@@ -1,0 +1,63 @@
+name: picnutri
+description: PicNutri — acompanhamento nutricional com IA.
+publish_to: none
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.12.0
+  flutter: '>=3.44.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  crypto: ^3.0.6
+  dio: ^5.11.1
+  firebase_core: ^4.15.0
+  firebase_messaging: ^16.7.0
+  fl_chart: ^1.2.0
+  flutter_riverpod: ^3.4.3
+  flutter_local_notifications: ^22.3.2
+  flutter_secure_storage: ^11.2.0
+  flutter_timezone: ^5.1.1
+  geolocator: ^14.0.2
+  go_router: ^18.0.2
+  google_sign_in: ^7.2.0
+  image_picker: ^1.2.1
+  in_app_purchase: ^3.3.0
+  intl: any
+  mobile_scanner: ^7.4.1
+  path_provider: ^2.1.5
+  sentry_flutter: ^10.0.0
+  share_plus: ^13.3.1
+  sign_in_with_apple: ^8.1.0
+  speech_to_text: ^7.5.0
+  timezone: ^0.11.0
+  uuid: ^4.5.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+  mocktail: ^1.0.5
+
+flutter:
+  uses-material-design: true
+
+  # Design System: Inter (SIL Open Font License, ver assets/fonts/OFL.txt),
+  # reduzida aos caracteres latinos para diminuir o tamanho do app.
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700

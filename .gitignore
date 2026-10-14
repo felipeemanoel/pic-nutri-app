@@ -1,0 +1,42 @@
+# Flutter/Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+/build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.g.dart.bak
+coverage/
+
+# FVM (a versão fica no .fvmrc; o link local não é versionado)
+.fvm/flutter_sdk
+.fvm/
+
+# IDEs
+.idea/
+*.iml
+.vscode/*
+!.vscode/launch.json
+.DS_Store
+
+# Android
+/android/.gradle/
+/android/local.properties
+/android/key.properties
+*.jks
+*.keystore
+
+# iOS
+/ios/Pods/
+/ios/.symlinks/
+/ios/Flutter/ephemeral/
+/ios/Flutter/Generated.xcconfig
+/ios/Flutter/flutter_export_environment.sh
+**/xcuserdata/
+
+# Ambientes locais com valores pessoais (os env/*.json versionados não têm segredos)
+env/*.local.json
+
+# Pacotes temporários de sincronização
+.sync-*.tgz

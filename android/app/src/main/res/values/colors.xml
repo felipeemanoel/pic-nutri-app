@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Identidade PicNutri: verde-esmeralda (Primary). -->
+    <color name="ic_launcher_background">#087F5B</color>
+    <color name="splash_background">#087F5B</color>
+    <color name="app_background">#F7F9F7</color>
+</resources>
