@@ -37,6 +37,7 @@ import '../features/reports/presentation/reports_page.dart';
 import '../features/symptoms/presentation/symptoms_page.dart';
 import '../features/system_status/presentation/system_status_page.dart';
 import '../features/water/presentation/water_page.dart';
+import 'features.dart';
 import 'routes.dart';
 import 'shell/app_shell.dart';
 
@@ -135,7 +136,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: 'privacy',
             builder: (context, state) => const PrivacyPage(),
           ),
-          GoRoute(
+          if (AppFeatures.medical) GoRoute(
             path: 'share-grants',
             builder: (context, state) => const ShareGrantsPage(),
           ),
@@ -275,7 +276,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          StatefulShellBranch(
+          if (AppFeatures.medical) StatefulShellBranch(
             routes: [
               GoRoute(
                 path: AppRoutes.professionals,

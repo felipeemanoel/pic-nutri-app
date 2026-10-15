@@ -1,6 +1,6 @@
 {
   "APP_FLAVOR": "prod",
-  "API_BASE_URL": "https://api.picnutri.example",
+  "API_BASE_URL": "https://picnutri.96code.com.br",
   "SENTRY_DSN": "",
   "GOOGLE_SERVER_CLIENT_ID": "",
   "GOOGLE_IOS_CLIENT_ID": "",

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/features.dart';
 import '../../../shared/labels.dart';
 import '../../../shared/validators.dart';
 import '../../../shared/widgets/feedback.dart';
@@ -170,7 +171,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
             const SizedBox(height: 20),
             Text('Objetivo', style: theme.textTheme.titleSmall),
             ChoiceList(
-              options: Labels.goals,
+              options: Labels.goalOptions,
               value: _goal,
               onChanged: (v) => setState(() => _goal = v),
             ),
@@ -347,7 +348,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
               max: 6000,
               decimal: false,
             ),
-            SwitchListTile(
+            if (AppFeatures.medical) SwitchListTile(
               value: _medication,
               onChanged: (v) => setState(() => _medication = v),
               contentPadding: EdgeInsets.zero,

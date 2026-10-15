@@ -1,0 +1,6 @@
+# Copie para android/key.properties (não versionado) e preencha.
+# storeFile é relativo à pasta android/app.
+storePassword=
+keyPassword=
+keyAlias=upload
+storeFile=../../../picnutri-upload-keystore.jks

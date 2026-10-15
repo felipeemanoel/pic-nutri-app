@@ -1,3 +1,5 @@
+import '../app/features.dart';
+
 /// Rótulos em português para os valores enviados/recebidos da API.
 abstract final class Labels {
   static const goals = {
@@ -7,6 +9,13 @@ abstract final class Labels {
     'improve_habits': 'Melhorar hábitos alimentares',
     'nutrition_tracking': 'Acompanhamento nutricional',
     'medication_support': 'Acompanhamento durante uso de medicamento prescrito',
+  };
+
+  /// Objetivos oferecidos para escolha (sem os de medicamento quando o
+  /// recurso está desligado). `goals` continua completo para exibição.
+  static Map<String, String> get goalOptions => {
+    for (final e in goals.entries)
+      if (AppFeatures.medical || e.key != 'medication_support') e.key: e.value,
   };
 
   static const activityLevels = {
@@ -51,6 +60,12 @@ abstract final class Labels {
     'has_professional_plan': 'Já tenho dieta ou orientação profissional',
     'prescribed_medication': 'Uso medicamento prescrito',
     'find_professional': 'Quero acompanhamento profissional',
+  };
+
+  static Map<String, String> get supportOptions => {
+    for (final e in supportPreferences.entries)
+      if (AppFeatures.medical || !{'prescribed_medication', 'find_professional'}.contains(e.key))
+        e.key: e.value,
   };
 
   static const guidanceSources = {

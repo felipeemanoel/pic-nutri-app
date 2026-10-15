@@ -1,3 +1,4 @@
+import '../../../app/features.dart';
 import '../../../core/utils/formatters.dart';
 import '../../food/data/nutrition_models.dart';
 import '../../progress/data/body_models.dart';
@@ -35,7 +36,7 @@ class Dashboard {
       weight: weight == null ? null : WeightSnapshot.fromJson(weight),
       goal: goal == null ? null : GoalProgress.fromJson(goal),
       medicationTrackingEnabled:
-          json['medication_tracking_enabled'] as bool? ?? false,
+          AppFeatures.medical && (json['medication_tracking_enabled'] as bool? ?? false),
       pendingMeals: [
         for (final m in (json['pending_meals'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>())
           PendingMeal(

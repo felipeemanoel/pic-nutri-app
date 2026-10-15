@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/features.dart';
 import '../../../core/design/design_system.dart';
 import '../../../core/utils/device_timezone.dart';
 import '../../../core/utils/formatters.dart';
@@ -51,8 +52,8 @@ abstract final class OnboardingSteps {
     if (consent) essentials,
     if (consent) routine,
     if (consent && support.contains('has_professional_plan')) guidance,
-    if (consent && support.contains('prescribed_medication')) medication,
-    if (support.contains('find_professional')) care,
+    if (AppFeatures.medical && consent && support.contains('prescribed_medication')) medication,
+    if (AppFeatures.medical && support.contains('find_professional')) care,
     if (consent) targets,
     summary,
   ];
@@ -489,7 +490,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
   List<Widget> _goalsStep() => [
     _title('Seus objetivos', 'Escolha um ou mais. O primeiro será o principal.'),
-    for (final e in Labels.goals.entries)
+    for (final e in Labels.goalOptions.entries)
       CheckboxListTile(
         value: _goals.contains(e.key),
         contentPadding: EdgeInsets.zero,
@@ -502,7 +503,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
   List<Widget> _supportStep() => [
     _title('Como você quer ser acompanhado(a)?', 'Escolha o que fizer sentido. As próximas perguntas dependem disso.'),
-    for (final e in Labels.supportPreferences.entries)
+    for (final e in Labels.supportOptions.entries)
       CheckboxListTile(
         value: _support.contains(e.key),
         contentPadding: EdgeInsets.zero,

@@ -1,3 +1,4 @@
+import '../../../app/features.dart';
 import '../../../core/utils/formatters.dart';
 
 /// Conta autenticada, como devolvida por `GET /me`.
@@ -132,7 +133,7 @@ class Profile {
     timezone: json['timezone'] as String? ?? 'America/Sao_Paulo',
     notificationsEnabled: json['notifications_enabled'] as bool? ?? false,
     medicationTrackingEnabled:
-        json['medication_tracking_enabled'] as bool? ?? false,
+        AppFeatures.medical && (json['medication_tracking_enabled'] as bool? ?? false),
     onboardingCompleted: json['onboarding_completed'] as bool? ?? false,
   );
 

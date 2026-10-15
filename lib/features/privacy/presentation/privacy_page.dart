@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../app/features.dart';
 import '../../../app/routes.dart';
 import '../../../core/notifications/local_notifications.dart';
 import '../../../core/utils/formatters.dart';
@@ -148,12 +149,14 @@ class _PrivacyPageState extends ConsumerState<PrivacyPage> {
             secondary: const Icon(Icons.health_and_safety_outlined),
             title: const Text('Dados de saúde'),
             subtitle: const Text(
-              'Necessária para registros de alimentação, peso, medicamentos e IA.',
+              AppFeatures.medical
+                  ? 'Necessária para registros de alimentação, peso, medicamentos e IA.'
+                  : 'Necessária para registros de alimentação, peso e IA.',
             ),
             value: account.consents.healthData,
             onChanged: _busy ? null : _toggleHealthConsent,
           ),
-          ListTile(
+          if (AppFeatures.medical) ListTile(
             leading: const Icon(Icons.share_outlined),
             title: const Text('Compartilhamentos com profissionais'),
             subtitle: const Text('Quem pode ver seus dados, até quando, e revogar'),

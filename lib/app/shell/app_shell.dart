@@ -10,6 +10,7 @@ import '../../core/notifications/push_messaging.dart';
 import '../../features/auth/application/session_controller.dart';
 import '../../features/plan/application/store_purchases.dart';
 import '../../features/reminders/application/reminder_scheduler.dart';
+import '../features.dart';
 
 /// Navegação principal: Início, Alimentação, Evolução, Assistente e
 /// Profissionais. O Perfil abre pelo avatar no topo de cada aba.
@@ -50,28 +51,28 @@ class _AppShellState extends ConsumerState<AppShell> {
     super.dispose();
   }
 
-  static const _destinations = <NavigationDestination>[
-    NavigationDestination(
+  static final _destinations = <NavigationDestination>[
+    const NavigationDestination(
       icon: Icon(Icons.home_outlined),
       selectedIcon: Icon(Icons.home),
       label: 'Início',
     ),
-    NavigationDestination(
+    const NavigationDestination(
       icon: Icon(Icons.restaurant_menu_outlined),
       selectedIcon: Icon(Icons.restaurant_menu),
       label: 'Alimentação',
     ),
-    NavigationDestination(
+    const NavigationDestination(
       icon: Icon(Icons.insights_outlined),
       selectedIcon: Icon(Icons.insights),
       label: 'Evolução',
     ),
-    NavigationDestination(
+    const NavigationDestination(
       icon: Icon(Icons.auto_awesome_outlined),
       selectedIcon: Icon(Icons.auto_awesome),
       label: 'Assistente',
     ),
-    NavigationDestination(
+    if (AppFeatures.medical) const NavigationDestination(
       icon: Icon(Icons.groups_outlined),
       selectedIcon: Icon(Icons.groups),
       label: 'Profissionais',
