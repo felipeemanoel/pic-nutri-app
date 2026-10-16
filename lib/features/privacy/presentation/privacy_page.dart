@@ -52,10 +52,10 @@ class _PrivacyPageState extends ConsumerState<PrivacyPage> {
       context,
       title: grant ? 'Autorizar dados de saúde?' : 'Revogar autorização?',
       message: grant
-          ? 'Você autoriza o PicNutri a tratar seus dados de saúde (alimentação, peso, medidas, '
-                'medicamentos e sintomas) para o acompanhamento no app e nas análises por IA.'
-          : 'Sem esta autorização, não será possível registrar refeições, peso, medidas, '
-                'medicamentos nem usar as análises por IA. Os dados já registrados continuam '
+          ? 'Você autoriza o PicNutri a tratar seus dados de saúde (alimentação, peso, medidas'
+                '${AppFeatures.medical ? ', medicamentos' : ''} e sintomas) para o acompanhamento no app e nas análises por IA.'
+          : 'Sem esta autorização, não será possível registrar refeições, peso, medidas'
+                '${AppFeatures.medical ? ', medicamentos' : ''} nem usar as análises por IA. Os dados já registrados continuam '
                 'disponíveis para consulta, exportação ou exclusão.',
       confirmLabel: grant ? 'Autorizar' : 'Revogar',
       destructive: !grant,

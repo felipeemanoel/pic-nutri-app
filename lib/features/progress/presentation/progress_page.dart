@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/features.dart';
 import '../../../app/routes.dart';
 import '../../../core/design/design_system.dart';
 import '../../../core/utils/formatters.dart';
@@ -161,13 +162,13 @@ class _WeightTabState extends ConsumerState<_WeightTab> {
                               ],
                               unit: 'kg',
                               target: p.goal?.goalWeightKg,
-                              markers: [for (final d in p.doses) d.date],
+                              markers: [if (AppFeatures.medical) for (final d in p.doses) d.date],
                             )
                           else
                             const Text(
                               'Registre o peso em pelo menos dois dias diferentes do período para ver o gráfico.',
                             ),
-                          if (p.series.length >= 2 && p.doses.isNotEmpty) ...[
+                          if (AppFeatures.medical && p.series.length >= 2 && p.doses.isNotEmpty) ...[
                             const SizedBox(height: 8),
                             Text(
                               'Linhas tracejadas roxas: aplicações registradas (${p.doses.length} no período). '

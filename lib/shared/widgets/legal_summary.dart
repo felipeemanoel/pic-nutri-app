@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../app/features.dart';
+
 /// Resumo de como o app trata os dados. Reflete o funcionamento real do
 /// sistema; os documentos jurídicos oficiais estão pendentes de publicação.
 Future<void> showLegalSummary(
@@ -19,7 +21,8 @@ Future<void> showLegalSummary(
         _Item(
           'O que coletamos',
           'Dados da conta (nome, e-mail), e os registros que você fizer: '
-              'perfil, refeições, água, peso, medidas, medicamentos e fotos de refeições.',
+              'perfil, refeições, água, peso, medidas, '
+              '${AppFeatures.medical ? 'medicamentos, ' : ''}fotos de refeições e de evolução.',
         ),
         _Item(
           'Dados de saúde',

@@ -462,7 +462,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     const _Bullet(icon: Icons.restaurant_menu, text: 'Registre refeições por foto, texto ou busca no banco de alimentos.'),
     const _Bullet(icon: Icons.insights, text: 'Acompanhe peso, medidas e hábitos com gráficos claros.'),
     const _Bullet(icon: Icons.auto_awesome, text: 'Tire dúvidas com o assistente, sempre com estimativas sinalizadas.'),
-    const _Bullet(icon: Icons.groups_outlined, text: 'Encontre nutricionistas e profissionais de educação física.'),
+    if (AppFeatures.medical)
+      const _Bullet(icon: Icons.groups_outlined, text: 'Encontre nutricionistas e profissionais de educação física.'),
     const _Bullet(icon: Icons.save_outlined, text: 'Você pode pular etapas e continuar depois: suas respostas ficam salvas.'),
   ];
 
@@ -470,7 +471,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     _title(
       'Seus dados de saúde',
       'Para personalizar o acompanhamento, vamos perguntar sobre idade, altura, peso, '
-          'alimentação e, se for o caso, uso de medicamento. Esses são dados de saúde e só são usados com a sua autorização.',
+          'alimentação${AppFeatures.medical ? ' e, se for o caso, uso de medicamento' : ''}. '
+          'Esses são dados de saúde e só são usados com a sua autorização.',
     ),
     const _Bullet(icon: Icons.lock_outline, text: 'Seus dados ficam protegidos e não são compartilhados sem a sua autorização.'),
     const _Bullet(icon: Icons.tune, text: 'Usamos esses dados para calcular totais e sugerir metas de referência, que você pode ajustar.'),
@@ -760,7 +762,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         if (_allergies.isNotEmpty) ('Alergias', join(_allergies, Labels.allergies), OnboardingSteps.routine),
         if (_support.contains('has_professional_plan'))
           ('Orientação profissional', _guidance.text.trim().isEmpty ? 'Não registrada' : 'Registrada', OnboardingSteps.guidance),
-        if (_support.contains('prescribed_medication'))
+        if (AppFeatures.medical && _support.contains('prescribed_medication'))
           ('Medicamento', _medicationTracking ? 'Registro ativado' : 'Registro desativado', OnboardingSteps.medication),
         (
           'Metas',

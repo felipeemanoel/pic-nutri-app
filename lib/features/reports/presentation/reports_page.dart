@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../app/features.dart';
 import '../../../app/routes.dart';
 import '../../../core/design/design_system.dart';
 import '../../../core/utils/formatters.dart';
@@ -172,8 +173,11 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'PDF com peso, medidas, sintomas, alimentação e, se você registra, as aplicações do medicamento. '
-                    'Leve para o médico ou nutricionista. Você escolhe com quem compartilhar.',
+                    AppFeatures.medical
+                        ? 'PDF com peso, medidas, sintomas, alimentação e, se você registra, as aplicações do medicamento. '
+                            'Leve para o médico ou nutricionista. Você escolhe com quem compartilhar.'
+                        : 'PDF com peso, medidas, sintomas e alimentação. '
+                            'Leve para o médico ou nutricionista. Você escolhe com quem compartilhar.',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   const SizedBox(height: Space.sm),

@@ -7,6 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../app/features.dart';
+
 /// Notificação semanal a agendar (um dia da semana, um horário).
 class WeeklyNotification {
   const WeeklyNotification({
@@ -53,7 +55,9 @@ class LocalNotifications {
     android: AndroidNotificationDetails(
       'reminders',
       'Lembretes',
-      channelDescription: 'Lembretes de água, refeições, pesagem e medicamento',
+      channelDescription: AppFeatures.medical
+          ? 'Lembretes de água, refeições, pesagem e medicamento'
+          : 'Lembretes de água, refeições e pesagem',
       importance: Importance.defaultImportance,
     ),
     iOS: DarwinNotificationDetails(),
