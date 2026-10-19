@@ -4,30 +4,30 @@ import 'package:flutter/painting.dart';
 /// Paleta oficial do PicNutri. Use pelos tokens semânticos
 /// (`Theme.of(context).colorScheme` e `context.pic`), não diretamente nas telas.
 ///
-/// Contraste (WCAG) verificado em `docs/design-system.md`.
+/// Contraste (WCAG) validado pelos testes do Design System.
 abstract final class PicPalette {
   // Marca.
-  static const primary = Color(0xFF087F5B);
-  static const primaryDark = Color(0xFF066649);
-  static const primaryLight = Color(0xFFDDF5EA);
-  static const accent = Color(0xFF65D6AD);
+  static const primary = Color(0xFF75435D);
+  static const primaryDark = Color(0xFF583147);
+  static const primaryLight = Color(0xFFF3E7EE);
+  static const accent = Color(0xFFD8B0C7);
 
   // Tema claro.
-  static const background = Color(0xFFF7F9F7);
+  static const background = Color(0xFFFAF8F5);
   static const surface = Color(0xFFFFFFFF);
-  static const surfaceMuted = Color(0xFFF0F4F1);
-  static const textPrimary = Color(0xFF1E2925);
-  static const textSecondary = Color(0xFF68756F);
-  static const border = Color(0xFFE4EAE6);
+  static const surfaceMuted = Color(0xFFF3EFEB);
+  static const textPrimary = Color(0xFF302A30);
+  static const textSecondary = Color(0xFF716770);
+  static const border = Color(0xFFEAE3E5);
 
   // Semânticas (tema claro).
   static const success = Color(0xFF21865A);
-  static const warning = Color(0xFFB7791F);
+  static const warning = Color(0xFFA87631);
   // Texto de alerta: o tom oficial tem contraste 3,6:1 no branco; para texto
   // pequeno usa-se este tom mais escuro (5,6:1).
   static const warningText = Color(0xFF8F5E14);
   static const error = Color(0xFFC43D4B);
-  static const info = Color(0xFF3478C8);
+  static const info = Color(0xFF547B91);
 
   // Inteligência artificial.
   static const aiPrimary = Color(0xFF7561D8);
@@ -35,14 +35,14 @@ abstract final class PicPalette {
   static const aiDark = Color(0xFF5141A6);
 
   // Tema escuro.
-  static const darkBackground = Color(0xFF111815);
-  static const darkSurface = Color(0xFF1B2420);
-  static const darkSurfaceElevated = Color(0xFF232E28);
-  static const darkTextPrimary = Color(0xFFF1F6F2);
-  static const darkTextSecondary = Color(0xFFB1BDB5);
-  static const darkBorder = Color(0xFF344139);
-  static const darkOnPrimary = Color(0xFF0B2A1F);
-  static const darkPrimaryContainer = Color(0xFF173B2E);
+  static const darkBackground = Color(0xFF191519);
+  static const darkSurface = Color(0xFF241E24);
+  static const darkSurfaceElevated = Color(0xFF302730);
+  static const darkTextPrimary = Color(0xFFFAF3F7);
+  static const darkTextSecondary = Color(0xFFC8BAC4);
+  static const darkBorder = Color(0xFF493C47);
+  static const darkOnPrimary = Color(0xFF352031);
+  static const darkPrimaryContainer = Color(0xFF493044);
   static const darkSuccess = Color(0xFF5CC48E);
   static const darkWarning = Color(0xFFE0B25C);
   static const darkError = Color(0xFFE07A86);
@@ -51,15 +51,15 @@ abstract final class PicPalette {
   static const darkAiContainer = Color(0xFF2A2547);
 
   // Macronutrientes (diferenciados também por rótulo e posição, nunca só pela cor).
-  static const protein = Color(0xFF3478C8);
-  static const carbs = Color(0xFFB7791F);
-  static const fat = Color(0xFFB0577A);
+  static const protein = Color(0xFF547B91);
+  static const carbs = Color(0xFFA87631);
+  static const fat = Color(0xFFA75F79);
   static const darkProtein = Color(0xFF6FA8EA);
   static const darkCarbs = Color(0xFFE0B25C);
   static const darkFat = Color(0xFFDB8DAB);
 
   // Água.
-  static const water = Color(0xFF2B8FC4);
+  static const water = Color(0xFF387D9C);
   static const darkWater = Color(0xFF6CC0EA);
 }
 
@@ -91,9 +91,9 @@ abstract final class Radii {
   static const sheet = 24.0;
   static const pill = 999.0;
 
-  static const card = BorderRadius.all(Radius.circular(lg));
+  static const card = BorderRadius.all(Radius.circular(24));
   static const control = BorderRadius.all(Radius.circular(md));
-  static const button = BorderRadius.all(Radius.circular(14));
+  static const button = BorderRadius.all(Radius.circular(16));
 }
 
 /// Durações e curvas das animações (curtas e funcionais).
@@ -107,6 +107,6 @@ abstract final class Motion {
 /// Sombras suaves, usadas só quando agregam hierarquia.
 abstract final class Shadows {
   static const soft = [
-    BoxShadow(color: Color(0x0F1E2925), blurRadius: 16, offset: Offset(0, 4)),
+    BoxShadow(color: Color(0x0F302A30), blurRadius: 16, offset: Offset(0, 4)),
   ];
 }

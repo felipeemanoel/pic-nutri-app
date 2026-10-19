@@ -32,7 +32,31 @@ class AuthLayout extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (!showBack) ...[
-                    const Center(child: PicNutriAppIcon(size: 64)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 28),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            context.pic.brandContainer,
+                            context.colors.surface,
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(32),
+                        border: Border.all(color: context.pic.border),
+                      ),
+                      child: Column(
+                        children: [
+                          const PicNutriWordmark(iconSize: 56),
+                          const SizedBox(height: Space.md),
+                          Text(
+                            'Um espaço para cuidar de você.',
+                            style: context.text.bodyMedium,
+                          ),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: Space.xl),
                   ],
                   Text(

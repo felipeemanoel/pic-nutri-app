@@ -3,14 +3,14 @@ import 'package:flutter/material.dart';
 import '../pic_colors.dart';
 import '../tokens.dart';
 
-/// Cartão padrão: superfície com borda discreta, cantos de 16 e espaçamento
+/// Cartão padrão: superfície com borda discreta, cantos de 24 e espaçamento
 /// interno consistente. Com [onTap], ganha resposta ao toque.
 class AppCard extends StatelessWidget {
   const AppCard({
     super.key,
     required this.child,
     this.onTap,
-    this.padding = const EdgeInsets.all(Space.lg),
+    this.padding = const EdgeInsets.all(Space.xl),
     this.color,
     this.borderColor,
     this.semanticLabel,
@@ -34,6 +34,9 @@ class AppCard extends StatelessWidget {
       label: semanticLabel,
       button: onTap != null,
       child: Material(
+        elevation: 1,
+        shadowColor: context.colors.shadow.withValues(alpha: 0.06),
+        surfaceTintColor: Colors.transparent,
         color: color ?? context.colors.surface,
         shape: shape,
         clipBehavior: Clip.antiAlias,

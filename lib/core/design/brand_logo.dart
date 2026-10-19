@@ -27,7 +27,7 @@ class PicNutriSymbol extends StatelessWidget {
   );
 }
 
-/// Ícone do app: símbolo branco sobre o quadrado esmeralda.
+/// Ícone do app: símbolo branco sobre o quadrado com a cor da marca.
 class PicNutriAppIcon extends StatelessWidget {
   const PicNutriAppIcon({super.key, this.size = 72});
 

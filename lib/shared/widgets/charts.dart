@@ -53,7 +53,8 @@ class DateLineChart extends StatelessWidget {
             maxY: maxY,
             gridData: FlGridData(
               drawVerticalLine: false,
-              getDrawingHorizontalLine: (_) => FlLine(color: pic.chartGrid, strokeWidth: 1),
+              getDrawingHorizontalLine: (_) =>
+                  FlLine(color: pic.chartGrid, strokeWidth: 1),
             ),
             borderData: FlBorderData(show: false),
             extraLinesData: ExtraLinesData(
@@ -124,7 +125,17 @@ class DateLineChart extends StatelessWidget {
                     strokeColor: Theme.of(context).colorScheme.surface,
                   ),
                 ),
-                belowBarData: BarAreaData(show: true, color: pic.chartFill),
+                belowBarData: BarAreaData(
+                  show: true,
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      pic.chartLine.withValues(alpha: 0.20),
+                      pic.chartLine.withValues(alpha: 0.01),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
@@ -181,12 +192,12 @@ class DailyBarChart extends StatelessWidget {
             extraLinesData: ExtraLinesData(
               horizontalLines: [
                 if (goal > 0)
-                HorizontalLine(
-                  y: goal,
-                  color: pic.chartReference,
-                  strokeWidth: 1,
-                  dashArray: [6, 4],
-                ),
+                  HorizontalLine(
+                    y: goal,
+                    color: pic.chartReference,
+                    strokeWidth: 1,
+                    dashArray: [6, 4],
+                  ),
               ],
             ),
             titlesData: FlTitlesData(
@@ -205,7 +216,8 @@ class DailyBarChart extends StatelessWidget {
                     return SideTitleWidget(
                       meta: meta,
                       child: Text(
-                        dayLabel?.call(days[index].$1) ?? '${days[index].$1.day}',
+                        dayLabel?.call(days[index].$1) ??
+                            '${days[index].$1.day}',
                         style: Theme.of(context).textTheme.labelSmall,
                       ),
                     );
@@ -239,7 +251,12 @@ class DailyBarChart extends StatelessWidget {
 /// Linha mínima, sem eixos, para resumos (ex.: peso no painel inicial).
 /// Só deve ser usada com pelo menos dois registros reais.
 class Sparkline extends StatelessWidget {
-  const Sparkline({super.key, required this.points, this.height = 56, this.semanticLabel});
+  const Sparkline({
+    super.key,
+    required this.points,
+    this.height = 56,
+    this.semanticLabel,
+  });
 
   final List<(DateTime, double)> points;
   final double height;
@@ -284,9 +301,23 @@ class Sparkline extends StatelessWidget {
                   isStrokeCapRound: true,
                   dotData: FlDotData(
                     checkToShowDot: (spot, bar) => spot == bar.spots.last,
-                    getDotPainter: (_, _, _, _) => FlDotCirclePainter(radius: 3.5, color: pic.chartLine, strokeWidth: 0),
+                    getDotPainter: (_, _, _, _) => FlDotCirclePainter(
+                      radius: 3.5,
+                      color: pic.chartLine,
+                      strokeWidth: 0,
+                    ),
                   ),
-                  belowBarData: BarAreaData(show: true, color: pic.chartFill),
+                  belowBarData: BarAreaData(
+                    show: true,
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        pic.chartLine.withValues(alpha: 0.20),
+                        pic.chartLine.withValues(alpha: 0.01),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),

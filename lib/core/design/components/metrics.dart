@@ -238,11 +238,12 @@ class QuickAction extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 52,
-                  height: 52,
+                  width: 54,
+                  height: 54,
                   decoration: BoxDecoration(
                     color: bg,
-                    borderRadius: Radii.card,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: fg.withValues(alpha: 0.12)),
                   ),
                   child: Icon(icon, color: fg),
                 ),

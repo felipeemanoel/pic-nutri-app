@@ -42,20 +42,31 @@ class HomePage extends ConsumerWidget {
             ref.invalidate(engagementProvider);
             return ref.refresh(dashboardProvider(day).future);
           },
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(Space.page, Space.lg, Space.page, Space.xxl),
-            children: [
-              _Header(name: name),
-              const SizedBox(height: Space.sm),
-              const DayNavigator(),
-              const SizedBox(height: Space.sm),
-              AsyncValueView<Dashboard>(
-                value: dashboard,
-                onRetry: () => ref.invalidate(dashboardProvider(day)),
-                loading: const _DashboardSkeleton(),
-                data: (data) => _DashboardBody(data: data),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 720),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(
+                  Space.page,
+                  Space.lg,
+                  Space.page,
+                  Space.xxl,
+                ),
+                children: [
+                  _Header(name: name),
+                  const SizedBox(height: Space.xxl),
+                  const DayNavigator(),
+                  const SizedBox(height: Space.xl),
+                  AsyncValueView<Dashboard>(
+                    value: dashboard,
+                    onRetry: () => ref.invalidate(dashboardProvider(day)),
+                    loading: const _DashboardSkeleton(),
+                    data: (data) => _DashboardBody(data: data),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -109,7 +120,64 @@ class _Header extends StatelessWidget {
   );
 }
 
-String _capitalize(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+String _capitalize(String s) =>
+    s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+
+class _JourneyBanner extends StatelessWidget {
+  const _JourneyBanner();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(Space.xxl),
+    decoration: BoxDecoration(
+      borderRadius: Radii.card,
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [context.colors.primaryContainer, context.colors.surface],
+      ),
+      border: Border.all(color: context.pic.border),
+    ),
+    child: Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'SEU ESPAÇO DE CUIDADO',
+                style: context.text.labelSmall?.copyWith(
+                  color: context.pic.onBrandContainer,
+                  letterSpacing: 1.5,
+                ),
+              ),
+              const SizedBox(height: Space.sm),
+              Text('Cada cuidado conta.', style: context.text.headlineSmall),
+              const SizedBox(height: Space.sm),
+              Text(
+                'Sua evolução, no seu ritmo.\nUm dia de cada vez.',
+                style: context.text.bodyMedium,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: Space.md),
+        Container(
+          padding: const EdgeInsets.all(Space.md),
+          decoration: BoxDecoration(
+            color: context.colors.surface.withValues(alpha: 0.7),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.spa_outlined,
+            size: 32,
+            color: context.colors.primary,
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
 class _DashboardSkeleton extends StatelessWidget {
   const _DashboardSkeleton();
@@ -136,14 +204,20 @@ class _DashboardBody extends StatelessWidget {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       const _CompleteProfileCard(),
+      const _JourneyBanner(),
+      const SizedBox(height: Space.xl),
       _DaySummaryCard(data: data),
       const SizedBox(height: Space.lg),
+      Text('Registrar no seu dia', style: context.text.titleMedium),
+      const SizedBox(height: Space.sm),
       _QuickActions(isToday: data.isToday),
       const SizedBox(height: Space.lg),
       if (data.isToday) ...[
         const StreakCard(),
         const SizedBox(height: Space.md),
       ],
+      Text('Seu acompanhamento', style: context.text.titleMedium),
+      const SizedBox(height: Space.md),
       _WaterCard(data: data),
       const SizedBox(height: Space.md),
       _WeightCard(data: data),
@@ -162,8 +236,14 @@ class _DashboardBody extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Resumo semanal e mensal', style: context.text.titleSmall),
-                  Text('Médias, metas atingidas e comparações', style: context.text.bodySmall),
+                  Text(
+                    'Resumo semanal e mensal',
+                    style: context.text.titleSmall,
+                  ),
+                  Text(
+                    'Médias, metas atingidas e comparações',
+                    style: context.text.bodySmall,
+                  ),
                 ],
               ),
             ),
@@ -201,11 +281,19 @@ class _DaySummaryCard extends StatelessWidget {
                 Container(
                   width: 48,
                   height: 48,
-                  decoration: BoxDecoration(color: context.pic.brandContainer, shape: BoxShape.circle),
-                  child: Icon(Icons.restaurant_menu, color: context.colors.primary),
+                  decoration: BoxDecoration(
+                    color: context.pic.brandContainer,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.restaurant_menu,
+                    color: context.colors.primary,
+                  ),
                 ),
                 const SizedBox(width: Space.md),
-                const Expanded(child: Text('Nenhuma refeição registrada neste dia.')),
+                const Expanded(
+                  child: Text('Nenhuma refeição registrada neste dia.'),
+                ),
               ],
             ),
             const SizedBox(height: Space.md),
@@ -238,7 +326,9 @@ class _DaySummaryCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(child: Text('Resumo do dia', style: context.text.titleMedium)),
+              Expanded(
+                child: Text('Resumo do dia', style: context.text.titleMedium),
+              ),
               Text(
                 '${n.mealsCount} ${n.mealsCount == 1 ? 'refeição' : 'refeições'}',
                 style: context.text.bodySmall,
@@ -340,7 +430,9 @@ class _PendingMeals extends StatelessWidget {
             ActionChip(
               avatar: Icon(m.late ? Icons.schedule : Icons.add, size: 16),
               label: Text(m.label),
-              tooltip: m.late ? '${m.label}: horário habitual já passou' : 'Registrar ${m.label}',
+              tooltip: m.late
+                  ? '${m.label}: horário habitual já passou'
+                  : 'Registrar ${m.label}',
               onPressed: () => context.go(AppRoutes.food),
             ),
         ],
@@ -418,7 +510,9 @@ class _WaterCardState extends ConsumerState<_WaterCard> {
           .add(
             ml,
             requestId: newRequestId(),
-            at: widget.data.isToday ? null : widget.data.date.add(const Duration(hours: 12)),
+            at: widget.data.isToday
+                ? null
+                : widget.data.date.add(const Duration(hours: 12)),
           );
       Refresh.water(ref);
       if (mounted) showMessage(context, '+$ml ml registrados.');
@@ -442,7 +536,9 @@ class _WaterCardState extends ConsumerState<_WaterCard> {
             children: [
               Icon(Icons.water_drop_outlined, size: 20, color: water),
               const SizedBox(width: Space.sm),
-              Expanded(child: Text('Água', style: context.text.titleMedium)),
+              Expanded(
+                child: Text('Hidratação', style: context.text.titleMedium),
+              ),
               Text(
                 '${Fmt.ml(d.waterTotalMl)} / ${Fmt.ml(d.waterGoalMl)}',
                 style: context.text.labelMedium?.copyWith(
@@ -493,9 +589,14 @@ class _WeightCard extends StatelessWidget {
           ? Row(
               children: [
                 const Expanded(
-                  child: Text('Registre seu peso na aba Evolução para acompanhar seu progresso.'),
+                  child: Text(
+                    'Registre seu peso na aba Evolução para acompanhar seu progresso.',
+                  ),
                 ),
-                TextButton(onPressed: () => showWeightForm(context), child: const Text('Registrar')),
+                TextButton(
+                  onPressed: () => showWeightForm(context),
+                  child: const Text('Registrar'),
+                ),
               ],
             )
           : Column(
@@ -505,9 +606,17 @@ class _WeightCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Expanded(
-                      child: Stat(value: Fmt.kg(w.latestKg), label: 'em ${Fmt.dayMonth(w.latestDate)}'),
+                      child: Stat(
+                        value: Fmt.kg(w.latestKg),
+                        label: 'em ${Fmt.dayMonth(w.latestDate)}',
+                      ),
                     ),
-                    Expanded(child: Stat(value: signedKg(w.change30dKg), label: 'nos últimos 30 dias')),
+                    Expanded(
+                      child: Stat(
+                        value: signedKg(w.change30dKg),
+                        label: 'nos últimos 30 dias',
+                      ),
+                    ),
                   ],
                 ),
                 if (w.series.length >= 2) ...[
@@ -549,6 +658,8 @@ class _MedicationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final last = data.lastDose;
     return AppCard(
+      color: context.pic.aiContainer,
+      borderColor: context.pic.ai.withValues(alpha: 0.18),
       onTap: () => context.go(AppRoutes.progress),
       child: Row(
         children: [
@@ -559,7 +670,9 @@ class _MedicationCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  last == null ? 'Nenhuma aplicação registrada' : 'Última aplicação: ${last.medicationName}',
+                  last == null
+                      ? 'Nenhuma aplicação registrada'
+                      : 'Última aplicação: ${last.medicationName}',
                   style: context.text.titleSmall,
                 ),
                 Text(
@@ -589,7 +702,10 @@ class _RemindersCard extends StatelessWidget {
     icon: Icons.alarm_outlined,
     onTap: () => context.push(AppRoutes.reminders),
     child: data.nextReminders.isEmpty
-        ? Text('Configure lembretes de água, refeições e pesagem.', style: context.text.bodySmall)
+        ? Text(
+            'Configure lembretes de água, refeições e pesagem.',
+            style: context.text.bodySmall,
+          )
         : Column(
             children: [
               for (final r in data.nextReminders)
@@ -606,9 +722,17 @@ class _RemindersCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      Expanded(child: Text(r.title, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      Expanded(
+                        child: Text(
+                          r.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                       Text(
-                        _sameDay(r.at, DateTime.now()) ? 'Hoje' : Fmt.dayMonth(r.at),
+                        _sameDay(r.at, DateTime.now())
+                            ? 'Hoje'
+                            : Fmt.dayMonth(r.at),
                         style: context.text.bodySmall,
                       ),
                     ],
@@ -619,7 +743,8 @@ class _RemindersCard extends StatelessWidget {
   );
 }
 
-bool _sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
+bool _sameDay(DateTime a, DateTime b) =>
+    a.year == b.year && a.month == b.month && a.day == b.day;
 
 /// Etapas do onboarding puladas: lembra de completar (ou dispensar).
 class _CompleteProfileCard extends ConsumerWidget {
@@ -636,14 +761,18 @@ class _CompleteProfileCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final skipped = (ref.watch(currentAccountProvider)?.onboardingSkipped ?? const <String>[])
-        .where(_labels.containsKey)
-        .toList();
+    final skipped =
+        (ref.watch(currentAccountProvider)?.onboardingSkipped ??
+                const <String>[])
+            .where(_labels.containsKey)
+            .toList();
     if (skipped.isEmpty) return const SizedBox.shrink();
 
     Future<void> dismiss() async {
       try {
-        final account = await ref.read(profileRepositoryProvider).saveOnboardingProgress(step: 'summary', skipped: const []);
+        final account = await ref
+            .read(profileRepositoryProvider)
+            .saveOnboardingProgress(step: 'summary', skipped: const []);
         ref.read(sessionControllerProvider.notifier).updateAccount(account);
       } on Object catch (e) {
         if (context.mounted) showFailure(context, e);
@@ -654,7 +783,8 @@ class _CompleteProfileCard extends ConsumerWidget {
       padding: const EdgeInsets.only(bottom: Space.md),
       child: StatusBanner(
         title: 'Complete seu perfil',
-        message: 'Ficou para depois: ${skipped.map((s) => _labels[s]).join(', ')}. Com esses dados, metas e sugestões ficam mais precisas.',
+        message:
+            'Ficou para depois: ${skipped.map((s) => _labels[s]).join(', ')}. Com esses dados, metas e sugestões ficam mais precisas.',
         actionLabel: 'Completar agora',
         onAction: () async {
           await context.push(AppRoutes.editProfile);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/design/design_system.dart';
 import '../../core/utils/formatters.dart';
 import '../state/selected_date.dart';
 
@@ -20,32 +21,46 @@ class DayNavigator extends ConsumerWidget {
         ? 'Ontem'
         : Fmt.dayMonth(day);
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        IconButton(
-          tooltip: 'Dia anterior',
-          icon: const Icon(Icons.chevron_left),
-          onPressed: notifier.previous,
-        ),
-        TextButton(
-          onPressed: () async {
-            final picked = await showDatePicker(
-              context: context,
-              initialDate: day,
-              firstDate: DateTime(2020),
-              lastDate: SelectedDate.today(),
-            );
-            if (picked != null) notifier.set(picked);
-          },
-          child: Text(label, style: Theme.of(context).textTheme.titleMedium),
-        ),
-        IconButton(
-          tooltip: 'Próximo dia',
-          icon: const Icon(Icons.chevron_right),
-          onPressed: isToday ? null : notifier.next,
-        ),
-      ],
+    return Container(
+      decoration: BoxDecoration(
+        color: context.colors.surface,
+        borderRadius: Radii.control,
+        border: Border.all(color: context.pic.border),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton(
+            tooltip: 'Dia anterior',
+            icon: const Icon(Icons.chevron_left),
+            onPressed: notifier.previous,
+          ),
+          TextButton(
+            onPressed: () async {
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: day,
+                firstDate: DateTime(2020),
+                lastDate: SelectedDate.today(),
+              );
+              if (picked != null) notifier.set(picked);
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.calendar_today_outlined, size: 16),
+                const SizedBox(width: 8),
+                Text(label, style: Theme.of(context).textTheme.titleSmall),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: 'Próximo dia',
+            icon: const Icon(Icons.chevron_right),
+            onPressed: isToday ? null : notifier.next,
+          ),
+        ],
+      ),
     );
   }
 }
