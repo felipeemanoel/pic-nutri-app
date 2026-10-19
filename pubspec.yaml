@@ -36,6 +36,13 @@ dependencies:
   speech_to_text: ^7.5.0
   timezone: ^0.11.0
   uuid: ^4.5.3
+  flutter_facebook_auth: ^7.1.7
+
+# flutter_facebook_auth 7.x exige flutter_secure_storage ^10 só no pacote de
+# desktop/web (facebook_auth_desktop), que o app não usa. Mantém a versão 11
+# usada pelo TokenStorage; conferido com build Android e iOS.
+dependency_overrides:
+  flutter_secure_storage: ^11.2.0
 
 dev_dependencies:
   flutter_test:
@@ -48,6 +55,9 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/images/login/
 
   # Design System: Inter (SIL Open Font License, ver assets/fonts/OFL.txt),
   # reduzida aos caracteres latinos para diminuir o tamanho do app.

@@ -8,6 +8,7 @@ import 'package:picnutri/features/auth/data/account.dart';
 import 'package:picnutri/features/auth/data/auth_repository.dart';
 import 'package:picnutri/features/engagement/data/engagement_models.dart';
 import 'package:picnutri/features/engagement/data/engagement_repository.dart';
+import 'package:picnutri/features/notifications/data/notification_repository.dart';
 
 class MockAuthRepository extends Mock implements AuthRepository {}
 
@@ -43,19 +44,23 @@ const testEnv = AppEnv(
   apiBaseUrl: 'http://localhost:8080',
 );
 
-Account testAccount({bool onboarded = true, String name = 'Maria Silva'}) =>
-    Account(
-      name: name,
-      email: 'maria@example.com',
-      onboardingCompleted: onboarded,
-      consents: const Consents(terms: true, privacy: true, healthData: true),
-      profile: Profile(
-        goal: 'lose_weight',
-        dailyCalorieGoal: 1700,
-        waterGoalMl: 2400,
-        onboardingCompleted: onboarded,
-      ),
-    );
+Account testAccount({
+  bool onboarded = true,
+  String name = 'Maria Silva',
+  bool notificationsEnabled = false,
+}) => Account(
+  name: name,
+  email: 'maria@example.com',
+  onboardingCompleted: onboarded,
+  consents: const Consents(terms: true, privacy: true, healthData: true),
+  profile: Profile(
+    goal: 'lose_weight',
+    dailyCalorieGoal: 1700,
+    waterGoalMl: 2400,
+    onboardingCompleted: onboarded,
+    notificationsEnabled: notificationsEnabled,
+  ),
+);
 
 /// Sessão fixa para testes de tela.
 class FixedSession extends SessionController {
@@ -77,6 +82,13 @@ class FakeLocalNotifications extends LocalNotifications {
   Future<bool> requestPermission() async => grant;
 
   @override
+  Future<void> ensureInitialized() async {}
+
+  @override
+  Future<NotificationPermission> permissionStatus() async =>
+      grant ? NotificationPermission.granted : NotificationPermission.denied;
+
+  @override
   Future<void> replaceAll(
     List<WeeklyNotification> notifications, {
     required String timezone,
@@ -89,12 +101,18 @@ class FakeLocalNotifications extends LocalNotifications {
   }
 }
 
-List<Override> sessionOverrides(SessionState state, {Map<String, dynamic>? engagement}) => [
+List<Override> sessionOverrides(
+  SessionState state, {
+  Map<String, dynamic>? engagement,
+}) => [
   appEnvProvider.overrideWithValue(testEnv),
   sessionControllerProvider.overrideWith(() => FixedSession(state)),
   localNotificationsProvider.overrideWithValue(FakeLocalNotifications()),
-  // Sem API nos testes: resumo de engajamento vazio.
-  engagementProvider.overrideWith((ref) async => Engagement.fromJson(engagement ?? emptyEngagementJson())),
+  // Sem API nos testes: resumo de engajamento vazio e nenhuma notificação.
+  engagementProvider.overrideWith(
+    (ref) async => Engagement.fromJson(engagement ?? emptyEngagementJson()),
+  ),
+  unreadNotificationsProvider.overrideWith((ref) async => 0),
 ];
 
 Map<String, dynamic> emptyEngagementJson({

@@ -18,6 +18,6 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Entrar no PicNutri'), findsOneWidget);
+    expect(find.text('Bem-vindo de volta'), findsOneWidget);
   });
 }

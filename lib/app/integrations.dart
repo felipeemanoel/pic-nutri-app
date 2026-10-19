@@ -9,6 +9,10 @@ abstract final class Integrations {
   // iOS: ID do cliente iOS (também precisa do URL scheme no Info.plist).
   static const googleIosClientId = String.fromEnvironment('GOOGLE_IOS_CLIENT_ID');
 
+  // Login com Facebook (Meta): ID do app e client token (públicos; o segredo fica no servidor).
+  static const facebookAppId = String.fromEnvironment('FACEBOOK_APP_ID');
+  static const facebookClientToken = String.fromEnvironment('FACEBOOK_CLIENT_TOKEN');
+
   // Firebase Cloud Messaging (push enviado pelo servidor).
   static const firebaseProjectId = String.fromEnvironment('FIREBASE_PROJECT_ID');
   static const firebaseSenderId = String.fromEnvironment('FIREBASE_SENDER_ID');
@@ -23,6 +27,9 @@ abstract final class Integrations {
 
   /// Sign in with Apple nativo só existe no iOS.
   static bool get appleSignIn => Platform.isIOS;
+
+  static bool get facebookSignIn =>
+      (Platform.isAndroid || Platform.isIOS) && facebookAppId.isNotEmpty && facebookClientToken.isNotEmpty;
 
   static bool get push {
     if (firebaseProjectId.isEmpty || firebaseSenderId.isEmpty) return false;

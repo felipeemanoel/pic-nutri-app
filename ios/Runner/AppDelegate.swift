@@ -15,5 +15,37 @@ import UserNotifications
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+
+    // Situação da permissão de notificações e atalho para as configurações do app.
+    guard let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "PicNutriNotificationSettings") else { return }
+    let channel = FlutterMethodChannel(
+      name: "br.com.picnutri/notification_settings",
+      binaryMessenger: registrar.messenger()
+    )
+    channel.setMethodCallHandler { call, result in
+      switch call.method {
+      case "status":
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+          let status: String
+          switch settings.authorizationStatus {
+          case .authorized, .provisional, .ephemeral: status = "granted"
+          case .notDetermined: status = "notDetermined"
+          default: status = "denied"
+          }
+          DispatchQueue.main.async { result(status) }
+        }
+      case "open":
+        let url: URL?
+        if #available(iOS 16.0, *) {
+          url = URL(string: UIApplication.openNotificationSettingsURLString)
+        } else {
+          url = URL(string: UIApplication.openSettingsURLString)
+        }
+        guard let target = url else { result(false); return }
+        UIApplication.shared.open(target) { opened in result(opened) }
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    }
   }
 }

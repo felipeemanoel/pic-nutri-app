@@ -1,4 +1,5 @@
 import java.io.FileInputStream
+import java.util.Base64
 import java.util.Properties
 
 plugins {
@@ -14,10 +15,28 @@ val keystoreProperties = Properties().apply {
     if (keystorePropertiesFile.exists()) load(FileInputStream(keystorePropertiesFile))
 }
 
+// Valores públicos do Facebook vindos de --dart-define-from-file (env/*.json),
+// a mesma fonte usada pelo código Dart. Sem eles, o login com Facebook fica oculto.
+val dartDefines: Map<String, String> = (project.findProperty("dart-defines") as String?)
+    ?.split(",")
+    ?.mapNotNull { encoded ->
+        val pair = String(Base64.getDecoder().decode(encoded)).split("=", limit = 2)
+        if (pair.size == 2) pair[0] to pair[1] else null
+    }
+    ?.toMap()
+    ?: emptyMap()
+val facebookAppId = dartDefines["FACEBOOK_APP_ID"].orEmpty()
+val facebookClientToken = dartDefines["FACEBOOK_CLIENT_TOKEN"].orEmpty()
+
 android {
     namespace = "br.com.picnutri"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
+
+    // resValue: IDs públicos do Facebook gerados a partir de env/*.json.
+    buildFeatures {
+        resValues = true
+    }
 
     compileOptions {
         // Exigido pelo flutter_local_notifications (agendamento de lembretes).
@@ -35,6 +54,10 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        resValue("string", "facebook_app_id", facebookAppId)
+        resValue("string", "facebook_client_token", facebookClientToken)
+        resValue("string", "fb_login_protocol_scheme", "fb$facebookAppId")
     }
 
     signingConfigs {

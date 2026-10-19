@@ -1,0 +1,10 @@
+// Copie para ios/Flutter/Social.xcconfig (fora do git) e preencha.
+// São identificadores públicos; nenhum segredo vai para o app.
+// Use os mesmos valores de env/<ambiente>.json.
+
+// Meta for Developers → app → Configurações → Básico (ID do app) e Avançado (Token do cliente).
+FACEBOOK_APP_ID =
+FACEBOOK_CLIENT_TOKEN =
+
+// Google Cloud → cliente OAuth iOS → "iOS URL scheme" (com.googleusercontent.apps.…).
+GOOGLE_REVERSED_CLIENT_ID =

@@ -13,6 +13,6 @@ void main() {
     await app.main();
     await tester.pumpAndSettle(const Duration(seconds: 5));
 
-    expect(find.text('Entrar no PicNutri'), findsOneWidget);
+    expect(find.text('Bem-vindo de volta'), findsOneWidget);
   });
 }

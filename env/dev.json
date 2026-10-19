@@ -2,12 +2,14 @@
   "APP_FLAVOR": "dev",
   "API_BASE_URL": "http://10.0.2.2:8080",
   "SENTRY_DSN": "",
-  "GOOGLE_SERVER_CLIENT_ID": "",
-  "GOOGLE_IOS_CLIENT_ID": "",
+  "GOOGLE_SERVER_CLIENT_ID": "49635319161-u5ve7c2mrsouulfpsgp3k68rrs6mnq81.apps.googleusercontent.com",
+  "GOOGLE_IOS_CLIENT_ID": "49635319161-hu84ovduuf2m4o1ob4kv0bgivpcp304j.apps.googleusercontent.com",
   "FIREBASE_PROJECT_ID": "",
   "FIREBASE_SENDER_ID": "",
   "FIREBASE_ANDROID_API_KEY": "",
   "FIREBASE_ANDROID_APP_ID": "",
   "FIREBASE_IOS_API_KEY": "",
-  "FIREBASE_IOS_APP_ID": ""
+  "FIREBASE_IOS_APP_ID": "",
+  "FACEBOOK_APP_ID": "4548007392149036",
+  "FACEBOOK_CLIENT_TOKEN": "6c4a0ef961493392502f26aa48effbf3"
 }

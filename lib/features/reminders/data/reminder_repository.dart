@@ -29,11 +29,16 @@ class ReminderRepository {
     bool? enabled,
     String? medicationId,
     String? requestId,
+    int? intervalMinutes,
+    String? endTime,
   }) async {
     final body = {
       'type': type,
       'title': (title?.trim().isEmpty ?? true) ? null : title!.trim(),
       'time': time,
+      // Sem repetição, os dois vão nulos (a API limpa o horário final).
+      'interval_minutes': intervalMinutes,
+      'end_time': intervalMinutes == null ? null : endTime,
       'days': days,
       'enabled': ?enabled,
       'medication_id': medicationId,

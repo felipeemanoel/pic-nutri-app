@@ -40,3 +40,7 @@ env/*.local.json
 
 # Pacotes temporários de sincronização
 .sync-*.tgz
+
+# Login social no iOS: valores por ambiente (modelo em ios/Flutter/Social.xcconfig.example)
+/ios/Flutter/Social.xcconfig
+/android/build/

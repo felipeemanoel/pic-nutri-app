@@ -10,6 +10,7 @@ import '../features/auth/presentation/forgot_password_page.dart';
 import '../features/auth/presentation/login_page.dart';
 import '../features/auth/presentation/register_page.dart';
 import '../features/auth/presentation/reset_password_page.dart';
+import '../features/auth/presentation/sign_in_methods_page.dart';
 import '../features/auth/presentation/splash_page.dart';
 import '../features/engagement/presentation/engagement_page.dart';
 import '../features/food/data/nutrition_models.dart';
@@ -17,6 +18,8 @@ import '../features/food/presentation/food_page.dart';
 import '../features/food/presentation/meal_editor_page.dart';
 import '../features/help/presentation/help_pages.dart';
 import '../features/home/presentation/home_page.dart';
+import '../features/notifications/presentation/notification_settings_page.dart';
+import '../features/notifications/presentation/notifications_page.dart';
 import '../features/onboarding/presentation/onboarding_page.dart';
 import '../features/plan/presentation/plan_page.dart';
 import '../features/planning/presentation/meal_plan_page.dart';
@@ -32,7 +35,6 @@ import '../features/profile/presentation/change_password_page.dart';
 import '../features/profile/presentation/edit_profile_page.dart';
 import '../features/profile/presentation/profile_page.dart';
 import '../features/progress/presentation/progress_page.dart';
-import '../features/reminders/presentation/reminders_page.dart';
 import '../features/reports/presentation/reports_page.dart';
 import '../features/symptoms/presentation/symptoms_page.dart';
 import '../features/system_status/presentation/system_status_page.dart';
@@ -107,6 +109,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.onboarding,
         builder: (context, state) => const OnboardingPage(),
       ),
+      GoRoute(
+        path: AppRoutes.notifications,
+        builder: (context, state) => const NotificationsPage(),
+      ),
       // Perfil e configurações: fora das abas, aberto pelo avatar no topo.
       GoRoute(
         path: AppRoutes.profile,
@@ -121,32 +127,39 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const ChangePasswordPage(),
           ),
           GoRoute(
+            path: 'sign-in-methods',
+            builder: (context, state) => const SignInMethodsPage(),
+          ),
+          GoRoute(
             path: 'status',
             builder: (context, state) => const SystemStatusPage(),
           ),
           GoRoute(
-            path: 'reminders',
-            builder: (context, state) => const RemindersPage(),
+            path: 'notifications',
+            builder: (context, state) => const NotificationSettingsPage(),
           ),
           GoRoute(
-            path: 'plan',
-            builder: (context, state) => const PlanPage(),
+            path: 'reminders',
+            redirect: (context, state) => AppRoutes.notificationSettings,
           ),
+          GoRoute(path: 'plan', builder: (context, state) => const PlanPage()),
           GoRoute(
             path: 'privacy',
             builder: (context, state) => const PrivacyPage(),
           ),
-          if (AppFeatures.medical) GoRoute(
-            path: 'share-grants',
-            builder: (context, state) => const ShareGrantsPage(),
-          ),
+          if (AppFeatures.medical)
+            GoRoute(
+              path: 'share-grants',
+              builder: (context, state) => const ShareGrantsPage(),
+            ),
           GoRoute(
             path: 'help',
             builder: (context, state) => const HelpCenterPage(),
             routes: [
               GoRoute(
                 path: ':slug',
-                builder: (context, state) => HelpArticlePage(slug: state.pathParameters['slug']!),
+                builder: (context, state) =>
+                    HelpArticlePage(slug: state.pathParameters['slug']!),
               ),
             ],
           ),
@@ -194,7 +207,8 @@ final routerProvider = Provider<GoRouter>((ref) {
                   ),
                   GoRoute(
                     path: 'text',
-                    builder: (context, state) => const MealPhotoPage(textMode: true),
+                    builder: (context, state) =>
+                        const MealPhotoPage(textMode: true),
                   ),
                   GoRoute(
                     path: 'plans',
@@ -202,13 +216,15 @@ final routerProvider = Provider<GoRouter>((ref) {
                     routes: [
                       GoRoute(
                         path: ':planId',
-                        builder: (context, state) =>
-                            MealPlanPage(planId: state.pathParameters['planId']!),
+                        builder: (context, state) => MealPlanPage(
+                          planId: state.pathParameters['planId']!,
+                        ),
                         routes: [
                           GoRoute(
                             path: 'shopping',
-                            builder: (context, state) =>
-                                ShoppingListPage(planId: state.pathParameters['planId']!),
+                            builder: (context, state) => ShoppingListPage(
+                              planId: state.pathParameters['planId']!,
+                            ),
                           ),
                         ],
                       ),
@@ -221,7 +237,9 @@ final routerProvider = Provider<GoRouter>((ref) {
                       GoRoute(
                         path: ':recipeId',
                         builder: (context, state) => RecipePage(
-                          recipeId: int.parse(state.pathParameters['recipeId']!),
+                          recipeId: int.parse(
+                            state.pathParameters['recipeId']!,
+                          ),
                         ),
                       ),
                     ],
@@ -276,25 +294,27 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          if (AppFeatures.medical) StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoutes.professionals,
-                builder: (context, state) => const ProfessionalsPage(),
-                routes: [
-                  GoRoute(
-                    path: 'requests',
-                    builder: (context, state) => const ContactRequestsPage(),
-                  ),
-                  GoRoute(
-                    path: ':professionalId',
-                    builder: (context, state) =>
-                        ProfessionalDetailPage(id: state.pathParameters['professionalId']!),
-                  ),
-                ],
-              ),
-            ],
-          ),
+          if (AppFeatures.medical)
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
+                  path: AppRoutes.professionals,
+                  builder: (context, state) => const ProfessionalsPage(),
+                  routes: [
+                    GoRoute(
+                      path: 'requests',
+                      builder: (context, state) => const ContactRequestsPage(),
+                    ),
+                    GoRoute(
+                      path: ':professionalId',
+                      builder: (context, state) => ProfessionalDetailPage(
+                        id: state.pathParameters['professionalId']!,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
         ],
       ),
     ],

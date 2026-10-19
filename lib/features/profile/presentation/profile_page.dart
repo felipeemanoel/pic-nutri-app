@@ -97,12 +97,20 @@ class ProfilePage extends ConsumerWidget {
           ),
           ListTile(
             leading: const Icon(Icons.notifications_outlined),
-            title: const Text('Lembretes'),
+            title: const Text('Notificações e lembretes'),
             subtitle: Text(
-              profile.notificationsEnabled ? 'Ativados' : 'Desativados',
+              profile.notificationsEnabled
+                  ? 'Ativadas neste aparelho'
+                  : 'Desativadas neste aparelho',
             ),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(AppRoutes.reminders),
+            onTap: () => context.push(AppRoutes.notificationSettings),
+          ),
+          ListTile(
+            leading: const Icon(Icons.inbox_outlined),
+            title: const Text('Central de notificações'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(AppRoutes.notifications),
           ),
           ListTile(
             leading: const Icon(Icons.workspace_premium_outlined),
@@ -147,10 +155,11 @@ class ProfilePage extends ConsumerWidget {
           const Divider(),
           const _Header('Conta e segurança'),
           ListTile(
-            leading: const Icon(Icons.password_outlined),
-            title: const Text('Alterar senha'),
+            leading: const Icon(Icons.key_outlined),
+            title: const Text('Formas de acesso'),
+            subtitle: const Text('Senha, Google, Facebook e Apple'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(AppRoutes.changePassword),
+            onTap: () => context.push(AppRoutes.signInMethods),
           ),
           ListTile(
             leading: const Icon(Icons.privacy_tip_outlined),

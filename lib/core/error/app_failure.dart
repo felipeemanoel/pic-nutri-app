@@ -15,7 +15,12 @@ Future<T> guard<T>(Future<T> Function() call) async {
 /// [message] é sempre segura para exibir ao usuário; [code] e [traceId]
 /// vêm do formato padrão de erro do backend e ajudam no suporte.
 sealed class AppFailure implements Exception {
-  const AppFailure(this.message, {this.code, this.traceId});
+  const AppFailure(
+    this.message, {
+    this.code,
+    this.traceId,
+    this.details = const {},
+  });
 
   /// Converte um erro do Dio no tipo de falha correspondente.
   factory AppFailure.fromDioException(DioException error) {
@@ -44,12 +49,21 @@ sealed class AppFailure implements Exception {
   final String? code;
   final String? traceId;
 
+  /// Dados para continuar um fluxo (`error.details`), ex.: token de etapa pendente.
+  final Map<String, dynamic> details;
+
   /// Códigos cuja mensagem da API é exibida mesmo fora do 4xx genérico.
   static const _domainCodes = {
     'account_blocked',
     'social_login_unavailable',
     'social_token_invalid',
     'social_email_required',
+    'social_pending_expired',
+    'social_code_invalid',
+    'social_link_invalid_password',
+    'social_account_in_use',
+    'social_provider_already_linked',
+    'last_sign_in_method',
     'store_billing_unavailable',
     'store_purchase_invalid',
     'store_purchase_in_use',
@@ -82,6 +96,7 @@ sealed class AppFailure implements Exception {
         body.message!,
         code: body.code,
         traceId: body.traceId,
+        details: body.details,
       );
     }
 
@@ -100,6 +115,7 @@ sealed class AppFailure implements Exception {
         body?.message ?? 'Não foi possível concluir a operação.',
         code: body?.code,
         traceId: body?.traceId,
+        details: body?.details ?? const {},
       ),
     };
   }
@@ -164,7 +180,12 @@ final class ServerFailure extends AppFailure {
 
 /// Erro de regra de negócio com código estável vindo da API.
 final class BusinessFailure extends AppFailure {
-  const BusinessFailure(super.message, {super.code, super.traceId});
+  const BusinessFailure(
+    super.message, {
+    super.code,
+    super.traceId,
+    super.details,
+  });
 }
 
 final class UnknownFailure extends AppFailure {
@@ -174,12 +195,19 @@ final class UnknownFailure extends AppFailure {
 /// Leitura defensiva do formato padrão de erro da API:
 /// `{"error": {"code", "message", "errors", "trace_id"}}`.
 class _ApiError {
-  const _ApiError({this.code, this.message, this.traceId, this.fieldErrors});
+  const _ApiError({
+    this.code,
+    this.message,
+    this.traceId,
+    this.fieldErrors,
+    this.details = const {},
+  });
 
   final String? code;
   final String? message;
   final String? traceId;
   final Map<String, List<String>>? fieldErrors;
+  final Map<String, dynamic> details;
 
   static _ApiError? tryParse(Object? data) {
     if (data is! Map<String, dynamic>) return null;
@@ -203,6 +231,9 @@ class _ApiError {
       message: error['message'] is String ? error['message'] as String : null,
       traceId: error['trace_id'] is String ? error['trace_id'] as String : null,
       fieldErrors: fieldErrors,
+      details: error['details'] is Map<String, dynamic>
+          ? error['details'] as Map<String, dynamic>
+          : const {},
     );
   }
 }

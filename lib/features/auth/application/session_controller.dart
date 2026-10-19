@@ -11,6 +11,8 @@ import '../data/account.dart';
 import '../data/auth_repository.dart';
 import '../data/social_sign_in.dart';
 
+export '../data/sign_in_methods.dart' show SocialFlowStep;
+
 /// Estado da sessão do app.
 sealed class SessionState {
   const SessionState();
@@ -97,19 +99,56 @@ class SessionController extends AsyncNotifier<SessionState> {
     await _start(session);
   }
 
-  /// Entra com uma credencial do Google/Apple já obtida no aparelho.
+  /// Entra com uma credencial do Google, Facebook ou Apple já obtida no aparelho.
   ///
-  /// Conta nova exige o aceite dos termos: a API responde
-  /// `terms_acceptance_required` e a tela pede o aceite antes de repetir.
-  Future<void> socialLogin(SocialCredential credential, {bool acceptTerms = false}) async {
+  /// Conta nova, e-mail ausente ou conta existente com o mesmo e-mail viram
+  /// falhas com uma etapa pendente (ver [SocialFlowStep]); a tela continua o
+  /// fluxo com [completeSocial] ou [linkSocial]. Conta nova vai para o
+  /// onboarding; conta existente, para o início (decidido pelo roteador).
+  Future<void> socialLogin(
+    SocialCredential credential, {
+    bool acceptTerms = false,
+  }) async {
     final session = await _repository.social(
-      provider: credential.provider,
-      idToken: credential.idToken,
-      nonce: credential.nonce,
-      name: credential.name,
+      credential.data,
       acceptTerms: acceptTerms,
       deviceName: _deviceName(),
       timezone: await deviceTimezone(),
+    );
+    await _start(session);
+  }
+
+  /// Conclui o cadastro social pendente. `false` = código enviado ao e-mail.
+  Future<bool> completeSocial({
+    required String pendingToken,
+    bool acceptTerms = false,
+    String? email,
+    String? code,
+  }) async {
+    final session = await _repository.socialComplete(
+      pendingToken: pendingToken,
+      acceptTerms: acceptTerms,
+      email: email,
+      code: code,
+      deviceName: _deviceName(),
+      timezone: await deviceTimezone(),
+    );
+    if (session == null) return false;
+    await _start(session);
+    return true;
+  }
+
+  /// Vincula o acesso social à conta existente, comprovada por senha ou código.
+  Future<void> linkSocial({
+    required String pendingToken,
+    String? password,
+    String? code,
+  }) async {
+    final session = await _repository.socialLink(
+      pendingToken: pendingToken,
+      password: password,
+      code: code,
+      deviceName: _deviceName(),
     );
     await _start(session);
   }

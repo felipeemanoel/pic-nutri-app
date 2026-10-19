@@ -17,6 +17,9 @@ abstract final class AppRoutes {
   // Perfil: fora das abas, aberto pelo avatar no topo.
   static const profile = '/profile';
 
+  // Central de notificações: fora das abas, aberta pelo sino no topo.
+  static const notifications = '/notifications';
+
   // Telas internas.
   static const water = '/home/water';
   static const symptoms = '/home/symptoms';
@@ -40,7 +43,10 @@ abstract final class AppRoutes {
 
   static const editProfile = '/profile/edit';
   static const changePassword = '/profile/password';
+  static const signInMethods = '/profile/sign-in-methods';
   static const systemStatus = '/profile/status';
+  static const notificationSettings = '/profile/notifications';
+  // Endereço antigo da tela de lembretes (redireciona para as configurações).
   static const reminders = '/profile/reminders';
   static const plan = '/profile/plan';
   static const privacy = '/profile/privacy';

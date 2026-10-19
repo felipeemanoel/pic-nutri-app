@@ -17,6 +17,7 @@ import '../../../shared/widgets/state_views.dart';
 import '../../auth/application/session_controller.dart';
 import '../../engagement/data/engagement_repository.dart';
 import '../../engagement/presentation/engagement_widgets.dart';
+import '../../notifications/presentation/notification_bell.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../progress/presentation/body_forms.dart';
 import '../../water/data/water_repository.dart';
@@ -110,11 +111,7 @@ class _Header extends StatelessWidget {
           ],
         ),
       ),
-      IconButton(
-        tooltip: 'Lembretes',
-        icon: const Icon(Icons.notifications_none_rounded),
-        onPressed: () => context.push(AppRoutes.reminders),
-      ),
+      const NotificationBell(),
       const ProfileButton(),
     ],
   );
@@ -700,7 +697,7 @@ class _RemindersCard extends StatelessWidget {
   Widget build(BuildContext context) => SectionCard(
     title: 'Próximos lembretes',
     icon: Icons.alarm_outlined,
-    onTap: () => context.push(AppRoutes.reminders),
+    onTap: () => context.push(AppRoutes.notificationSettings),
     child: data.nextReminders.isEmpty
         ? Text(
             'Configure lembretes de água, refeições e pesagem.',
