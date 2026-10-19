@@ -9,6 +9,7 @@ import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../app/features.dart';
+import '../design/tokens.dart';
 
 /// Notificação a agendar: semanal (um dia da semana), diária (sem dia) ou
 /// única (com data), sempre num horário.
@@ -110,6 +111,7 @@ class LocalNotifications {
           : 'Lembretes de água, refeições e pesagem',
       importance: Importance.defaultImportance,
       visibility: NotificationVisibility.private,
+      color: PicPalette.primary,
     ),
     iOS: DarwinNotificationDetails(),
   );
@@ -128,7 +130,7 @@ class LocalNotifications {
     tzdata.initializeTimeZones();
     await _plugin.initialize(
       settings: const InitializationSettings(
-        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+        android: AndroidInitializationSettings('ic_notification'),
         // A permissão é pedida só depois de explicar o motivo ao usuário.
         iOS: DarwinInitializationSettings(
           requestAlertPermission: false,
@@ -249,6 +251,7 @@ class LocalNotifications {
           'Análises prontas, respostas do assistente e avisos da conta',
       importance: Importance.high,
       visibility: NotificationVisibility.private,
+      color: PicPalette.primary,
     ),
     iOS: DarwinNotificationDetails(),
   );

@@ -83,7 +83,7 @@ class PicColors extends ThemeExtension<PicColors> {
     fat: PicPalette.fat,
     water: PicPalette.water,
     chartLine: PicPalette.primary,
-    chartFill: Color(0x1F75435D),
+    chartFill: Color(0x1F0C8452),
     chartGrid: PicPalette.border,
     chartReference: PicPalette.textSecondary,
   );
@@ -111,7 +111,7 @@ class PicColors extends ThemeExtension<PicColors> {
     fat: PicPalette.darkFat,
     water: PicPalette.darkWater,
     chartLine: PicPalette.accent,
-    chartFill: Color(0x26D8B0C7),
+    chartFill: Color(0x266FD3A2),
     chartGrid: PicPalette.darkBorder,
     chartReference: PicPalette.darkTextSecondary,
   );

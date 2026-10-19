@@ -58,6 +58,7 @@ flutter:
 
   assets:
     - assets/images/login/
+    - assets/images/meals/
 
   # Design System: Inter (SIL Open Font License, ver assets/fonts/OFL.txt),
   # reduzida aos caracteres latinos para diminuir o tamanho do app.

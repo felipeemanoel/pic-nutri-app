@@ -4,4 +4,5 @@
     <color name="ic_launcher_background">#087F5B</color>
     <color name="splash_background">#087F5B</color>
     <color name="app_background">#F7F9F7</color>
+    <color name="notification_color">#0C8452</color>
 </resources>

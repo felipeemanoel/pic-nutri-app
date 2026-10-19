@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:picnutri/features/auth/application/session_controller.dart';
+import 'package:picnutri/features/food/data/food_repository.dart';
+import 'package:picnutri/features/food/data/nutrition_models.dart';
 import 'package:picnutri/features/home/data/dashboard.dart';
 import 'package:picnutri/features/home/data/dashboard_repository.dart';
 import 'package:picnutri/features/home/presentation/home_page.dart';
@@ -32,58 +34,66 @@ Map<String, dynamic> _dashboardJson({
   'medication_tracking_enabled': false,
 };
 
-Widget _app(Dashboard data) => ProviderScope(
+Widget _app(Dashboard data, {List<Meal> meals = const []}) => ProviderScope(
   overrides: [
     ...sessionOverrides(SessionSignedIn(testAccount())),
     dashboardProvider.overrideWith((ref, day) async => data),
+    mealsOnDayProvider.overrideWith((ref, day) async => meals),
   ],
   child: const MaterialApp(home: HomePage()),
 );
+
+Meal _meal(String type, double kcal) => Meal.fromJson({
+  'id': type,
+  'meal_type': type,
+  'eaten_at': '2026-10-13T12:00:00Z',
+  'local_date': '2026-10-13',
+  'source': 'manual',
+  'totals': {
+    'energy_kcal': kcal,
+    'protein_g': 0,
+    'carbs_g': 0,
+    'fat_g': 0,
+  },
+});
 
 void main() {
   testWidgets('sem registros, orienta a começar em vez de mostrar números', (
     tester,
   ) async {
+    tester.view
+      ..physicalSize = const Size(800, 2400)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(_app(Dashboard.fromJson(_dashboardJson())));
     await tester.pumpAndSettle();
 
     expect(find.text('Nenhuma refeição registrada neste dia.'), findsOneWidget);
-    expect(
-      find.text(
-        'Registre seu peso na aba Evolução para acompanhar seu progresso.',
-      ),
-      findsOneWidget,
-    );
-    expect(find.textContaining('500 ml'), findsWidgets);
+    expect(find.text('Suas refeições do dia aparecem aqui.'), findsOneWidget);
+    expect(find.text('Registrar refeição'), findsOneWidget);
+    expect(find.text('500 / 2.000 ml'), findsOneWidget);
+    expect(find.text('25%'), findsOneWidget);
   });
 
-  testWidgets('com refeições e peso, mostra os indicadores reais', (
+  testWidgets('com refeições, mostra o equilíbrio do dia e a lista', (
     tester,
   ) async {
+    tester.view
+      ..physicalSize = const Size(800, 2400)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(
       _app(
-        Dashboard.fromJson(
-          _dashboardJson(
-            meals: 2,
-            kcal: 1250,
-            weight: {
-              'latest_kg': 79.5,
-              'latest_date': '2026-10-12',
-              'change_30d_kg': -1.2,
-              'series_30d': [
-                {'date': '2026-09-20', 'weight_kg': 80.7},
-                {'date': '2026-10-12', 'weight_kg': 79.5},
-              ],
-            },
-          ),
-        ),
+        Dashboard.fromJson(_dashboardJson(meals: 2, kcal: 1250)),
+        meals: [_meal('lunch', 580), _meal('breakfast', 320)],
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('1.250 kcal'), findsOneWidget);
+    expect(find.text('1.250'), findsOneWidget);
+    expect(find.text('de 1.800 kcal'), findsOneWidget);
     expect(find.text('550 kcal'), findsOneWidget);
-    expect(find.text('79,5 kg'), findsOneWidget);
-    expect(find.text('−1,2 kg'), findsOneWidget);
+    expect(find.text('Almoço'), findsOneWidget);
+    expect(find.text('Registrado · 320 kcal'), findsOneWidget);
   });
 }

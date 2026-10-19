@@ -7,18 +7,18 @@ import 'package:flutter/painting.dart';
 /// Contraste (WCAG) validado pelos testes do Design System.
 abstract final class PicPalette {
   // Marca.
-  static const primary = Color(0xFF75435D);
-  static const primaryDark = Color(0xFF583147);
-  static const primaryLight = Color(0xFFF3E7EE);
-  static const accent = Color(0xFFD8B0C7);
+  static const primary = Color(0xFF0C8452);
+  static const primaryDark = Color(0xFF0B5E3B);
+  static const primaryLight = Color(0xFFDDF3E6);
+  static const accent = Color(0xFF6FD3A2);
 
   // Tema claro.
-  static const background = Color(0xFFFAF8F5);
+  static const background = Color(0xFFF6FAF7);
   static const surface = Color(0xFFFFFFFF);
-  static const surfaceMuted = Color(0xFFF3EFEB);
-  static const textPrimary = Color(0xFF302A30);
-  static const textSecondary = Color(0xFF716770);
-  static const border = Color(0xFFEAE3E5);
+  static const surfaceMuted = Color(0xFFEFF4F1);
+  static const textPrimary = Color(0xFF14201E);
+  static const textSecondary = Color(0xFF5B6670);
+  static const border = Color(0xFFE3E9E6);
 
   // Semânticas (tema claro).
   static const success = Color(0xFF21865A);
@@ -35,14 +35,14 @@ abstract final class PicPalette {
   static const aiDark = Color(0xFF5141A6);
 
   // Tema escuro.
-  static const darkBackground = Color(0xFF191519);
-  static const darkSurface = Color(0xFF241E24);
-  static const darkSurfaceElevated = Color(0xFF302730);
-  static const darkTextPrimary = Color(0xFFFAF3F7);
-  static const darkTextSecondary = Color(0xFFC8BAC4);
-  static const darkBorder = Color(0xFF493C47);
-  static const darkOnPrimary = Color(0xFF352031);
-  static const darkPrimaryContainer = Color(0xFF493044);
+  static const darkBackground = Color(0xFF121614);
+  static const darkSurface = Color(0xFF1B201D);
+  static const darkSurfaceElevated = Color(0xFF252B27);
+  static const darkTextPrimary = Color(0xFFF2F6F3);
+  static const darkTextSecondary = Color(0xFFB7C2BC);
+  static const darkBorder = Color(0xFF343C37);
+  static const darkOnPrimary = Color(0xFF0B2A1C);
+  static const darkPrimaryContainer = Color(0xFF1E3A2C);
   static const darkSuccess = Color(0xFF5CC48E);
   static const darkWarning = Color(0xFFE0B25C);
   static const darkError = Color(0xFFE07A86);
@@ -53,13 +53,13 @@ abstract final class PicPalette {
   // Macronutrientes (diferenciados também por rótulo e posição, nunca só pela cor).
   static const protein = Color(0xFF547B91);
   static const carbs = Color(0xFFA87631);
-  static const fat = Color(0xFFA75F79);
+  static const fat = Color(0xFFC0583A);
   static const darkProtein = Color(0xFF6FA8EA);
   static const darkCarbs = Color(0xFFE0B25C);
-  static const darkFat = Color(0xFFDB8DAB);
+  static const darkFat = Color(0xFFF0997C);
 
   // Água.
-  static const water = Color(0xFF387D9C);
+  static const water = Color(0xFF1A6FD1);
   static const darkWater = Color(0xFF6CC0EA);
 }
 
@@ -107,6 +107,6 @@ abstract final class Motion {
 /// Sombras suaves, usadas só quando agregam hierarquia.
 abstract final class Shadows {
   static const soft = [
-    BoxShadow(color: Color(0x0F302A30), blurRadius: 16, offset: Offset(0, 4)),
+    BoxShadow(color: Color(0x0F14201E), blurRadius: 16, offset: Offset(0, 4)),
   ];
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../core/design/design_system.dart';
 import '../../core/utils/formatters.dart';
@@ -15,20 +16,23 @@ class DayNavigator extends ConsumerWidget {
     final notifier = ref.read(selectedDateProvider.notifier);
     final isToday = day == SelectedDate.today();
     final yesterday = SelectedDate.today().subtract(const Duration(days: 1));
+    final short = DateFormat('d MMM', 'pt_BR').format(day).replaceAll('.', '');
     final label = isToday
-        ? 'Hoje'
+        ? 'Hoje, $short'
         : day == yesterday
-        ? 'Ontem'
+        ? 'Ontem, $short'
         : Fmt.dayMonth(day);
 
     return Container(
+      height: 56,
       decoration: BoxDecoration(
         color: context.colors.surface,
-        borderRadius: Radii.control,
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: context.pic.border),
+        boxShadow: Shadows.soft,
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           IconButton(
             tooltip: 'Dia anterior',
@@ -48,9 +52,19 @@ class DayNavigator extends ConsumerWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.calendar_today_outlined, size: 16),
-                const SizedBox(width: 8),
-                Text(label, style: Theme.of(context).textTheme.titleSmall),
+                Icon(
+                  Icons.calendar_month_outlined,
+                  size: 22,
+                  color: context.colors.primary,
+                ),
+                const SizedBox(width: Space.md),
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: context.colors.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
             ),
           ),

@@ -286,9 +286,7 @@ abstract final class AppTheme {
         backgroundColor: s.surface,
         surfaceTintColor: Colors.transparent,
         indicatorColor: p.brandContainer,
-        indicatorShape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        indicatorShape: const StadiumBorder(),
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         iconTheme: WidgetStateProperty.resolveWith(
           (states) => IconThemeData(
@@ -301,7 +299,7 @@ abstract final class AppTheme {
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => text.labelSmall?.copyWith(
             color: states.contains(WidgetState.selected)
-                ? s.onSurface
+                ? s.primary
                 : s.onSurfaceVariant,
             fontWeight: states.contains(WidgetState.selected)
                 ? FontWeight.w600

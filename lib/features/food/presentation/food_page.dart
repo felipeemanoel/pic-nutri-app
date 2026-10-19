@@ -43,7 +43,7 @@ class FoodPage extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _chooseHowToAdd(context),
+        onPressed: () => chooseHowToAddMeal(context),
         icon: const Icon(Icons.add),
         label: const Text('Refeição'),
       ),
@@ -73,7 +73,7 @@ class FoodPage extends ConsumerWidget {
                       title: 'Nenhuma refeição neste dia',
                       message: 'Registre o que você comeu para acompanhar calorias e macronutrientes.',
                       actionLabel: 'Registrar refeição',
-                      onAction: () => _chooseHowToAdd(context),
+                      onAction: () => chooseHowToAddMeal(context),
                     )
                   : Column(
                       children: [
@@ -93,7 +93,7 @@ class FoodPage extends ConsumerWidget {
 
 /// Escolha da forma de registro: foto ou texto/voz (estimativa por IA),
 /// refeição favorita ou manual.
-Future<void> _chooseHowToAdd(BuildContext context) async {
+Future<void> chooseHowToAddMeal(BuildContext context) async {
   final route = await showModalBottomSheet<String>(
     context: context,
     isScrollControlled: true,
