@@ -61,6 +61,27 @@ class _HelpCenterPageState extends ConsumerState<HelpCenterPage> {
             ],
           ),
           const SizedBox(height: Space.md),
+          AppCard(
+            onTap: () => context.push('${AppRoutes.introTour}?review=1'),
+            semanticLabel: 'Primeiros passos. Rever o guia: refeição, água, metas e evolução.',
+            child: Row(
+              children: [
+                Icon(Icons.tour_outlined, color: context.colors.primary),
+                const SizedBox(width: Space.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Primeiros passos', style: context.text.titleSmall),
+                      Text('Rever o guia: refeição, água, metas e evolução', style: context.text.bodySmall),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right),
+              ],
+            ),
+          ),
+          const SizedBox(height: Space.md),
           AsyncValueView<List<HelpArticle>>(
             value: articles,
             onRetry: () => ref.invalidate(helpArticlesProvider(query)),

@@ -11,6 +11,7 @@ class Account {
     required this.profile,
     this.onboardingStep,
     this.onboardingSkipped = const [],
+    this.introTourPending = false,
   });
 
   factory Account.fromJson(Map<String, dynamic> json) => Account(
@@ -27,6 +28,7 @@ class Account {
     onboardingSkipped: ((json['onboarding'] as Map<String, dynamic>?)?['skipped'] as List<dynamic>? ?? const [])
         .whereType<String>()
         .toList(),
+    introTourPending: (json['onboarding'] as Map<String, dynamic>?)?['intro_tour_pending'] as bool? ?? false,
   );
 
   final String name;
@@ -40,6 +42,9 @@ class Account {
 
   /// Etapas puladas para completar depois.
   final List<String> onboardingSkipped;
+
+  /// Primeira visita guiada ainda não concluída nem dispensada (mostrada uma vez por conta).
+  final bool introTourPending;
 
   String get firstName => name.trim().split(RegExp(r'\s+')).first;
 }

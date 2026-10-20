@@ -344,10 +344,7 @@ class _LoginField extends StatelessWidget {
   final Widget child;
   final Widget? trailing;
 
-  static const inputStyle = TextStyle(
-    fontSize: 16.5,
-    color: LoginColors.title,
-  );
+  static const inputStyle = TextStyle(fontSize: 16.5, color: LoginColors.title);
 
   static InputDecoration decoration(String hint) => InputDecoration(
     hintText: hint,
@@ -407,7 +404,7 @@ class _LoginField extends StatelessWidget {
               ),
             ),
           ),
-          if (trailing != null) trailing!,
+          ?trailing,
         ],
       ),
     );
@@ -447,10 +444,7 @@ class _EnterButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          textStyle: const TextStyle(
-            fontSize: 19,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: const TextStyle(fontSize: 19, fontWeight: FontWeight.w600),
         ),
         child: loading
             ? const SizedBox.square(
@@ -481,8 +475,9 @@ class _RegisterLink extends StatelessWidget {
   const _RegisterLink();
 
   @override
-  Widget build(BuildContext context) => Row(
-    mainAxisAlignment: MainAxisAlignment.center,
+  Widget build(BuildContext context) => Wrap(
+    alignment: WrapAlignment.center,
+    crossAxisAlignment: WrapCrossAlignment.center,
     children: [
       const Text(
         'Ainda não tem conta?',

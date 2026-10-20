@@ -8,8 +8,10 @@ import '../../../shared/validators.dart';
 import '../../../shared/widgets/feedback.dart';
 import '../../../shared/widgets/form_fields.dart';
 import '../../../shared/widgets/state_views.dart';
+import '../data/injection_guides.dart';
 import '../data/medication_models.dart';
 import '../data/medication_repository.dart';
+import 'injection_guidance.dart';
 
 /// Cadastro/edição de medicamento.
 Future<void> showMedicationForm(
@@ -138,6 +140,32 @@ class _MedicationFormState extends ConsumerState<_MedicationForm> {
               Text(
                 'Informe o medicamento conforme a sua prescrição.',
                 style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  labelText: 'Preencher nome pelo catálogo (opcional)',
+                  helperText:
+                      'A apresentação será confirmada ao registrar uma aplicação.',
+                  helperMaxLines: 2,
+                ),
+                items: [
+                  for (final guide in InjectionGuide.catalog)
+                    DropdownMenuItem(
+                      value: guide.id,
+                      child: Text(
+                        '${guide.brand} · ${guide.manufacturer}',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                ],
+                onChanged: (id) {
+                  final guide = InjectionGuide.catalog
+                      .where((g) => g.id == id)
+                      .firstOrNull;
+                  if (guide != null) _name.text = guide.brand;
+                },
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -428,6 +456,8 @@ class _DoseFormPageState extends ConsumerState<_DoseFormPage> {
                         ],
                         onChanged: (v) => setState(() {
                           _medicationId = v;
+                          _site = null;
+                          _amount.clear();
                           _unit = available
                               .firstWhere((m) => m.id == v)
                               .doseUnit;
@@ -471,8 +501,25 @@ class _DoseFormPageState extends ConsumerState<_DoseFormPage> {
                       ),
                       if (medication.isInjection) ...[
                         const SizedBox(height: 12),
+                        InjectionGuidance(
+                          key: ValueKey(medication.id),
+                          medicationName: medication.name,
+                          sites: options.injectionSites,
+                          site: _site,
+                          onSiteChanged: (value) =>
+                              setState(() => _site = value),
+                          takenAt: _takenAt,
+                          editingDoseId: widget.dose?.id,
+                        ),
+                        const SizedBox(height: 12),
                         DropdownButtonFormField<String?>(
-                          initialValue: _site,
+                          key: ValueKey('site:${medication.id}:$_site'),
+                          initialValue:
+                              options.injectionSites.any(
+                                (s) => s.value == _site,
+                              )
+                              ? _site
+                              : null,
                           isExpanded: true,
                           decoration: const InputDecoration(
                             labelText: 'Local da aplicação (opcional)',

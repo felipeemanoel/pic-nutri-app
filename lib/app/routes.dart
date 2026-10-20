@@ -20,6 +20,9 @@ abstract final class AppRoutes {
   // Central de notificações: fora das abas, aberta pelo sino no topo.
   static const notifications = '/notifications';
 
+  // Primeira visita guiada (tela cheia). `?review=1`: revisão pela ajuda.
+  static const introTour = '/welcome';
+
   // Telas internas.
   static const water = '/home/water';
   static const symptoms = '/home/symptoms';
@@ -27,6 +30,7 @@ abstract final class AppRoutes {
   static String helpArticle(String slug) => '/profile/help/$slug';
   static const newMeal = '/food/meal';
   static const editMeal = '/food/meal-edit';
+  static const repeatMeal = '/food/meal-repeat';
   static const mealPhoto = '/food/photo';
   static const mealText = '/food/text';
   static const photoReview = '/food/photo-review';

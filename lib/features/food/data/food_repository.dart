@@ -25,6 +25,27 @@ class FoodRepository {
         .toList();
   }
 
+  /// Refeições dos últimos [days] dias (mais recentes primeiro), sem repetir
+  /// refeições com os mesmos alimentos e quantidades.
+  Future<List<Meal>> recentMeals({int days = 14, int limit = 20}) async {
+    final today = DateTime.now();
+    final response = await guard(
+      () => _dio.get<Map<String, dynamic>>(
+        'meals',
+        queryParameters: {
+          'from': Fmt.apiDate(today.subtract(Duration(days: days - 1))),
+          'to': Fmt.apiDate(today),
+        },
+      ),
+    );
+    final meals = (response.data!['data'] as List<dynamic>).cast<Map<String, dynamic>>().map(Meal.fromJson);
+    final seen = <String>{};
+    return [
+      for (final meal in meals)
+        if (meal.items.isNotEmpty && seen.add(meal.items.map((i) => '${i.name}|${i.quantity}|${i.unit}').join(';'))) meal,
+    ].take(limit).toList();
+  }
+
   Future<NutritionSummary> summaryOn(DateTime day) async {
     final response = await guard(
       () => _dio.get<Map<String, dynamic>>(
@@ -196,3 +217,7 @@ final nutritionSummaryProvider =
     FutureProvider.family<NutritionSummary, DateTime>(
       (ref, day) => ref.watch(foodRepositoryProvider).summaryOn(day),
     );
+
+final recentMealsProvider = FutureProvider.autoDispose<List<Meal>>(
+  (ref) => ref.watch(foodRepositoryProvider).recentMeals(),
+);

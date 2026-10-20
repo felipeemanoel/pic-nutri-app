@@ -13,6 +13,7 @@ import '../../../shared/widgets/state_views.dart';
 import '../../assistant/presentation/chat_page.dart';
 import '../data/food_repository.dart';
 import '../data/nutrition_models.dart';
+import 'favorite_meal_action.dart';
 import 'food_picker_sheet.dart';
 import 'item_sheets.dart';
 
@@ -24,10 +25,15 @@ class MealEditorPage extends ConsumerStatefulWidget {
     this.meal,
     this.initialItems,
     this.photoAnalysisId,
+    this.repeatFrom,
   });
 
   /// Refeição existente (edição).
   final Meal? meal;
+
+  /// Refeição usada como base para um NOVO registro ("Repetir refeição"):
+  /// alimentos, quantidades e tipo vêm preenchidos; a original não muda.
+  final Meal? repeatFrom;
 
   /// Itens pré-preenchidos (ex.: revisão da análise por foto).
   final List<MealItem>? initialItems;
@@ -41,15 +47,17 @@ class _MealEditorPageState extends ConsumerState<MealEditorPage> {
   late final _requestId = newRequestId();
   late String _type;
   late DateTime _eatenAt;
-  late final _title = TextEditingController(text: widget.meal?.title);
+  late final _title = TextEditingController(text: widget.meal?.title ?? widget.repeatFrom?.title);
   late final _notes = TextEditingController(text: widget.meal?.notes);
   late final List<MealItem> _items = [
     ...?widget.meal?.items,
     ...?widget.initialItems,
+    ...?widget.repeatFrom?.items,
   ];
   bool _saving = false;
 
   bool get _isEdit => widget.meal != null;
+  bool get _isRepeat => widget.repeatFrom != null;
 
   @override
   void initState() {
@@ -68,6 +76,13 @@ class _MealEditorPageState extends ConsumerState<MealEditorPage> {
                 now.minute,
               ));
     _type = widget.meal?.mealType ?? MealTypes.suggestFor(_eatenAt);
+    final base = widget.repeatFrom;
+    if (base != null) {
+      // Dia selecionado no diário, no mesmo horário da refeição original (nunca no futuro).
+      final at = DateTime(selected.year, selected.month, selected.day, base.eatenAt.hour, base.eatenAt.minute);
+      _eatenAt = at.isAfter(now) ? now : at;
+      _type = base.mealType;
+    }
   }
 
   @override
@@ -155,34 +170,8 @@ class _MealEditorPageState extends ConsumerState<MealEditorPage> {
     }
   }
 
-  Future<void> _saveAsFavorite() async {
-    final name = TextEditingController(text: widget.meal!.displayName);
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (dialog) => AlertDialog(
-        title: const Text('Salvar como favorita'),
-        content: TextField(
-          controller: name,
-          maxLength: 80,
-          decoration: const InputDecoration(labelText: 'Nome da refeição'),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(dialog).pop(false), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.of(dialog).pop(true), child: const Text('Salvar')),
-        ],
-      ),
-    );
-    final text = name.text;
-    name.dispose();
-    if (ok != true || !mounted) return;
-    try {
-      await ref.read(foodRepositoryProvider).saveAsTemplate(widget.meal!.id, name: text);
-      ref.invalidate(mealTemplatesProvider);
-      if (mounted) showMessage(context, 'Refeição salva nos favoritos.');
-    } on Object catch (error) {
-      if (mounted) showFailure(context, error);
-    }
-  }
+  Future<void> _saveAsFavorite() =>
+      saveFavoriteMeal(context, ref, widget.meal!);
 
   /// Ações do item: editar, pedir substituições ao assistente ou remover.
   Future<void> _itemActions(int index) async {
@@ -201,7 +190,9 @@ class _MealEditorPageState extends ConsumerState<MealEditorPage> {
             ListTile(
               leading: Icon(Icons.auto_awesome_outlined, color: sheet.pic.ai),
               title: const Text('Sugerir substituições'),
-              subtitle: const Text('Pergunte ao assistente, considerando suas preferências'),
+              subtitle: const Text(
+                'Pergunte ao assistente, considerando suas preferências',
+              ),
               onTap: () => Navigator.of(sheet).pop('swap'),
             ),
             ListTile(
@@ -265,6 +256,8 @@ class _MealEditorPageState extends ConsumerState<MealEditorPage> {
         title: Text(
           _isEdit
               ? 'Editar refeição'
+              : _isRepeat
+              ? 'Repetir refeição'
               : widget.photoAnalysisId != null
               ? 'Revisar refeição'
               : 'Nova refeição',
@@ -287,6 +280,17 @@ class _MealEditorPageState extends ConsumerState<MealEditorPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          if (_isRepeat) ...[
+            StatusBanner(
+              tone: BannerTone.info,
+              icon: Icons.replay_rounded,
+              title: 'Novo registro em ${Fmt.fullDate(_eatenAt)}',
+              message:
+                  'Revise alimentos, quantidades, tipo, data e horário. '
+                  'Nada é salvo até você tocar em "Registrar refeição", e a refeição original não muda.',
+            ),
+            const SizedBox(height: Space.md),
+          ],
           DropdownButtonFormField<String>(
             initialValue: _type,
             decoration: const InputDecoration(labelText: 'Tipo de refeição'),
@@ -412,7 +416,7 @@ class _MealEditorPageState extends ConsumerState<MealEditorPage> {
           ),
           const SizedBox(height: 8),
           LoadingButton(
-            label: 'Salvar refeição',
+            label: _isEdit ? 'Salvar refeição' : 'Registrar refeição',
             loading: _saving,
             onPressed: _save,
           ),

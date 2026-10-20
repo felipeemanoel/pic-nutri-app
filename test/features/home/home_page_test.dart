@@ -49,12 +49,7 @@ Meal _meal(String type, double kcal) => Meal.fromJson({
   'eaten_at': '2026-10-13T12:00:00Z',
   'local_date': '2026-10-13',
   'source': 'manual',
-  'totals': {
-    'energy_kcal': kcal,
-    'protein_g': 0,
-    'carbs_g': 0,
-    'fat_g': 0,
-  },
+  'totals': {'energy_kcal': kcal, 'protein_g': 0, 'carbs_g': 0, 'fat_g': 0},
 });
 
 void main() {
@@ -73,6 +68,21 @@ void main() {
     expect(find.text('Registrar refeição'), findsOneWidget);
     expect(find.text('500 / 2.000 ml'), findsOneWidget);
     expect(find.text('25%'), findsOneWidget);
+  });
+
+  testWidgets('home em celular destaca cuidados e sequência sem estourar', (
+    tester,
+  ) async {
+    tester.view
+      ..physicalSize = const Size(390, 844)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(_app(Dashboard.fromJson(_dashboardJson())));
+    await tester.pumpAndSettle();
+    expect(find.text('Sua sequência'), findsOneWidget);
+    expect(find.text('Seus cuidados de hoje'), findsOneWidget);
+    expect(find.text('Defina sua meta no perfil'), findsOneWidget);
+    expect(find.text('500 ml de 2.000 ml'), findsOneWidget);
   });
 
   testWidgets('com refeições, mostra o equilíbrio do dia e a lista', (

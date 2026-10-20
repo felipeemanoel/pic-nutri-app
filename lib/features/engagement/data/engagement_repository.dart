@@ -30,6 +30,14 @@ class EngagementRepository {
 
   Future<void> markAchievementsSeen() =>
       guard(() => _dio.post<void>('engagement/achievements/seen'));
+
+  Future<List<Celebration>> celebrations() async {
+    final response = await guard(() => _dio.get<Map<String, dynamic>>('engagement/celebrations'));
+    return (response.data!['data'] as List<dynamic>).cast<Map<String, dynamic>>().map(Celebration.fromJson).toList();
+  }
+
+  Future<void> markCelebrationsSeen(List<String> keys) =>
+      guard(() => _dio.post<void>('engagement/celebrations/seen', data: {'keys': keys}));
 }
 
 final engagementRepositoryProvider = Provider<EngagementRepository>(
@@ -38,4 +46,9 @@ final engagementRepositoryProvider = Provider<EngagementRepository>(
 
 final engagementProvider = FutureProvider<Engagement>(
   (ref) => ref.watch(engagementRepositoryProvider).load(),
+);
+
+/// Celebrações pendentes; recarregadas ao abrir o app e após cada registro.
+final celebrationsProvider = FutureProvider<List<Celebration>>(
+  (ref) => ref.watch(engagementRepositoryProvider).celebrations(),
 );

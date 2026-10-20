@@ -8,6 +8,7 @@ import '../../features/home/data/dashboard_repository.dart';
 import '../../features/medication/data/medication_repository.dart';
 import '../../features/progress/data/body_repository.dart';
 import '../../features/reminders/application/reminder_scheduler.dart';
+import '../../features/reports/data/report_repository.dart';
 import '../../features/water/data/water_repository.dart';
 
 /// Recarrega os dados afetados após uma alteração, mantendo painel, diário e
@@ -18,7 +19,9 @@ abstract final class Refresh {
       ..invalidate(mealsOnDayProvider)
       ..invalidate(nutritionSummaryProvider)
       ..invalidate(dashboardProvider)
-      ..invalidate(engagementProvider);
+      ..invalidate(engagementProvider)
+      ..invalidate(periodReportProvider)
+      ..invalidate(celebrationsProvider);
     _resyncReminders(ref);
   }
 
@@ -27,7 +30,9 @@ abstract final class Refresh {
       ..invalidate(waterDayProvider)
       ..invalidate(waterHistoryProvider)
       ..invalidate(dashboardProvider)
-      ..invalidate(engagementProvider);
+      ..invalidate(engagementProvider)
+      ..invalidate(periodReportProvider)
+      ..invalidate(celebrationsProvider);
     _resyncReminders(ref);
   }
 

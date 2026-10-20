@@ -18,6 +18,7 @@ import '../features/food/presentation/food_page.dart';
 import '../features/food/presentation/meal_editor_page.dart';
 import '../features/help/presentation/help_pages.dart';
 import '../features/home/presentation/home_page.dart';
+import '../features/intro_tour/presentation/intro_tour_page.dart';
 import '../features/notifications/presentation/notification_settings_page.dart';
 import '../features/notifications/presentation/notifications_page.dart';
 import '../features/onboarding/presentation/onboarding_page.dart';
@@ -110,6 +111,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const OnboardingPage(),
       ),
       GoRoute(
+        path: AppRoutes.introTour,
+        builder: (context, state) =>
+            IntroTourPage(review: state.uri.queryParameters['review'] == '1'),
+      ),
+      GoRoute(
         path: AppRoutes.notifications,
         builder: (context, state) => const NotificationsPage(),
       ),
@@ -195,6 +201,11 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'meal',
                     builder: (context, state) => const MealEditorPage(),
+                  ),
+                  GoRoute(
+                    path: 'meal-repeat',
+                    builder: (context, state) =>
+                        MealEditorPage(repeatFrom: state.extra as Meal?),
                   ),
                   GoRoute(
                     path: 'meal-edit',

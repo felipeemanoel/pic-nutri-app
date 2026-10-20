@@ -9,6 +9,8 @@ import 'package:picnutri/features/auth/data/auth_repository.dart';
 import 'package:picnutri/features/engagement/data/engagement_models.dart';
 import 'package:picnutri/features/engagement/data/engagement_repository.dart';
 import 'package:picnutri/features/notifications/data/notification_repository.dart';
+import 'package:picnutri/features/reports/data/report_models.dart';
+import 'package:picnutri/features/reports/data/report_repository.dart';
 
 class MockAuthRepository extends Mock implements AuthRepository {}
 
@@ -113,6 +115,7 @@ List<Override> sessionOverrides(
     (ref) async => Engagement.fromJson(engagement ?? emptyEngagementJson()),
   ),
   unreadNotificationsProvider.overrideWith((ref) async => 0),
+  periodReportProvider.overrideWith((ref, q) async => emptyWeekReport()),
 ];
 
 Map<String, dynamic> emptyEngagementJson({
@@ -131,3 +134,26 @@ Map<String, dynamic> emptyEngagementJson({
     'completed_count': 0,
   },
 };
+
+/// Semana atual sem registros (conta nova).
+PeriodReport emptyWeekReport() {
+  Map<String, dynamic> summary() => {
+    'days_logged': 0,
+    'days_calories_met': 0,
+    'days_protein_met': 0,
+    'days_water_met': 0,
+  };
+  return PeriodReport.fromJson({
+    'period': 'week',
+    'from': '2026-10-13',
+    'to': '2026-10-19',
+    'days_elapsed': 1,
+    'in_progress': true,
+    'goals': {'water_ml': 2000},
+    'summary': summary(),
+    'previous': {...summary(), 'from': '2026-10-06', 'to': '2026-10-12'},
+    'meals_by_type': <Object>[],
+    'days': <Object>[],
+  });
+}
+

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:picnutri/app/app.dart';
 import 'package:picnutri/features/auth/application/session_controller.dart';
+import 'package:picnutri/features/food/data/food_repository.dart';
 import 'package:picnutri/features/home/data/dashboard.dart';
 import 'package:picnutri/features/home/data/dashboard_repository.dart';
 
@@ -66,6 +67,7 @@ void main() {
       ProviderScope(
         overrides: [
           ...sessionOverrides(SessionSignedIn(testAccount())),
+          mealsOnDayProvider.overrideWith((ref, day) async => []),
           // Sem API nos testes: o painel recebe um dia vazio.
           dashboardProvider.overrideWith(
             (ref, day) async => Dashboard.fromJson(_emptyDashboard),

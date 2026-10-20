@@ -37,6 +37,7 @@ dependencies:
   timezone: ^0.11.0
   uuid: ^4.5.3
   flutter_facebook_auth: ^7.1.7
+  url_launcher: ^6.3.3
 
 # flutter_facebook_auth 7.x exige flutter_secure_storage ^10 só no pacote de
 # desktop/web (facebook_auth_desktop), que o app não usa. Mantém a versão 11

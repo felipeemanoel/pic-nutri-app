@@ -89,6 +89,7 @@ class PeriodReport {
     this.goalWaterMl,
     this.weightChangeKg,
     this.weightLastKg,
+    this.inProgress = false,
   });
 
   factory PeriodReport.fromJson(Map<String, dynamic> json) {
@@ -111,6 +112,7 @@ class PeriodReport {
       goalWaterMl: toInt(goals['water_ml']),
       weightChangeKg: toDouble(weight?['change_kg']),
       weightLastKg: toDouble(weight?['last_kg']),
+      inProgress: json['in_progress'] as bool? ?? false,
     );
   }
 
@@ -130,4 +132,7 @@ class PeriodReport {
   final int? goalWaterMl;
   final double? weightChangeKg;
   final double? weightLastKg;
+
+  /// Período em andamento (inclui hoje) ou já concluído.
+  final bool inProgress;
 }

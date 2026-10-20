@@ -14,12 +14,15 @@ import '../../../shared/widgets/feedback.dart';
 import '../../../shared/widgets/profile_button.dart';
 import '../../../shared/widgets/state_views.dart';
 import '../../auth/application/session_controller.dart';
+import '../../engagement/data/engagement_repository.dart';
+import '../../engagement/presentation/engagement_widgets.dart';
 import '../../food/data/food_repository.dart';
 import '../../food/data/nutrition_models.dart';
 import '../../food/presentation/food_page.dart';
 import '../../notifications/presentation/notification_bell.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../progress/presentation/body_forms.dart';
+import '../../reports/presentation/weekly_summary_card.dart';
 import '../../water/data/water_repository.dart';
 import '../data/dashboard.dart';
 import '../data/dashboard_repository.dart';
@@ -40,6 +43,7 @@ class HomePage extends ConsumerWidget {
         bottom: false,
         child: RefreshIndicator(
           onRefresh: () {
+            ref.invalidate(engagementProvider);
             ref.invalidate(mealsOnDayProvider(day));
             return ref.refresh(dashboardProvider(day).future);
           },
@@ -169,10 +173,19 @@ class _DashboardBody extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      const _CompleteProfileCard(),
       _BalanceCard(data: data),
-      const SizedBox(height: Space.lg),
+      const SizedBox(height: Space.md),
       _WaterCard(data: data),
+      if (data.isToday) ...[
+        const SizedBox(height: Space.md),
+        const StreakCard(),
+        const SizedBox(height: Space.md),
+        const WeeklySummaryCard(),
+      ],
+      const SizedBox(height: Space.md),
+      _DailyCareCard(data: data),
+      const SizedBox(height: Space.md),
+      const _CompleteProfileCard(),
       if (data.medicationTrackingEnabled) ...[
         const SizedBox(height: Space.md),
         _MedicationCard(data: data),
@@ -182,6 +195,104 @@ class _DashboardBody extends StatelessWidget {
       const SizedBox(height: Space.lg),
       const _Shortcuts(),
     ],
+  );
+}
+
+/// Metas visíveis e acionáveis; calorias não viram uma pontuação a superar.
+class _DailyCareCard extends StatelessWidget {
+  const _DailyCareCard({required this.data});
+  final Dashboard data;
+
+  @override
+  Widget build(BuildContext context) {
+    final n = data.nutrition;
+    final proteinGoal = n.goalProteinG;
+    final hasProteinGoal = proteinGoal != null && proteinGoal > 0;
+    final proteinDone = hasProteinGoal && n.totals.proteinG >= proteinGoal;
+    final waterDone =
+        data.waterGoalMl > 0 && data.waterTotalMl >= data.waterGoalMl;
+    final mealDone = n.mealsCount > 0;
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.stars_rounded, color: context.pic.warning),
+              const SizedBox(width: Space.sm),
+              Expanded(
+                child: Text(
+                  data.isToday ? 'Seus cuidados de hoje' : 'Cuidados do dia',
+                  style: context.text.titleMedium,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: Space.xs),
+          Text(
+            mealDone || waterDone || proteinDone
+                ? 'Cada cuidado conta. Veja o que você já registrou.'
+                : 'Comece com um pequeno cuidado. Seu ritmo importa.',
+            style: context.text.bodySmall,
+          ),
+          const SizedBox(height: Space.sm),
+          _CareRow(
+            label: 'Alimentação',
+            detail: mealDone
+                ? '${n.mealsCount} ${n.mealsCount == 1 ? 'refeição registrada' : 'refeições registradas'}'
+                : 'Registre sua primeira refeição',
+            done: mealDone,
+            onTap: () => chooseHowToAddMeal(context),
+          ),
+          _CareRow(
+            label: 'Proteínas',
+            detail: hasProteinGoal
+                ? '${Fmt.grams(n.totals.proteinG)} de ${Fmt.grams(proteinGoal.toDouble())}'
+                : 'Defina sua meta no perfil',
+            done: proteinDone,
+            onTap: () => context.push(
+              hasProteinGoal ? AppRoutes.food : AppRoutes.editProfile,
+            ),
+          ),
+          _CareRow(
+            label: 'Água',
+            detail: data.waterGoalMl > 0
+                ? '${Fmt.ml(data.waterTotalMl)} de ${Fmt.ml(data.waterGoalMl)}'
+                : 'Defina sua meta de água no perfil',
+            done: waterDone,
+            onTap: () => context.push(
+              data.waterGoalMl > 0 ? AppRoutes.water : AppRoutes.editProfile,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CareRow extends StatelessWidget {
+  const _CareRow({
+    required this.label,
+    required this.detail,
+    required this.done,
+    required this.onTap,
+  });
+  final String label;
+  final String detail;
+  final bool done;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+    contentPadding: EdgeInsets.zero,
+    leading: Icon(
+      done ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+      color: done ? context.pic.success : context.pic.textSecondary,
+    ),
+    title: Text(label, style: context.text.titleSmall),
+    subtitle: Text(detail),
+    trailing: const Icon(Icons.chevron_right_rounded),
+    onTap: onTap,
   );
 }
 
@@ -245,41 +356,44 @@ class _BalanceCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ProgressRing(
-                      progress: hasGoal ? kcal / goal : null,
-                      size: 128,
-                      strokeWidth: 11,
-                      semanticLabel: hasGoal
-                          ? '${Fmt.kcal(kcal)} de ${Fmt.kcal(goal)}'
-                          : '${Fmt.kcal(kcal)} registradas',
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            Fmt.integer(kcal),
-                            style: context.text.headlineMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: -0.8,
-                              fontFeatures: const [
-                                FontFeature.tabularFigures(),
-                              ],
+                SizedBox(
+                  width: 132,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ProgressRing(
+                        progress: hasGoal ? kcal / goal : null,
+                        size: 128,
+                        strokeWidth: 11,
+                        semanticLabel: hasGoal
+                            ? '${Fmt.kcal(kcal)} de ${Fmt.kcal(goal)}'
+                            : '${Fmt.kcal(kcal)} registradas',
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              Fmt.integer(kcal),
+                              style: context.text.headlineMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: -0.8,
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures(),
+                                ],
+                              ),
                             ),
-                          ),
-                          Text(
-                            hasGoal ? 'de ${Fmt.kcal(goal)}' : 'kcal',
-                            style: context.text.bodySmall?.copyWith(
-                              color: context.pic.textSecondary,
+                            Text(
+                              hasGoal ? 'de ${Fmt.kcal(goal)}' : 'kcal',
+                              style: context.text.bodySmall?.copyWith(
+                                color: context.pic.textSecondary,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: Space.md),
-                    _GoalHint(hasGoal: hasGoal, remaining: remaining),
-                  ],
+                      const SizedBox(height: Space.md),
+                      _GoalHint(hasGoal: hasGoal, remaining: remaining),
+                    ],
+                  ),
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: Space.lg),
@@ -352,8 +466,7 @@ class _BalanceCard extends StatelessWidget {
 
   /// Parte das calorias do dia vinda do macronutriente (sem meta definida).
   static double _share(double kcal, Nutrients totals) {
-    final total =
-        totals.proteinG * 4 + totals.carbsG * 4 + totals.fatG * 9;
+    final total = totals.proteinG * 4 + totals.carbsG * 4 + totals.fatG * 9;
     return total <= 0 ? 0 : kcal / total;
   }
 }
@@ -390,8 +503,9 @@ class _GoalHint extends StatelessWidget {
       );
     }
     final over = remaining! < 0;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Icon(
           Icons.local_fire_department_rounded,
@@ -407,7 +521,7 @@ class _GoalHint extends StatelessWidget {
             fontFeatures: const [FontFeature.tabularFigures()],
           ),
         ),
-        Text(over ? ' acima da meta' : ' para sua meta', style: style),
+        Text(over ? 'acima da meta' : 'para sua meta', style: style),
       ],
     );
   }
@@ -519,7 +633,9 @@ class _WaterCardState extends ConsumerState<_WaterCard> {
     final d = widget.data;
     final light = Theme.of(context).brightness == Brightness.light;
     final blue = context.pic.water;
-    final background = light ? const Color(0xFFEEF6FE) : context.pic.infoContainer;
+    final background = light
+        ? const Color(0xFFEEF6FE)
+        : context.pic.infoContainer;
     final circle = light
         ? const Color(0xFFD8EBFD)
         : blue.withValues(alpha: 0.18);
@@ -543,7 +659,10 @@ class _WaterCardState extends ConsumerState<_WaterCard> {
               Container(
                 width: 52,
                 height: 52,
-                decoration: BoxDecoration(color: circle, shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: circle,
+                  shape: BoxShape.circle,
+                ),
                 child: Icon(Icons.water_drop_outlined, color: blue, size: 26),
               ),
               const SizedBox(width: Space.md),
@@ -673,7 +792,10 @@ class _MealsSection extends ConsumerWidget {
             meals: [...value]..sort((a, b) => a.eatenAt.compareTo(b.eatenAt)),
             pending: pending,
           ),
-          AsyncError() => _MealList(meals: const [], pending: pending),
+          AsyncError() => ErrorView(
+            message: 'Não foi possível carregar suas refeições.',
+            onRetry: () => ref.invalidate(mealsOnDayProvider(day)),
+          ),
           _ => const SkeletonCard(lines: 2),
         },
       ],
@@ -847,32 +969,49 @@ class _Shortcuts extends StatelessWidget {
   const _Shortcuts();
 
   @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Expanded(
-        child: _ShortcutTile(
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final tiles = [
+        _ShortcutTile(
           icon: Icons.monitor_weight_outlined,
           label: 'Peso',
           onTap: () => showWeightForm(context),
         ),
-      ),
-      const SizedBox(width: Space.sm),
-      Expanded(
-        child: _ShortcutTile(
+        _ShortcutTile(
           icon: Icons.bar_chart_rounded,
-          label: 'Hábitos',
+          label: 'Hábitos e conquistas',
           onTap: () => context.push(AppRoutes.engagement),
         ),
-      ),
-      const SizedBox(width: Space.sm),
-      Expanded(
-        child: _ShortcutTile(
+        _ShortcutTile(
           icon: Icons.spa_outlined,
           label: 'Bem-estar',
           onTap: () => context.push(AppRoutes.symptoms),
         ),
-      ),
-    ],
+      ];
+      if (constraints.maxWidth >= 600 &&
+          MediaQuery.textScalerOf(context).scale(15) <= 20) {
+        return IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var i = 0; i < tiles.length; i++) ...[
+                if (i > 0) const SizedBox(width: Space.sm),
+                Expanded(child: tiles[i]),
+              ],
+            ],
+          ),
+        );
+      }
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var i = 0; i < tiles.length; i++) ...[
+            if (i > 0) const SizedBox(height: Space.sm),
+            tiles[i],
+          ],
+        ],
+      );
+    },
   );
 }
 
@@ -916,8 +1055,6 @@ class _ShortcutTile extends StatelessWidget {
                   style: context.text.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w500,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               Icon(

@@ -156,6 +156,14 @@ class AuthRepository {
 
   Future<void> logout() => guard(() => _dio.post<void>('auth/logout'));
 
+  /// Primeira visita guiada concluída (`completed`) ou dispensada (`skipped`).
+  Future<Account> introTour(String status) async {
+    final response = await guard(
+      () => _dio.post<Map<String, dynamic>>('me/intro-tour', data: {'status': status}),
+    );
+    return Account.fromJson(response.data!['data'] as Map<String, dynamic>);
+  }
+
   Future<Account> me() async {
     final response = await guard(() => _dio.get<Map<String, dynamic>>('me'));
     return Account.fromJson(response.data!['data'] as Map<String, dynamic>);

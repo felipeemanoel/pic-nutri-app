@@ -149,3 +149,25 @@ class ChallengeOption {
   final String description;
   final int target;
 }
+
+/// Celebração pendente: conquista nova ou meta do dia (água, proteína).
+/// Cada uma aparece uma única vez (o servidor guarda o que já foi visto).
+class Celebration {
+  const Celebration({required this.key, required this.kind, required this.title, required this.message, required this.icon});
+
+  factory Celebration.fromJson(Map<String, dynamic> json) => Celebration(
+    key: json['key'] as String,
+    kind: json['kind'] as String? ?? 'achievement',
+    title: json['title'] as String? ?? '',
+    message: json['message'] as String? ?? '',
+    icon: json['icon'] as String? ?? 'star',
+  );
+
+  final String key;
+
+  /// `achievement`, `water_goal` ou `protein_goal`.
+  final String kind;
+  final String title;
+  final String message;
+  final String icon;
+}

@@ -31,7 +31,7 @@ class ProgressPage extends ConsumerWidget {
       const Tab(text: 'Peso'),
       const Tab(text: 'Medidas'),
       const Tab(text: 'Fotos'),
-      if (medication) const Tab(text: 'Medicamento'),
+      if (AppFeatures.medical) const Tab(text: 'Medicamento'),
     ];
 
     return DefaultTabController(
@@ -52,14 +52,28 @@ class ProgressPage extends ConsumerWidget {
             const ProfileButton(),
           ],
           title: const Text('Evolução'),
-          bottom: TabBar(tabs: tabs, isScrollable: tabs.length > 3, tabAlignment: tabs.length > 3 ? TabAlignment.start : null),
+          bottom: TabBar(
+            tabs: tabs,
+            isScrollable: tabs.length > 3,
+            tabAlignment: tabs.length > 3 ? TabAlignment.start : null,
+          ),
         ),
         body: TabBarView(
           children: [
             const _WeightTab(),
             const _MeasurementsTab(),
             const ProgressPhotosTab(),
-            if (medication) const MedicationTab(),
+            if (AppFeatures.medical)
+              medication
+                  ? const MedicationTab()
+                  : EmptyState(
+                      icon: Icons.medication_outlined,
+                      title: 'Acompanhe seu medicamento',
+                      message:
+                          'Ative o registro de medicamento prescrito no perfil para cadastrar aplicações, locais do corpo e sintomas.',
+                      actionLabel: 'Ativar no perfil',
+                      onAction: () => context.push(AppRoutes.editProfile),
+                    ),
           ],
         ),
       ),
@@ -162,13 +176,18 @@ class _WeightTabState extends ConsumerState<_WeightTab> {
                               ],
                               unit: 'kg',
                               target: p.goal?.goalWeightKg,
-                              markers: [if (AppFeatures.medical) for (final d in p.doses) d.date],
+                              markers: [
+                                if (AppFeatures.medical)
+                                  for (final d in p.doses) d.date,
+                              ],
                             )
                           else
                             const Text(
                               'Registre o peso em pelo menos dois dias diferentes do período para ver o gráfico.',
                             ),
-                          if (AppFeatures.medical && p.series.length >= 2 && p.doses.isNotEmpty) ...[
+                          if (AppFeatures.medical &&
+                              p.series.length >= 2 &&
+                              p.doses.isNotEmpty) ...[
                             const SizedBox(height: 8),
                             Text(
                               'Linhas tracejadas roxas: aplicações registradas (${p.doses.length} no período). '
@@ -355,13 +374,18 @@ class _TrendCard extends StatelessWidget {
       return SectionCard(
         title: 'Tendência',
         icon: Icons.trending_flat,
-        child: Text(trend.message ?? 'Registre o peso por algumas semanas para ver a tendência.', style: theme.textTheme.bodySmall),
+        child: Text(
+          trend.message ??
+              'Registre o peso por algumas semanas para ver a tendência.',
+          style: theme.textTheme.bodySmall,
+        ),
       );
     }
     final weekly = trend.weeklyChangeKg ?? 0;
     final rate = switch (trend.direction) {
       'stable' => 'Peso estável nas últimas 4 semanas',
-      _ => '${weekly > 0 ? '+' : ''}${Fmt.decimal(weekly)} kg por semana nas últimas 4 semanas',
+      _ =>
+        '${weekly > 0 ? '+' : ''}${Fmt.decimal(weekly)} kg por semana nas últimas 4 semanas',
     };
     return SectionCard(
       title: 'Tendência',
@@ -383,7 +407,10 @@ class _TrendCard extends StatelessWidget {
           ],
           if (trend.fastChange && trend.fastChangeNote != null) ...[
             const SizedBox(height: 8),
-            StatusBanner(tone: BannerTone.warning, message: trend.fastChangeNote!),
+            StatusBanner(
+              tone: BannerTone.warning,
+              message: trend.fastChangeNote!,
+            ),
           ],
           const SizedBox(height: 8),
           Text(trend.note ?? '', style: theme.textTheme.bodySmall),

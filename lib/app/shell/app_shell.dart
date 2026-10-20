@@ -8,6 +8,10 @@ import '../../core/design/design_system.dart';
 import '../../core/notifications/local_notifications.dart';
 import '../../core/notifications/push_messaging.dart';
 import '../../features/auth/application/session_controller.dart';
+import '../../features/auth/data/auth_repository.dart';
+import '../../features/engagement/data/engagement_repository.dart';
+import '../../features/engagement/presentation/celebrations.dart';
+import '../../features/intro_tour/data/intro_tour_store.dart';
 import '../../features/notifications/application/device_permission.dart';
 import '../../features/notifications/application/notification_inbox.dart';
 import '../../features/notifications/application/notification_routes.dart';
@@ -56,6 +60,7 @@ class _AppShellState extends ConsumerState<AppShell>
       unawaited(enabled ? push.enable() : push.disable());
       // Compras de assinatura pendentes (ex.: app fechado durante a compra).
       ref.read(storePurchasesProvider).listen();
+      _maybeShowIntroTour();
     });
   }
 
@@ -73,7 +78,27 @@ class _AppShellState extends ConsumerState<AppShell>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed) return;
     _refreshInbox();
+    ref.invalidate(celebrationsProvider);
     unawaited(ref.read(reminderSchedulerProvider).sync());
+  }
+
+  bool _tourShown = false;
+
+  /// Recibo local impede reapresentação mesmo se a API estiver indisponível.
+  Future<void> _maybeShowIntroTour() async {
+    final account = ref.read(currentAccountProvider);
+    if (account == null || _tourShown || !mounted) return;
+    _tourShown = true;
+    final store = ref.read(introTourStoreProvider);
+    final repository = ref.read(authRepositoryProvider);
+    final show = await store.shouldShow(account);
+    if (!mounted || ref.read(currentAccountProvider)?.email != account.email)
+      return;
+    if (show) {
+      await context.push(AppRoutes.introTour);
+    } else if (account.introTourPending) {
+      unawaited(store.sync(account.email, repository));
+    }
   }
 
   void _refreshInbox() {
@@ -138,7 +163,7 @@ class _AppShellState extends ConsumerState<AppShell>
   Widget build(BuildContext context) {
     final shell = widget.shell;
     return Scaffold(
-      body: shell,
+      body: CelebrationHost(child: shell),
       bottomNavigationBar: DecoratedBox(
         decoration: BoxDecoration(
           border: Border(top: BorderSide(color: context.pic.border)),

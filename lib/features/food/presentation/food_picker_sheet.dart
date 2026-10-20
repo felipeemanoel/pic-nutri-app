@@ -36,6 +36,7 @@ class _FoodSearch extends ConsumerStatefulWidget {
 
 class _FoodSearchState extends ConsumerState<_FoodSearch> {
   final _query = TextEditingController();
+  final _searchFocus = FocusNode();
   Timer? _debounce;
   AsyncValue<List<Food>> _results = const AsyncData([]);
 
@@ -43,6 +44,7 @@ class _FoodSearchState extends ConsumerState<_FoodSearch> {
   int _tab = 0;
   final Map<int, bool> _favorite = {};
   bool _scanning = false;
+  final Set<int> _savingFavorites = {};
 
   @override
   void initState() {
@@ -54,12 +56,14 @@ class _FoodSearchState extends ConsumerState<_FoodSearch> {
   void dispose() {
     _debounce?.cancel();
     _query.dispose();
+    _searchFocus.dispose();
     super.dispose();
   }
 
   bool get _searching => _query.text.trim().isNotEmpty;
 
   void _onChanged(String value) {
+    setState(() {});
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 350), () {
       if (value.trim().isEmpty) {
@@ -85,18 +89,34 @@ class _FoodSearchState extends ConsumerState<_FoodSearch> {
     final result = await AsyncValue.guard(
       () => tab == 0 ? repo.recentFoods() : repo.favoriteFoods(),
     );
-    if (mounted && !_searching && _tab == tab) setState(() => _results = result);
+    if (mounted && !_searching && _tab == tab) {
+      setState(() => _results = result);
+    }
   }
 
   Future<void> _toggleFavorite(Food food) async {
+    if (_savingFavorites.contains(food.id)) return;
+    _savingFavorites.add(food.id);
     final next = !(_favorite[food.id] ?? food.isFavorite);
     setState(() => _favorite[food.id] = next);
     try {
-      await ref.read(foodRepositoryProvider).setFavorite(food.id, favorite: next);
+      await ref
+          .read(foodRepositoryProvider)
+          .setFavorite(food.id, favorite: next);
+      if (!mounted) return;
+      showMessage(
+        context,
+        next
+            ? 'Alimento adicionado aos favoritos.'
+            : 'Alimento removido dos favoritos.',
+      );
+      if (!_searching && _tab == 1) await _loadTab();
     } on Object catch (error) {
       if (!mounted) return;
       setState(() => _favorite[food.id] = !next);
       showFailure(context, error);
+    } finally {
+      if (mounted) setState(() => _savingFavorites.remove(food.id));
     }
   }
 
@@ -105,7 +125,11 @@ class _FoodSearchState extends ConsumerState<_FoodSearch> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (_) => _CustomFoodForm(initialName: draft?.name ?? _query.text, draft: draft, notice: notice),
+      builder: (_) => _CustomFoodForm(
+        initialName: draft?.name ?? _query.text,
+        draft: draft,
+        notice: notice,
+      ),
     );
     if (food != null && mounted) Navigator.of(context).pop(food);
   }
@@ -121,15 +145,21 @@ class _FoodSearchState extends ConsumerState<_FoodSearch> {
       if (!mounted) return;
       switch (result.status) {
         case 'found':
-          if (result.attribution != null) showMessage(context, result.attribution!);
+          if (result.attribution != null) {
+            showMessage(context, result.attribution!);
+          }
           Navigator.of(context).pop(result.food);
         case 'incomplete':
           await _createFood(
             draft: result.draft,
-            notice: 'O rótulo encontrado não tem todos os valores. Complete com os dados da embalagem.',
+            notice:
+                'O rótulo encontrado não tem todos os valores. Complete com os dados da embalagem.',
           );
         default:
-          await _createFood(notice: 'Produto não encontrado. Cadastre com os valores do rótulo da embalagem.');
+          await _createFood(
+            notice:
+                'Produto não encontrado. Cadastre com os valores do rótulo da embalagem.',
+          );
       }
     } on Object catch (error) {
       if (mounted) showFailure(context, error);
@@ -146,13 +176,17 @@ class _FoodSearchState extends ConsumerState<_FoodSearch> {
         children: [
           TextField(
             controller: _query,
+            focusNode: _searchFocus,
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.search),
               hintText: 'Buscar alimento',
               suffixIcon: _scanning
                   ? const Padding(
                       padding: EdgeInsets.all(12),
-                      child: SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                      child: SizedBox.square(
+                        dimension: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
                     )
                   : IconButton(
                       tooltip: 'Ler código de barras',
@@ -163,13 +197,24 @@ class _FoodSearchState extends ConsumerState<_FoodSearch> {
             onChanged: _onChanged,
           ),
           const SizedBox(height: Space.sm),
-          Row(
+          Wrap(
+            spacing: Space.sm,
+            runSpacing: Space.xs,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               if (!_searching)
                 SegmentedButton<int>(
                   segments: const [
-                    ButtonSegment(value: 0, label: Text('Recentes'), icon: Icon(Icons.history, size: 18)),
-                    ButtonSegment(value: 1, label: Text('Favoritos'), icon: Icon(Icons.star_outline, size: 18)),
+                    ButtonSegment(
+                      value: 0,
+                      label: Text('Recentes'),
+                      icon: Icon(Icons.history, size: 18),
+                    ),
+                    ButtonSegment(
+                      value: 1,
+                      label: Text('Favoritos'),
+                      icon: Icon(Icons.star_outline, size: 18),
+                    ),
                   ],
                   selected: {_tab},
                   showSelectedIcon: false,
@@ -178,7 +223,6 @@ class _FoodSearchState extends ConsumerState<_FoodSearch> {
                     _loadTab();
                   },
                 ),
-              const Spacer(),
               TextButton.icon(
                 onPressed: _createFood,
                 icon: const Icon(Icons.add),
@@ -192,7 +236,9 @@ class _FoodSearchState extends ConsumerState<_FoodSearch> {
               onRetry: () => _searching ? _search(_query.text) : _loadTab(),
               data: (foods) => foods.isEmpty
                   ? EmptyState(
-                      icon: _searching ? Icons.search_off : (_tab == 0 ? Icons.history : Icons.star_outline),
+                      icon: _searching
+                          ? Icons.search_off
+                          : (_tab == 0 ? Icons.history : Icons.star_outline),
                       title: _searching
                           ? 'Nenhum alimento encontrado'
                           : _tab == 0
@@ -202,7 +248,15 @@ class _FoodSearchState extends ConsumerState<_FoodSearch> {
                           ? 'Cadastre o alimento com os valores do rótulo ou use um item manual.'
                           : _tab == 0
                           ? 'Os alimentos que você registrar aparecem aqui para facilitar.'
-                          : 'Toque na estrela de um alimento para salvá-lo aqui.',
+                          : 'Busque um alimento no campo acima e toque na estrela ao lado do resultado.',
+                      actionLabel: !_searching && _tab == 1
+                          ? 'Buscar para favoritar'
+                          : null,
+                      onAction: !_searching && _tab == 1
+                          ? () => FocusScope.of(
+                              context,
+                            ).requestFocus(_searchFocus)
+                          : null,
                     )
                   : ListView.separated(
                       itemCount: foods.length,
@@ -217,12 +271,18 @@ class _FoodSearchState extends ConsumerState<_FoodSearch> {
                             '${Fmt.kcal(f.per100.energyKcal)} por 100 ${f.baseUnit} · ${f.sourceLabel}',
                           ),
                           trailing: IconButton(
-                            tooltip: fav ? 'Remover dos favoritos' : 'Adicionar aos favoritos',
+                            tooltip: fav
+                                ? 'Remover dos favoritos'
+                                : 'Adicionar aos favoritos',
                             icon: Icon(
-                              fav ? Icons.star_rounded : Icons.star_outline_rounded,
+                              fav
+                                  ? Icons.star_rounded
+                                  : Icons.star_outline_rounded,
                               color: fav ? context.pic.warning : null,
                             ),
-                            onPressed: () => _toggleFavorite(f),
+                            onPressed: _savingFavorites.contains(f.id)
+                                ? null
+                                : () => _toggleFavorite(f),
                           ),
                           onTap: () => Navigator.of(context).pop(f),
                         );
@@ -252,13 +312,20 @@ class _CustomFoodForm extends ConsumerStatefulWidget {
 class _CustomFoodFormState extends ConsumerState<_CustomFoodForm> {
   final _formKey = GlobalKey<FormState>();
   late final _name = TextEditingController(text: widget.initialName);
-  late final _kcal = TextEditingController(text: _initial(widget.draft?.energyKcal));
-  late final _protein = TextEditingController(text: _initial(widget.draft?.proteinG));
-  late final _carbs = TextEditingController(text: _initial(widget.draft?.carbsG));
+  late final _kcal = TextEditingController(
+    text: _initial(widget.draft?.energyKcal),
+  );
+  late final _protein = TextEditingController(
+    text: _initial(widget.draft?.proteinG),
+  );
+  late final _carbs = TextEditingController(
+    text: _initial(widget.draft?.carbsG),
+  );
   late final _fat = TextEditingController(text: _initial(widget.draft?.fatG));
   late String _unit = widget.draft?.baseUnit ?? 'g';
 
-  static String _initial(double? value) => value == null ? '' : Fmt.decimal(value);
+  static String _initial(double? value) =>
+      value == null ? '' : Fmt.decimal(value);
   bool _saving = false;
 
   @override

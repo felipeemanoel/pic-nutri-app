@@ -1,23 +1,8 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:picnutri/features/auth/application/session_controller.dart';
 import 'package:picnutri/features/engagement/data/engagement_models.dart';
-import 'package:picnutri/features/engagement/data/engagement_repository.dart';
-import 'package:picnutri/features/engagement/presentation/engagement_widgets.dart';
 import 'package:picnutri/features/reminders/data/reminder_models.dart';
 
 import '../../helpers/fakes.dart';
-
-class _FakeEngagementRepository implements EngagementRepository {
-  int seenCalls = 0;
-
-  @override
-  Future<void> markAchievementsSeen() async => seenCalls++;
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
 
 Map<String, dynamic> _achievement({bool achieved = true, bool isNew = false}) => {
   'code': 'streak_3',
@@ -60,31 +45,6 @@ void main() {
     expect(data.newlyUnlocked.single.code, 'streak_3');
     expect(data.activeChallenges.single.ratio, closeTo(0.4, 0.001));
     expect(data.availableChallenges.single.code, 'breakfast_5');
-  });
-
-  testWidgets('celebra conquista nova e marca como vista', (tester) async {
-    final repo = _FakeEngagementRepository();
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          ...sessionOverrides(
-            SessionSignedIn(testAccount()),
-            engagement: emptyEngagementJson(streak: 3, last7: 3, achievements: [_achievement(isNew: true)]),
-          ),
-          engagementRepositoryProvider.overrideWithValue(repo),
-        ],
-        child: const MaterialApp(home: Scaffold(body: StreakCard())),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('3 dias seguidos'), findsWidgets);
-    expect(find.text('Nova conquista'), findsOneWidget);
-
-    await tester.tap(find.text('Continuar'));
-    await tester.pumpAndSettle();
-    expect(find.text('Nova conquista'), findsNothing);
-    expect(repo.seenCalls, 1);
   });
 
   test('lembretes condicionais abrem a tela relacionada', () {

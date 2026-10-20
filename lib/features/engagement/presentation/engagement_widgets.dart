@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/routes.dart';
 import '../../../core/design/design_system.dart';
-import '../data/engagement_models.dart';
 import '../data/engagement_repository.dart';
 
 /// Ícone Material correspondente ao nome enviado pela API.
@@ -33,31 +32,9 @@ class StreakCard extends ConsumerStatefulWidget {
 }
 
 class _StreakCardState extends ConsumerState<StreakCard> {
-  bool _celebrating = false;
-
-  Future<void> _celebrate(List<Achievement> fresh) async {
-    if (_celebrating || fresh.isEmpty) return;
-    _celebrating = true;
-    await showAchievementsDialog(context, fresh);
-    try {
-      await ref.read(engagementRepositoryProvider).markAchievementsSeen();
-    } on Object {
-      // Sem conexão: a celebração reaparece na próxima abertura.
-    }
-    _celebrating = false;
-  }
-
+  // Conquistas novas são celebradas pelo CelebrationHost (uma vez, para todo o app).
   @override
   Widget build(BuildContext context) {
-    ref.listen(engagementProvider, (_, next) {
-      final fresh = next.value?.newlyUnlocked ?? const <Achievement>[];
-      if (fresh.isNotEmpty) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _celebrate(fresh);
-        });
-      }
-    });
-
     final data = ref.watch(engagementProvider).value;
     if (data == null) return const SizedBox.shrink();
 
@@ -135,30 +112,3 @@ class _WeekDots extends StatelessWidget {
   );
 }
 
-/// Celebração discreta de conquistas recém-desbloqueadas.
-Future<void> showAchievementsDialog(BuildContext context, List<Achievement> items) =>
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        icon: Icon(Icons.emoji_events_rounded, color: context.pic.warning, size: 40),
-        title: Text(items.length == 1 ? 'Nova conquista' : 'Novas conquistas'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final a in items)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Icon(achievementIcon(a.icon), color: context.colors.primary),
-                title: Text(a.title),
-                subtitle: Text(a.description),
-              ),
-          ],
-        ),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Continuar'),
-          ),
-        ],
-      ),
-    );
