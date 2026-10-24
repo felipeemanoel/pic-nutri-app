@@ -18,11 +18,10 @@ import '../../features/notifications/application/notification_routes.dart';
 import '../../features/notifications/data/notification_repository.dart';
 import '../../features/plan/application/store_purchases.dart';
 import '../../features/reminders/application/reminder_scheduler.dart';
-import '../features.dart';
+import '../../shared/widgets/account_avatar.dart';
 import '../routes.dart';
 
-/// Navegação principal: Início, Alimentação, Evolução, Assistente e
-/// Profissionais. O Perfil abre pelo avatar no topo de cada aba.
+/// Navegação principal: Início, Alimentação, Evolução, Conteúdo e Perfil.
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key, required this.shell});
 
@@ -92,8 +91,9 @@ class _AppShellState extends ConsumerState<AppShell>
     final store = ref.read(introTourStoreProvider);
     final repository = ref.read(authRepositoryProvider);
     final show = await store.shouldShow(account);
-    if (!mounted || ref.read(currentAccountProvider)?.email != account.email)
+    if (!mounted || ref.read(currentAccountProvider)?.email != account.email) {
       return;
+    }
     if (show) {
       await context.push(AppRoutes.introTour);
     } else if (account.introTourPending) {
@@ -122,41 +122,41 @@ class _AppShellState extends ConsumerState<AppShell>
     // Lembrete local sem rota: fica onde está. Mensagem do servidor sem rota (ou desconhecida): central.
     if (!mounted || (id == null && tap.route == null)) return;
     final target = NotificationRoutes.resolve(tap.route);
-    if (target == AppRoutes.notifications ||
-        target == AppRoutes.notificationSettings) {
-      context.push(target);
-    } else {
+    // Telas das abas trocam de aba; as de fora (Perfil, Profissionais,
+    // notificações) empilham, para o "voltar" funcionar.
+    if (AppRoutes.isInTabs(target)) {
       context.go(target);
+    } else {
+      context.push(target);
     }
   }
 
-  static final _destinations = <NavigationDestination>[
-    const NavigationDestination(
+  static const _destinations = <NavigationDestination>[
+    NavigationDestination(
       icon: Icon(Icons.home_outlined),
       selectedIcon: Icon(Icons.home),
       label: 'Início',
     ),
-    const NavigationDestination(
+    NavigationDestination(
       icon: Icon(Icons.restaurant_menu_outlined),
       selectedIcon: Icon(Icons.restaurant_menu),
       label: 'Alimentação',
     ),
-    const NavigationDestination(
+    NavigationDestination(
       icon: Icon(Icons.insights_outlined),
       selectedIcon: Icon(Icons.insights),
       label: 'Evolução',
     ),
-    const NavigationDestination(
-      icon: Icon(Icons.auto_awesome_outlined),
-      selectedIcon: Icon(Icons.auto_awesome),
-      label: 'Assistente',
+    NavigationDestination(
+      icon: Icon(Icons.auto_stories_outlined),
+      selectedIcon: Icon(Icons.auto_stories),
+      label: 'Conteúdo',
     ),
-    if (AppFeatures.medical)
-      const NavigationDestination(
-        icon: Icon(Icons.groups_outlined),
-        selectedIcon: Icon(Icons.groups),
-        label: 'Profissionais',
-      ),
+    NavigationDestination(
+      icon: AccountAvatar(size: 24),
+      selectedIcon: AccountAvatar(size: 24),
+      label: 'Perfil',
+    ),
   ];
 
   @override

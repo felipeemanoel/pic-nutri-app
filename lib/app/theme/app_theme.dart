@@ -88,7 +88,9 @@ abstract final class AppTheme {
     surfaceTint: Colors.transparent,
   );
 
-  /// Escala tipográfica (Inter). Números em destaque usam algarismos tabulares.
+  /// Escala tipográfica (Inter). Texto principal em 16 px; rótulos e textos
+  /// auxiliares com no mínimo 13–14 px, sem caixa alta. Números em destaque
+  /// usam algarismos tabulares.
   static TextTheme _text(ColorScheme s, PicColors p) {
     TextStyle style(
       double size,
@@ -112,20 +114,14 @@ abstract final class AppTheme {
       headlineMedium: style(26, FontWeight.w600, 1.25, spacing: -0.3),
       headlineSmall: style(22, FontWeight.w600, 1.3, spacing: -0.2),
       titleLarge: style(20, FontWeight.w600, 1.3, spacing: -0.1),
-      titleMedium: style(17, FontWeight.w600, 1.35),
-      titleSmall: style(15, FontWeight.w600, 1.4),
+      titleMedium: style(18, FontWeight.w600, 1.35),
+      titleSmall: style(16, FontWeight.w600, 1.4),
       bodyLarge: style(16, FontWeight.w400, 1.5),
-      bodyMedium: style(15, FontWeight.w400, 1.45),
-      bodySmall: style(13, FontWeight.w400, 1.4, color: p.textSecondary),
-      labelLarge: style(15, FontWeight.w600, 1.3),
-      labelMedium: style(13, FontWeight.w500, 1.3),
-      labelSmall: style(
-        12,
-        FontWeight.w500,
-        1.3,
-        color: p.textSecondary,
-        spacing: 0.1,
-      ),
+      bodyMedium: style(16, FontWeight.w400, 1.5),
+      bodySmall: style(14, FontWeight.w400, 1.45, color: p.textSecondary),
+      labelLarge: style(16, FontWeight.w600, 1.3),
+      labelMedium: style(14, FontWeight.w500, 1.3),
+      labelSmall: style(13, FontWeight.w500, 1.3, color: p.textSecondary),
     );
   }
 

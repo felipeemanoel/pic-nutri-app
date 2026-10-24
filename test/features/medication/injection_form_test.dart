@@ -110,10 +110,13 @@ void main() {
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.byTooltip('Abdome esquerdo'));
     await tester.tap(find.byTooltip('Abdome esquerdo'));
+    await tester.pump();
+    // Resumo fixo identifica medicamento, apresentação e região.
+    expect(find.textContaining('Abdome esquerdo'), findsWidgets);
     await tester.pumpAndSettle();
     expect(repo.saves, 0);
     await tester.scrollUntilVisible(
-      find.widgetWithText(FilledButton, 'Salvar'),
+      find.widgetWithText(FilledButton, 'Registrar aplicação'),
       300,
       scrollable: find
           .descendant(
@@ -122,7 +125,7 @@ void main() {
           )
           .first,
     );
-    await tester.tap(find.widgetWithText(FilledButton, 'Salvar'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Registrar aplicação'));
     await tester.pumpAndSettle();
     expect(repo.savedSite, 'abdomen_left');
     expect(repo.savedMedication, 'med');

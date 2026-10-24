@@ -11,10 +11,21 @@ abstract final class AppRoutes {
   static const home = '/home';
   static const food = '/food';
   static const progress = '/progress';
+  static const contents = '/contents';
+
+  // Assistente: acesso eventual pelo menu de Perfil.
   static const assistant = '/assistant';
+
+  /// Prefixos das abas: telas sob eles abrem com `go` (trocam de aba);
+  /// as demais (Perfil, Profissionais, notificações) abrem com `push`.
+  static const tabRoots = [home, food, progress, contents, profile];
+  static bool isInTabs(String location) =>
+      tabRoots.any((r) => location == r || location.startsWith('$r/'));
+
+  // Profissionais: fora das abas, aberto pelo Perfil (uso eventual).
   static const professionals = '/professionals';
 
-  // Perfil: fora das abas, aberto pelo avatar no topo.
+  // Perfil e menu geral: quinta aba.
   static const profile = '/profile';
 
   // Central de notificações: fora das abas, aberta pelo sino no topo.
@@ -25,7 +36,8 @@ abstract final class AppRoutes {
 
   // Telas internas.
   static const water = '/home/water';
-  static const symptoms = '/home/symptoms';
+  // Bem-estar (sintomas): parte da Evolução.
+  static const symptoms = '/progress/symptoms';
   static const help = '/profile/help';
   static String helpArticle(String slug) => '/profile/help/$slug';
   static const newMeal = '/food/meal';
@@ -34,6 +46,10 @@ abstract final class AppRoutes {
   static const mealPhoto = '/food/photo';
   static const mealText = '/food/text';
   static const photoReview = '/food/photo-review';
+  // Revisão de uma refeição a partir de uma receita ("Comi esta receita").
+  static const recipeMeal = '/food/meal-from-recipe';
+  // Endereço anterior de conteúdos: redireciona para a nova aba.
+  static const legacyContents = '/food/contents';
   static const mealPlans = '/food/plans';
   static const recipes = '/food/recipes';
   static String mealPlan(String id) => '/food/plans/$id';

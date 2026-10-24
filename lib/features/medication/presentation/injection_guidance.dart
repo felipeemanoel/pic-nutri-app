@@ -21,7 +21,11 @@ class InjectionGuidance extends ConsumerStatefulWidget {
     required this.onSiteChanged,
     required this.takenAt,
     this.editingDoseId,
+    this.onPresentationChanged,
   });
+
+  /// Apresentação confirmada na embalagem (null = não informada).
+  final ValueChanged<String?>? onPresentationChanged;
 
   final String medicationName;
   final List<Option> sites;
@@ -120,10 +124,13 @@ class _InjectionGuidanceState extends ConsumerState<InjectionGuidance> {
                   ),
                 ),
             ],
-            onChanged: (id) => setState(() {
-              _guide = catalog.where((g) => g.id == id).firstOrNull;
-              _confirmed = false;
-            }),
+            onChanged: (id) {
+              setState(() {
+                _guide = catalog.where((g) => g.id == id).firstOrNull;
+                _confirmed = false;
+              });
+              widget.onPresentationChanged?.call(null);
+            },
           ),
           if (catalog.isEmpty) ...[
             const SizedBox(height: Space.sm),
@@ -148,7 +155,10 @@ class _InjectionGuidanceState extends ConsumerState<InjectionGuidance> {
                 'Minha embalagem corresponde a este produto e apresentação',
               ),
               value: _confirmed,
-              onChanged: (v) => setState(() => _confirmed = v ?? false),
+              onChanged: (v) {
+                setState(() => _confirmed = v ?? false);
+                widget.onPresentationChanged?.call(_confirmed ? '${guide.brand} · ${guide.presentation}' : null);
+              },
             ),
             if (_confirmed) ...[
               Text(guide.deviceNote, style: context.text.bodySmall),

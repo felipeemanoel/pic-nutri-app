@@ -27,6 +27,17 @@ class AiFeatureStatus {
 
   bool get hasQuota => remaining == null || remaining! > 0;
 
+  /// Assistente com limite finito, inclusive no plano pago.
+  bool get hasValidFiniteQuota =>
+      limit != null &&
+      remaining != null &&
+      limit! >= 0 &&
+      remaining! >= 0 &&
+      remaining! <= limit!;
+  int? get used => hasValidFiniteQuota ? limit! - remaining! : null;
+  bool get canSendAssistantMessage =>
+      available && hasValidFiniteQuota && remaining! > 0;
+
   String? get quotaLabel {
     if (limit == null) return null;
     return '${remaining ?? 0} de $limit restantes hoje';
@@ -53,8 +64,15 @@ class AiStatus {
       json['assistant'] as Map<String, dynamic>,
     ),
     textAnalysis: json['text_analysis'] is Map<String, dynamic>
-        ? AiFeatureStatus.fromJson(json['text_analysis'] as Map<String, dynamic>)
-        : const AiFeatureStatus(available: false, limit: 0, remaining: 0, disclaimer: ''),
+        ? AiFeatureStatus.fromJson(
+            json['text_analysis'] as Map<String, dynamic>,
+          )
+        : const AiFeatureStatus(
+            available: false,
+            limit: 0,
+            remaining: 0,
+            disclaimer: '',
+          ),
   );
 
   final AiFeatureStatus photoAnalysis;

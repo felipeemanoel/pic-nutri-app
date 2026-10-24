@@ -7,6 +7,7 @@ import '../../../shared/widgets/state_views.dart';
 import '../data/medication_models.dart';
 import '../data/medication_repository.dart';
 import 'medication_forms.dart';
+import 'medication_instructions_page.dart';
 
 /// Aba "Medicamento" da Evolução: medicamentos informados, aplicações e
 /// sintomas. Registro informativo, sem orientação de dose.
@@ -39,22 +40,23 @@ class MedicationTab extends ConsumerWidget {
           value: options,
           onRetry: () => ref.invalidate(medicationOptionsProvider),
           data: (opts) => ListView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+            padding: const EdgeInsets.fromLTRB(Space.page, Space.md, Space.page, Space.fabClearance),
             children: [
               _Disclaimer(text: opts.disclaimer),
-              const SizedBox(height: 12),
+              const SizedBox(height: Space.section),
+              // 1. Cadastro
               Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      'Medicamentos',
-                      style: Theme.of(context).textTheme.titleMedium,
+                    child: Semantics(
+                      header: true,
+                      child: Text('Seus medicamentos', style: context.text.titleMedium),
                     ),
                   ),
                   TextButton.icon(
                     onPressed: () => showMedicationForm(context),
                     icon: const Icon(Icons.add),
-                    label: const Text('Adicionar'),
+                    label: const Text('Cadastrar'),
                   ),
                 ],
               ),
@@ -97,12 +99,21 @@ class MedicationTab extends ConsumerWidget {
                         ],
                       ),
               ),
-              const SizedBox(height: 16),
-              Text(
-                'Aplicações recentes',
-                style: Theme.of(context).textTheme.titleMedium,
+              const SizedBox(height: Space.section),
+              // 2. Registro das aplicações
+              Row(
+                children: [
+                  Expanded(
+                    child: Semantics(header: true, child: Text('Aplicações', style: context.text.titleMedium)),
+                  ),
+                  if (medications.value?.any((m) => m.isActive) ?? false)
+                    TextButton.icon(
+                      onPressed: () => openDoseForm(context),
+                      icon: const Icon(Icons.add),
+                      label: const Text('Registrar'),
+                    ),
+                ],
               ),
-              const SizedBox(height: 4),
               AsyncValueView<List<MedicationDose>>(
                 value: doses,
                 onRetry: () => ref.invalidate(recentDosesProvider),
@@ -120,6 +131,21 @@ class MedicationTab extends ConsumerWidget {
                         ],
                       ),
               ),
+              // 3. Consulta às instruções (separada do registro)
+              if (medications.value?.any((m) => m.isInjection && m.isActive) ?? false) ...[
+                const SizedBox(height: Space.section),
+                Semantics(header: true, child: Text('Instruções do fabricante', style: context.text.titleMedium)),
+                const SizedBox(height: Space.xs),
+                for (final m in medications.value!.where((m) => m.isInjection && m.isActive))
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.menu_book_outlined),
+                    title: Text(m.name),
+                    subtitle: const Text('Bula, dispositivo e rodízio de regiões'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => MedicationInstructionsPage.open(context, m.name),
+                  ),
+              ],
             ],
           ),
         ),

@@ -41,8 +41,13 @@ abstract final class OnboardingSteps {
     targets: 'Metas diárias',
   };
 
-  /// Sequência conforme as escolhas: só aparecem as perguntas que fazem
-  /// sentido para cada pessoa.
+  /// Sequência curta conforme as escolhas: só o essencial para calcular a
+  /// meta, que aparece logo depois dos dados básicos. Perguntas condicionais
+  /// (orientação e medicamento) vêm depois da meta.
+  ///
+  /// "Alimentação e rotina" e "Preferências de atendimento" saíram do fluxo
+  /// inicial: a rotina fica para "Complete seu perfil" ([deferred]) e o
+  /// atendimento é escolhido nos filtros de Profissionais.
   static List<String> sequence({required bool consent, required Set<String> support}) => [
     welcome,
     // Os parâmetros têm o mesmo nome das etapas: qualifica para não confundir.
@@ -50,13 +55,22 @@ abstract final class OnboardingSteps {
     goals,
     OnboardingSteps.support,
     if (consent) essentials,
-    if (consent) routine,
+    if (consent) targets,
     if (consent && support.contains('has_professional_plan')) guidance,
     if (AppFeatures.medical && consent && support.contains('prescribed_medication')) medication,
-    if (AppFeatures.medical && support.contains('find_professional')) care,
-    if (consent) targets,
     summary,
   ];
+
+  /// Etapas deixadas para depois automaticamente (com consentimento): entram
+  /// como "puladas", e o Início convida a completar no perfil.
+  static List<String> deferred({required bool consent}) => [if (consent) routine];
+
+  /// Quem parou numa etapa que saiu do fluxo retoma na seguinte equivalente.
+  static String? resumeAt(String? saved) => switch (saved) {
+    routine => targets,
+    care => summary,
+    _ => saved,
+  };
 
   static bool skippable(String step) => labels.containsKey(step);
 }
@@ -165,7 +179,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     if (p.fatGoalG != null) _fat.text = '${p.fatGoalG}';
     _water.text = '${p.waterGoalMl}';
 
-    final saved = account.onboardingStep;
+    final saved = OnboardingSteps.resumeAt(account.onboardingStep);
     if (saved != null && _sequence.contains(saved)) _step = saved;
   }
 
@@ -223,7 +237,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       final account = await profile.saveOnboardingProgress(
         step: next,
         data: data,
-        skipped: _skipped.toList(),
+        skipped: {
+          ..._skipped,
+          ...OnboardingSteps.deferred(consent: _consent),
+        }.toList(),
       );
       ref.read(sessionControllerProvider.notifier).updateAccount(account);
       if (!mounted) return;
@@ -459,7 +476,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     const Center(child: PicNutriWordmark(iconSize: 64, showTagline: true)),
     const SizedBox(height: Space.xxl),
     _title('Que bom ter você aqui', 'Algumas perguntas rápidas para deixar o PicNutri do seu jeito. Leva cerca de 2 minutos.'),
-    const _Bullet(icon: Icons.restaurant_menu, text: 'Registre refeições por foto, texto ou busca no banco de alimentos.'),
+    const _Bullet(icon: Icons.restaurant_menu, text: 'Registre refeições por foto ou busca no banco de alimentos.'),
     const _Bullet(icon: Icons.insights, text: 'Acompanhe peso, medidas e hábitos com gráficos claros.'),
     const _Bullet(icon: Icons.auto_awesome, text: 'Tire dúvidas com o assistente, sempre com estimativas sinalizadas.'),
     if (AppFeatures.medical)
@@ -758,8 +775,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 ].join(' · '),
           OnboardingSteps.essentials,
         ),
-        ('Refeições', join(_plannedMeals, _mealLabels), OnboardingSteps.routine),
-        if (_allergies.isNotEmpty) ('Alergias', join(_allergies, Labels.allergies), OnboardingSteps.routine),
         if (_support.contains('has_professional_plan'))
           ('Orientação profissional', _guidance.text.trim().isEmpty ? 'Não registrada' : 'Registrada', OnboardingSteps.guidance),
         if (AppFeatures.medical && _support.contains('prescribed_medication'))
@@ -770,14 +785,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           OnboardingSteps.targets,
         ),
       ],
-      if (_support.contains('find_professional'))
-        (
-          'Atendimento',
-          [join(_careCategories, Labels.professionalCategories), Labels.careModalities[_careModality] ?? ''].join(' · '),
-          OnboardingSteps.care,
-        ),
     ];
-    final pending = _skipped.where(OnboardingSteps.labels.containsKey).map((s) => OnboardingSteps.labels[s]!).toList();
+    final pending = {..._skipped, ...OnboardingSteps.deferred(consent: _consent)}.where(OnboardingSteps.labels.containsKey).map((s) => OnboardingSteps.labels[s]!).toList();
 
     return [
       _title('Tudo pronto', 'Confira suas escolhas. Você pode mudar qualquer uma depois no Perfil.'),

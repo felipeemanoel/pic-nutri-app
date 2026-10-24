@@ -7,29 +7,44 @@ import 'package:picnutri/features/progress/presentation/progress_page.dart';
 
 import '../../helpers/fakes.dart';
 
+Widget _app({required bool medication}) => ProviderScope(
+  overrides: [
+    ...sessionOverrides(
+      SessionSignedIn(testAccount(medicationTracking: medication)),
+    ),
+    bodyProgressProvider.overrideWith(
+      (ref, days) async => throw Exception('Sem dados de teste'),
+    ),
+    weightEntriesProvider.overrideWith((ref) async => []),
+  ],
+  child: const MaterialApp(home: ProgressPage()),
+);
+
 void main() {
-  testWidgets(
-    'medicamento fica visível antes de ativar e explica como começar',
-    (tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            ...sessionOverrides(SessionSignedIn(testAccount())),
-            bodyProgressProvider.overrideWith(
-              (ref, days) async => throw Exception('Sem dados de teste'),
-            ),
-            weightEntriesProvider.overrideWith((ref) async => []),
-          ],
-          child: const MaterialApp(home: ProgressPage()),
-        ),
-      );
-      await tester.pumpAndSettle();
-      expect(find.text('Medicamento'), findsOneWidget);
-      await tester.tap(find.text('Medicamento'));
-      await tester.pumpAndSettle();
-      expect(find.text('Acompanhe seu medicamento'), findsOneWidget);
-      expect(find.text('Ativar no perfil'), findsOneWidget);
-      expect(find.text('Aplicação'), findsNothing);
-    },
-  );
+  testWidgets('sem acompanhamento ativo, a aba de medicamento não aparece', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_app(medication: false));
+    await tester.pumpAndSettle();
+    expect(find.text('Resumo'), findsOneWidget);
+    expect(find.text('Medicamento'), findsNothing);
+  });
+
+  testWidgets('com acompanhamento ativo, a aba de medicamento aparece', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_app(medication: true));
+    await tester.pumpAndSettle();
+    expect(find.text('Medicamento'), findsOneWidget);
+  });
+
+  testWidgets('o resumo da Evolução leva a relatórios, hábitos e bem-estar', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_app(medication: false));
+    await tester.pumpAndSettle();
+    expect(find.text('Relatórios'), findsOneWidget);
+    expect(find.text('Hábitos e conquistas'), findsOneWidget);
+    expect(find.text('Bem-estar'), findsOneWidget);
+  });
 }

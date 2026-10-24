@@ -90,11 +90,16 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
     setState(() => _exporting = true);
     try {
       final dir = await getTemporaryDirectory();
-      final path = '${dir.path}/picnutri-relatorio-${Fmt.apiDate(report.from)}.csv';
+      // Mesmo período da tela (o período em andamento vai até hoje).
+      final until = report.to.isAfter(DateTime.now()) ? DateTime.now() : report.to;
+      final path = '${dir.path}/picnutri-relatorio-${Fmt.apiDate(report.from)}-a-${Fmt.apiDate(until)}.csv';
       await ref.read(reportRepositoryProvider).export(_query, path);
       ref.invalidate(currentPlanProvider);
       await SharePlus.instance.share(
-        ShareParams(files: [XFile(path, mimeType: 'text/csv')], subject: 'Relatório PicNutri'),
+        ShareParams(
+          files: [XFile(path, mimeType: 'text/csv')],
+          subject: 'Relatório PicNutri · ${Fmt.dayMonth(report.from)} a ${Fmt.dayMonth(until)}',
+        ),
       );
       final file = File(path);
       if (file.existsSync()) await file.delete();
@@ -153,7 +158,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
         title: const Text('Relatórios'),
         actions: [
           IconButton(
-            tooltip: 'Exportar CSV',
+            tooltip: 'Exportar planilha deste período',
             icon: _exporting
                 ? const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.ios_share),
@@ -166,29 +171,6 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(Space.page, Space.sm, Space.page, Space.xxl),
           children: [
-            SectionCard(
-              title: 'Relatório para consulta',
-              icon: Icons.picture_as_pdf_outlined,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    AppFeatures.medical
-                        ? 'PDF com peso, medidas, sintomas, alimentação e, se você registra, as aplicações do medicamento. '
-                            'Leve para o médico ou nutricionista. Você escolhe com quem compartilhar.'
-                        : 'PDF com peso, medidas, sintomas e alimentação. '
-                            'Leve para o médico ou nutricionista. Você escolhe com quem compartilhar.',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: Space.sm),
-                  OutlinedButton.icon(
-                    onPressed: _exporting ? null : _consultationPdf,
-                    icon: const Icon(Icons.download_outlined),
-                    label: const Text('Gerar PDF'),
-                  ),
-                ],
-              ),
-            ),
             const SizedBox(height: Space.md),
             SizedBox(
               width: double.infinity,
@@ -221,6 +203,30 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
               onRetry: () => ref.invalidate(periodReportProvider(_query)),
               loading: const Column(children: [SkeletonCard(lines: 3), SizedBox(height: Space.md), SkeletonCard()]),
               data: (r) => _ReportBody(report: r),
+            ),
+            const SizedBox(height: Space.section),
+            SectionCard(
+              title: 'Relatório para consulta',
+              icon: Icons.picture_as_pdf_outlined,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    AppFeatures.medical
+                        ? 'PDF com peso, medidas, sintomas, alimentação e, se você registra, as aplicações do medicamento. '
+                            'Leve para o médico ou nutricionista. Você escolhe com quem compartilhar.'
+                        : 'PDF com peso, medidas, sintomas e alimentação. '
+                            'Leve para o médico ou nutricionista. Você escolhe com quem compartilhar.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: Space.sm),
+                  OutlinedButton.icon(
+                    onPressed: _exporting ? null : _consultationPdf,
+                    icon: const Icon(Icons.download_outlined),
+                    label: const Text('Gerar PDF'),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -269,14 +275,44 @@ class _ReportBody extends StatelessWidget {
     }
 
     final pic = context.pic;
+    final unit = report.period == 'week' ? 'semana' : 'mês';
+    final days = report.daysElapsed;
+    final plain = [
+      '${report.inProgress ? 'Até agora, você' : 'Você'} registrou refeições em ${s.daysLogged} de $days ${days == 1 ? 'dia' : 'dias'}.',
+      if (report.goalWaterMl != null && report.goalWaterMl! > 0) 'Alcançou a meta de água em ${s.daysWaterMet} ${s.daysWaterMet == 1 ? 'dia' : 'dias'}.',
+      if (report.goalProteinG != null && report.goalProteinG! > 0)
+        'Alcançou a meta de proteínas em ${s.daysProteinMet} ${s.daysProteinMet == 1 ? 'dia' : 'dias'}.',
+      if (s.daysLogged >= 3 && p.daysLogged >= 3) 'No $unit anterior, foram ${p.daysLogged} dias com registros.',
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // Resumo em linguagem simples antes dos números.
         AppCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Média por dia registrado', style: context.text.labelSmall),
+              Row(
+                children: [
+                  Expanded(child: Text('Resumo', style: context.text.titleMedium)),
+                  Text(report.inProgress ? 'Em andamento' : 'Concluído', style: context.text.labelMedium),
+                ],
+              ),
+              const SizedBox(height: Space.sm),
+              for (final line in plain) Text(line, style: context.text.bodyMedium),
+              if (s.daysLogged < days) ...[
+                const SizedBox(height: Space.sm),
+                Text('Dias sem registro só indicam que nada foi anotado.', style: context.text.bodySmall),
+              ],
+            ],
+          ),
+        ),
+        const SectionHeader(title: 'Detalhes'),
+        AppCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Média de calorias por dia registrado', style: context.text.bodySmall),
               MetricValue(
                 value: s.avgEnergyKcal == null ? '—' : Fmt.integer(s.avgEnergyKcal!),
                 unit: 'kcal',
@@ -330,7 +366,7 @@ class _ReportBody extends StatelessWidget {
               ),
               const Divider(height: Space.xxl),
               _GoalRow(
-                label: 'Proteínas (90% da meta)',
+                label: 'Proteínas (meta alcançada)',
                 days: report.days.map((d) => d.proteinMet).toList(),
                 count: s.daysProteinMet,
                 hasGoal: report.goalProteinG != null,

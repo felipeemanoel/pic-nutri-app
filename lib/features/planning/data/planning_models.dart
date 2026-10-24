@@ -17,6 +17,11 @@ class Recipe {
     this.prepMinutes,
     this.tags = const [],
     this.instructions,
+    this.imageUrl,
+    this.author,
+    this.source,
+    this.updatedAt,
+    this.isFavorite = false,
   });
 
   factory Recipe.fromJson(Map<String, dynamic> json) => Recipe(
@@ -30,6 +35,11 @@ class Recipe {
     perServing: Nutrients.fromJson(json['per_serving'] as Map<String, dynamic>),
     instructions: json['instructions'] as String?,
     ingredients: _list(json['ingredients']).map(RecipeIngredient.fromJson).toList(),
+    imageUrl: json['image_url'] as String?,
+    author: json['author'] as String?,
+    source: json['source'] as String?,
+    updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? '')?.toLocal(),
+    isFavorite: json['is_favorite'] as bool? ?? false,
   );
 
   final int id;
@@ -44,6 +54,52 @@ class Recipe {
   /// Só vem no detalhe da receita.
   final String? instructions;
   final List<RecipeIngredient> ingredients;
+
+  /// Foto do prato (sem foto, o app mostra uma ilustração identificada como tal).
+  final String? imageUrl;
+  final String? author;
+  final String? source;
+  final DateTime? updatedAt;
+  final bool isFavorite;
+
+  Recipe copyWith({bool? isFavorite}) => Recipe(
+    id: id,
+    title: title,
+    servings: servings,
+    mealTypes: mealTypes,
+    perServing: perServing,
+    ingredients: ingredients,
+    summary: summary,
+    prepMinutes: prepMinutes,
+    tags: tags,
+    instructions: instructions,
+    imageUrl: imageUrl,
+    author: author,
+    source: source,
+    updatedAt: updatedAt,
+    isFavorite: isFavorite ?? this.isFavorite,
+  );
+
+  /// Itens para registrar o consumo de [eaten] porções (revisados antes de salvar).
+  /// Alimentos do banco levam o `food_id`: o servidor recalcula os valores.
+  List<MealItem> itemsFor(double eaten) {
+    final factor = eaten / (servings <= 0 ? 1 : servings);
+    return [
+      for (final i in ingredients)
+        MealItem(
+          foodId: i.foodId,
+          name: i.name,
+          quantity: double.parse((i.quantity * factor).toStringAsFixed(1)),
+          unit: i.unit,
+          nutrients: Nutrients(
+            energyKcal: i.nutrients.energyKcal * factor,
+            proteinG: i.nutrients.proteinG * factor,
+            carbsG: i.nutrients.carbsG * factor,
+            fatG: i.nutrients.fatG * factor,
+          ),
+        ),
+    ];
+  }
 }
 
 class RecipeIngredient {
@@ -54,6 +110,7 @@ class RecipeIngredient {
     required this.unit,
     this.display,
     this.source,
+    this.nutrients = const Nutrients(),
   });
 
   factory RecipeIngredient.fromJson(Map<String, dynamic> json) => RecipeIngredient(
@@ -63,6 +120,7 @@ class RecipeIngredient {
     unit: json['unit'] as String? ?? 'g',
     display: json['display'] as String?,
     source: json['source'] as String?,
+    nutrients: Nutrients.fromJson(json),
   );
 
   final int foodId;
@@ -71,6 +129,9 @@ class RecipeIngredient {
   final String unit;
   final String? display;
   final String? source;
+
+  /// Valores da quantidade usada na receita inteira.
+  final Nutrients nutrients;
 
   String get amountLabel {
     final base = '${Fmt.decimal(quantity)} $unit';
@@ -232,6 +293,21 @@ class PlanItem {
     'food' => '${Fmt.decimal(quantity ?? 0)} ${baseUnit ?? 'g'}',
     _ => 'Removido do banco de alimentos',
   };
+}
+
+/// Receita adicionada só à lista de compras (sem planejar a refeição).
+class ShoppingExtraRecipe {
+  const ShoppingExtraRecipe({required this.recipeId, required this.title, required this.servings});
+
+  factory ShoppingExtraRecipe.fromJson(Map<String, dynamic> json) => ShoppingExtraRecipe(
+    recipeId: toInt(json['recipe_id'])!,
+    title: json['title'] as String? ?? '',
+    servings: toDouble(json['servings']) ?? 1,
+  );
+
+  final int recipeId;
+  final String title;
+  final double servings;
 }
 
 class ShoppingGroup {

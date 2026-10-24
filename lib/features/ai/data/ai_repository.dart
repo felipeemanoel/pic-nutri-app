@@ -1,8 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/features.dart';
 import '../../../core/error/app_failure.dart';
 import '../../../core/network/api_client.dart';
+import '../../assistant/domain/assistant_scope.dart';
 import 'ai_models.dart';
 
 /// Recursos de IA: análise de refeição por foto e assistente. Toda chamada ao
@@ -50,13 +52,24 @@ class AiRepository {
     String description, {
     required String requestId,
   }) async {
+    if (!AppFeatures.mealTextVoice) {
+      throw const BusinessFailure(
+        'Recurso desativado.',
+        code: 'feature_disabled',
+      );
+    }
     final response = await guard(
       () => _dio.post<Map<String, dynamic>>(
         'ai/meal-analyses',
-        data: {'description': description.trim(), 'client_request_id': requestId},
+        data: {
+          'description': description.trim(),
+          'client_request_id': requestId,
+        },
       ),
     );
-    return MealAnalysis.fromJson(response.data!['data'] as Map<String, dynamic>);
+    return MealAnalysis.fromJson(
+      response.data!['data'] as Map<String, dynamic>,
+    );
   }
 
   Future<MealAnalysis> mealAnalysis(String id) async {
@@ -99,16 +112,26 @@ class AiRepository {
     );
   }
 
+  /// O servidor aplica a cota atomicamente e reconhece tentativas repetidas.
   Future<void> sendMessage(
     String conversationId,
     String content, {
     required String requestId,
-  }) => guard(
-    () => _dio.post<Map<String, dynamic>>(
-      'ai/conversations/$conversationId/messages',
-      data: {'content': content.trim(), 'client_request_id': requestId},
-    ),
-  );
+  }) async {
+    final scoped = AssistantScope.resolve(content);
+    if (scoped == null) {
+      throw const BusinessFailure(
+        AssistantScope.refusal,
+        code: 'assistant_out_of_scope',
+      );
+    }
+    await guard(
+      () => _dio.post<Map<String, dynamic>>(
+        'ai/conversations/$conversationId/messages',
+        data: {'content': scoped, 'client_request_id': requestId},
+      ),
+    );
+  }
 
   Future<void> endConversation(String id) =>
       guard(() => _dio.post<void>('ai/conversations/$id/end'));

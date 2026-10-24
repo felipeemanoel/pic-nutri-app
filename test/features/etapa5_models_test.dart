@@ -6,7 +6,7 @@ import 'package:picnutri/features/symptoms/data/symptom_models.dart';
 
 void main() {
   group('Jornada inicial', () {
-    test('mostra só as perguntas que fazem sentido para as escolhas', () {
+    test('fluxo curto: só as perguntas que fazem sentido, meta logo após os dados', () {
       final minimal = OnboardingSteps.sequence(consent: false, support: {});
       expect(minimal, [
         OnboardingSteps.welcome,
@@ -20,22 +20,35 @@ void main() {
         consent: true,
         support: {'has_professional_plan', 'prescribed_medication', 'find_professional'},
       );
-      expect(full, containsAllInOrder([
+      expect(full, [
+        OnboardingSteps.welcome,
+        OnboardingSteps.consent,
+        OnboardingSteps.goals,
+        OnboardingSteps.support,
         OnboardingSteps.essentials,
-        OnboardingSteps.routine,
+        OnboardingSteps.targets,
         OnboardingSteps.guidance,
         OnboardingSteps.medication,
-        OnboardingSteps.care,
-        OnboardingSteps.targets,
         OnboardingSteps.summary,
-      ]));
+      ]);
+      // Rotina fica para "Complete seu perfil"; atendimento, para os filtros.
+      expect(full, isNot(contains(OnboardingSteps.routine)));
+      expect(full, isNot(contains(OnboardingSteps.care)));
+      expect(OnboardingSteps.deferred(consent: true), [OnboardingSteps.routine]);
+      expect(OnboardingSteps.deferred(consent: false), isEmpty);
+    });
+
+    test('quem parou numa etapa que saiu do fluxo retoma na seguinte', () {
+      expect(OnboardingSteps.resumeAt(OnboardingSteps.routine), OnboardingSteps.targets);
+      expect(OnboardingSteps.resumeAt(OnboardingSteps.care), OnboardingSteps.summary);
+      expect(OnboardingSteps.resumeAt(OnboardingSteps.goals), OnboardingSteps.goals);
+      expect(OnboardingSteps.resumeAt(null), isNull);
     });
 
     test('sem autorização de dados de saúde, nada de medicamento ou dados corporais', () {
       final seq = OnboardingSteps.sequence(consent: false, support: {'prescribed_medication', 'find_professional'});
       expect(seq, isNot(contains(OnboardingSteps.medication)));
       expect(seq, isNot(contains(OnboardingSteps.essentials)));
-      expect(seq, contains(OnboardingSteps.care));
     });
 
     test('etapas obrigatórias não podem ser puladas', () {

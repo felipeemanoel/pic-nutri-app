@@ -44,3 +44,4 @@ env/*.local.json
 # Login social no iOS: valores por ambiente (modelo em ios/Flutter/Social.xcconfig.example)
 /ios/Flutter/Social.xcconfig
 /android/build/
+_backup_ux/

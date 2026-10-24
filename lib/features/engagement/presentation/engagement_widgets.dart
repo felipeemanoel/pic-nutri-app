@@ -41,7 +41,7 @@ class _StreakCardState extends ConsumerState<StreakCard> {
     final pic = context.pic;
     final streak = data.currentStreak;
     return AppCard(
-      onTap: () => context.go(AppRoutes.engagement),
+      onTap: () => context.push(AppRoutes.engagement),
       semanticLabel:
           'Sequência de ${dayCount(streak)}. ${data.last7Days} de 7 dias com registro. ${data.message}',
       child: Row(

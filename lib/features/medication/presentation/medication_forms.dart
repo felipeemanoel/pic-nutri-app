@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/design/design_system.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/request_id.dart';
 import '../../../shared/state/refresh.dart';
@@ -293,6 +294,7 @@ class _DoseFormPageState extends ConsumerState<_DoseFormPage> {
   };
   late final _notes = TextEditingController(text: widget.dose?.notes);
   bool _saving = false;
+  String? _presentation;
 
   bool get _isEdit => widget.dose != null;
 
@@ -438,174 +440,288 @@ class _DoseFormPageState extends ConsumerState<_DoseFormPage> {
                 }
                 _unit ??= medication.doseUnit;
 
+                final siteLabel = _site == null
+                    ? null
+                    : options.label(options.injectionSites, _site);
                 return Form(
                   key: _formKey,
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
+                  child: Column(
                     children: [
-                      Text(
-                        options.disclaimer,
-                        style: theme.textTheme.bodySmall,
+                      // Identificação sempre visível: medicamento, apresentação, data e região.
+                      _DoseSummary(
+                        medication: medication.name,
+                        presentation: medication.isInjection
+                            ? (_presentation ?? 'não confirmada')
+                            : null,
+                        takenAt: _takenAt,
+                        region: medication.isInjection
+                            ? (siteLabel ?? 'não informada')
+                            : null,
                       ),
-                      const SizedBox(height: 12),
-                      _Dropdown(
-                        label: 'Medicamento',
-                        value: _medicationId,
-                        options: [
-                          for (final m in available) Option(m.id, m.name),
-                        ],
-                        onChanged: (v) => setState(() {
-                          _medicationId = v;
-                          _site = null;
-                          _amount.clear();
-                          _unit = available
-                              .firstWhere((m) => m.id == v)
-                              .doseUnit;
-                        }),
-                      ),
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: const Icon(Icons.schedule),
-                        title: const Text('Data e horário'),
-                        subtitle: Text(
-                          '${Fmt.shortDate(_takenAt)} às ${Fmt.time(_takenAt)}',
-                        ),
-                        trailing: const Icon(Icons.edit_outlined),
-                        onTap: _pickTime,
-                      ),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            flex: 3,
-                            child: NumberField(
-                              controller: _amount,
-                              label: 'Dose informada',
-                              helper: 'Conforme a sua prescrição (opcional)',
-                              min: 0.001,
-                              max: 99999,
-                              optional: true,
-                            ),
+                      Expanded(
+                        child: ListView(
+                          padding: const EdgeInsets.fromLTRB(
+                            Space.page,
+                            Space.lg,
+                            Space.page,
+                            Space.xxl,
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            flex: 2,
-                            child: _Dropdown(
-                              label: 'Unidade',
-                              value: _unit,
-                              options: options.doseUnits,
-                              onChanged: (v) => setState(() => _unit = v),
+                          children: [
+                            Text(
+                              options.disclaimer,
+                              style: theme.textTheme.bodySmall,
                             ),
-                          ),
-                        ],
-                      ),
-                      if (medication.isInjection) ...[
-                        const SizedBox(height: 12),
-                        InjectionGuidance(
-                          key: ValueKey(medication.id),
-                          medicationName: medication.name,
-                          sites: options.injectionSites,
-                          site: _site,
-                          onSiteChanged: (value) =>
-                              setState(() => _site = value),
-                          takenAt: _takenAt,
-                          editingDoseId: widget.dose?.id,
-                        ),
-                        const SizedBox(height: 12),
-                        DropdownButtonFormField<String?>(
-                          key: ValueKey('site:${medication.id}:$_site'),
-                          initialValue:
-                              options.injectionSites.any(
-                                (s) => s.value == _site,
-                              )
-                              ? _site
-                              : null,
-                          isExpanded: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Local da aplicação (opcional)',
-                          ),
-                          items: [
-                            const DropdownMenuItem<String?>(
-                              child: Text('Não informar'),
+                            const SizedBox(height: Space.lg),
+                            Text(
+                              'Aplicação',
+                              style: theme.textTheme.titleMedium,
                             ),
-                            for (final o in options.injectionSites)
-                              DropdownMenuItem<String?>(
-                                value: o.value,
-                                child: Text(o.label),
-                              ),
-                          ],
-                          onChanged: (v) => setState(() => _site = v),
-                        ),
-                      ],
-                      const SizedBox(height: 16),
-                      Text(
-                        'Sintomas (opcional)',
-                        style: theme.textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 4),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 4,
-                        children: [
-                          for (final s in options.symptoms)
-                            FilterChip(
-                              label: Text(s.label),
-                              selected: _symptoms.containsKey(s.value),
-                              onSelected: (on) => setState(() {
-                                if (on) {
-                                  _symptoms[s.value] = 1;
-                                } else {
-                                  _symptoms.remove(s.value);
-                                }
+                            const SizedBox(height: Space.sm),
+                            _Dropdown(
+                              label: 'Medicamento',
+                              value: _medicationId,
+                              options: [
+                                for (final m in available) Option(m.id, m.name),
+                              ],
+                              onChanged: (v) => setState(() {
+                                _medicationId = v;
+                                _site = null;
+                                _amount.clear();
+                                _unit = available
+                                    .firstWhere((m) => m.id == v)
+                                    .doseUnit;
                               }),
                             ),
-                        ],
-                      ),
-                      for (final code in _symptoms.keys.toList())
-                        Padding(
-                          padding: const EdgeInsets.only(top: 12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Intensidade: ${options.label(options.symptoms, code)}',
+                            ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: const Icon(Icons.schedule),
+                              title: const Text('Data e horário'),
+                              subtitle: Text(
+                                '${Fmt.shortDate(_takenAt)} às ${Fmt.time(_takenAt)}',
                               ),
-                              const SizedBox(height: 4),
-                              SegmentedButton<int>(
-                                segments: [
-                                  for (final i in options.intensities)
-                                    ButtonSegment(
-                                      value: int.parse(i.value),
-                                      label: Text(i.label),
+                              trailing: const Icon(Icons.edit_outlined),
+                              onTap: _pickTime,
+                            ),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  flex: 3,
+                                  child: NumberField(
+                                    controller: _amount,
+                                    label: 'Dose informada',
+                                    helper:
+                                        'Conforme a sua prescrição (opcional)',
+                                    min: 0.001,
+                                    max: 99999,
+                                    optional: true,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  flex: 2,
+                                  child: _Dropdown(
+                                    label: 'Unidade',
+                                    value: _unit,
+                                    options: options.doseUnits,
+                                    onChanged: (v) => setState(() => _unit = v),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (medication.isInjection) ...[
+                              const SizedBox(height: Space.section),
+                              Text(
+                                'Região da aplicação',
+                                style: theme.textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: Space.sm),
+                              InjectionGuidance(
+                                onPresentationChanged: (p) =>
+                                    setState(() => _presentation = p),
+                                key: ValueKey(medication.id),
+                                medicationName: medication.name,
+                                sites: options.injectionSites,
+                                site: _site,
+                                onSiteChanged: (value) =>
+                                    setState(() => _site = value),
+                                takenAt: _takenAt,
+                                editingDoseId: widget.dose?.id,
+                              ),
+                              const SizedBox(height: 12),
+                              DropdownButtonFormField<String?>(
+                                key: ValueKey('site:${medication.id}:$_site'),
+                                initialValue:
+                                    options.injectionSites.any(
+                                      (s) => s.value == _site,
+                                    )
+                                    ? _site
+                                    : null,
+                                isExpanded: true,
+                                decoration: const InputDecoration(
+                                  labelText: 'Local da aplicação (opcional)',
+                                ),
+                                items: [
+                                  const DropdownMenuItem<String?>(
+                                    child: Text('Não informar'),
+                                  ),
+                                  for (final o in options.injectionSites)
+                                    DropdownMenuItem<String?>(
+                                      value: o.value,
+                                      child: Text(o.label),
                                     ),
                                 ],
-                                selected: {_symptoms[code]!},
-                                onSelectionChanged: (v) =>
-                                    setState(() => _symptoms[code] = v.first),
+                                onChanged: (v) => setState(() => _site = v),
                               ),
                             ],
-                          ),
+                            const SizedBox(height: Space.section),
+                            ExpansionTile(
+                              tilePadding: EdgeInsets.zero,
+                              title: Text(
+                                'Sintomas e observações (opcional)',
+                                style: theme.textTheme.titleMedium,
+                              ),
+                              subtitle: _symptoms.isEmpty
+                                  ? null
+                                  : Text(
+                                      '${_symptoms.length} sintoma(s) informado(s)',
+                                    ),
+                              initiallyExpanded:
+                                  _symptoms.isNotEmpty ||
+                                  _notes.text.isNotEmpty,
+                              expandedCrossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                              children: [
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 4,
+                                  children: [
+                                    for (final s in options.symptoms)
+                                      FilterChip(
+                                        label: Text(s.label),
+                                        selected: _symptoms.containsKey(
+                                          s.value,
+                                        ),
+                                        onSelected: (on) => setState(() {
+                                          if (on) {
+                                            _symptoms[s.value] = 1;
+                                          } else {
+                                            _symptoms.remove(s.value);
+                                          }
+                                        }),
+                                      ),
+                                  ],
+                                ),
+                                for (final code in _symptoms.keys.toList())
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 12),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Intensidade: ${options.label(options.symptoms, code)}',
+                                        ),
+                                        const SizedBox(height: 4),
+                                        SegmentedButton<int>(
+                                          segments: [
+                                            for (final i in options.intensities)
+                                              ButtonSegment(
+                                                value: int.parse(i.value),
+                                                label: Text(i.label),
+                                              ),
+                                          ],
+                                          selected: {_symptoms[code]!},
+                                          onSelectionChanged: (v) => setState(
+                                            () => _symptoms[code] = v.first,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                const SizedBox(height: Space.lg),
+                                TextFormField(
+                                  controller: _notes,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Observações',
+                                  ),
+                                  maxLength: 500,
+                                  maxLines: 2,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: Space.lg),
+                            LoadingButton(
+                              label: _isEdit ? 'Salvar' : 'Registrar aplicação',
+                              loading: _saving,
+                              onPressed: () => _save(medication),
+                            ),
+                          ],
                         ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _notes,
-                        decoration: const InputDecoration(
-                          labelText: 'Observações (opcional)',
-                        ),
-                        maxLength: 500,
-                        maxLines: 2,
-                      ),
-                      const SizedBox(height: 8),
-                      LoadingButton(
-                        label: 'Salvar',
-                        loading: _saving,
-                        onPressed: () => _save(medication),
                       ),
                     ],
                   ),
                 );
               },
             ),
+    );
+  }
+}
+
+/// Resumo fixo do registro: o que, qual apresentação, quando e onde.
+class _DoseSummary extends StatelessWidget {
+  const _DoseSummary({
+    required this.medication,
+    required this.takenAt,
+    this.presentation,
+    this.region,
+  });
+
+  final String medication;
+  final String? presentation;
+  final DateTime takenAt;
+  final String? region;
+
+  @override
+  Widget build(BuildContext context) {
+    final lines = [
+      ('Medicamento', medication),
+      if (presentation != null) ('Apresentação', presentation!),
+      ('Data', '${Fmt.shortDate(takenAt)} às ${Fmt.time(takenAt)}'),
+      if (region != null) ('Região', region!),
+    ];
+    return Semantics(
+      container: true,
+      label: lines.map((l) => '${l.$1}: ${l.$2}').join('. '),
+      excludeSemantics: true,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(
+          horizontal: Space.page,
+          vertical: Space.md,
+        ),
+        color: context.pic.surfaceMuted,
+        child: Wrap(
+          spacing: Space.lg,
+          runSpacing: Space.xs,
+          children: [
+            for (final (label, value) in lines)
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(text: '$label: ', style: context.text.bodySmall),
+                    TextSpan(
+                      text: value,
+                      style: context.text.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -23,6 +23,7 @@ import '../features/notifications/presentation/notification_settings_page.dart';
 import '../features/notifications/presentation/notifications_page.dart';
 import '../features/onboarding/presentation/onboarding_page.dart';
 import '../features/plan/presentation/plan_page.dart';
+import '../features/planning/presentation/contents_page.dart';
 import '../features/planning/presentation/meal_plan_page.dart';
 import '../features/planning/presentation/plans_page.dart';
 import '../features/planning/presentation/recipes_page.dart';
@@ -119,55 +120,36 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.notifications,
         builder: (context, state) => const NotificationsPage(),
       ),
-      // Perfil e configurações: fora das abas, aberto pelo avatar no topo.
+      // Profissionais: fora das abas (uso eventual), aberto pelo Perfil.
+      if (AppFeatures.medical)
+        GoRoute(
+          path: AppRoutes.professionals,
+          builder: (context, state) => const ProfessionalsPage(),
+          routes: [
+            GoRoute(
+              path: 'requests',
+              builder: (context, state) => const ContactRequestsPage(),
+            ),
+            GoRoute(
+              path: ':professionalId',
+              builder: (context, state) => ProfessionalDetailPage(
+                id: state.pathParameters['professionalId']!,
+              ),
+            ),
+          ],
+        ),
+      // Assistente fora das abas: acessado pelo menu geral (Perfil).
       GoRoute(
-        path: AppRoutes.profile,
-        builder: (context, state) => const ProfilePage(),
+        path: AppRoutes.assistant,
+        builder: (context, state) => const AssistantPage(),
         routes: [
           GoRoute(
-            path: 'edit',
-            builder: (context, state) => const EditProfilePage(),
-          ),
-          GoRoute(
-            path: 'password',
-            builder: (context, state) => const ChangePasswordPage(),
-          ),
-          GoRoute(
-            path: 'sign-in-methods',
-            builder: (context, state) => const SignInMethodsPage(),
-          ),
-          GoRoute(
-            path: 'status',
-            builder: (context, state) => const SystemStatusPage(),
-          ),
-          GoRoute(
-            path: 'notifications',
-            builder: (context, state) => const NotificationSettingsPage(),
-          ),
-          GoRoute(
-            path: 'reminders',
-            redirect: (context, state) => AppRoutes.notificationSettings,
-          ),
-          GoRoute(path: 'plan', builder: (context, state) => const PlanPage()),
-          GoRoute(
-            path: 'privacy',
-            builder: (context, state) => const PrivacyPage(),
-          ),
-          if (AppFeatures.medical)
-            GoRoute(
-              path: 'share-grants',
-              builder: (context, state) => const ShareGrantsPage(),
-            ),
-          GoRoute(
-            path: 'help',
-            builder: (context, state) => const HelpCenterPage(),
-            routes: [
-              GoRoute(
-                path: ':slug',
-                builder: (context, state) =>
-                    HelpArticlePage(slug: state.pathParameters['slug']!),
-              ),
-            ],
+            path: 'chat',
+            builder: (context, state) => switch (state.extra) {
+              final ChatDraft draft => ChatPage(draft: draft.text),
+              final String id => ChatPage(conversationId: id),
+              _ => const ChatPage(),
+            },
           ),
         ],
       ),
@@ -184,9 +166,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                     path: 'water',
                     builder: (context, state) => const WaterPage(),
                   ),
+                  // Endereço antigo de Bem-estar (agora na Evolução).
                   GoRoute(
                     path: 'symptoms',
-                    builder: (context, state) => const SymptomsPage(),
+                    redirect: (context, state) => AppRoutes.symptoms,
                   ),
                 ],
               ),
@@ -200,7 +183,8 @@ final routerProvider = Provider<GoRouter>((ref) {
                 routes: [
                   GoRoute(
                     path: 'meal',
-                    builder: (context, state) => const MealEditorPage(),
+                    builder: (context, state) =>
+                        MealEditorPage(start: state.extra as MealEditorStart?),
                   ),
                   GoRoute(
                     path: 'meal-repeat',
@@ -218,6 +202,8 @@ final routerProvider = Provider<GoRouter>((ref) {
                   ),
                   GoRoute(
                     path: 'text',
+                    redirect: (context, state) =>
+                        AppFeatures.mealTextVoice ? null : AppRoutes.food,
                     builder: (context, state) =>
                         const MealPhotoPage(textMode: true),
                   ),
@@ -256,6 +242,21 @@ final routerProvider = Provider<GoRouter>((ref) {
                     ],
                   ),
                   GoRoute(
+                    path: 'meal-from-recipe',
+                    builder: (context, state) {
+                      final draft = state.extra as RecipeMealDraft?;
+                      return MealEditorPage(
+                        initialItems: draft?.items,
+                        initialTitle: draft?.title,
+                        initialType: draft?.mealType,
+                      );
+                    },
+                  ),
+                  GoRoute(
+                    path: 'contents',
+                    redirect: (context, state) => AppRoutes.contents,
+                  ),
+                  GoRoute(
                     path: 'photo-review',
                     builder: (context, state) {
                       final review = state.extra as PhotoReview?;
@@ -283,6 +284,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                     path: 'habits',
                     builder: (context, state) => const EngagementPage(),
                   ),
+                  GoRoute(
+                    path: 'symptoms',
+                    builder: (context, state) => const SymptomsPage(),
+                  ),
                 ],
               ),
             ],
@@ -290,42 +295,72 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: AppRoutes.assistant,
-                builder: (context, state) => const AssistantPage(),
+                path: AppRoutes.contents,
+                builder: (context, state) => const ContentsPage(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.profile,
+                builder: (context, state) => const ProfilePage(),
                 routes: [
                   GoRoute(
-                    path: 'chat',
-                    builder: (context, state) => switch (state.extra) {
-                      final ChatDraft draft => ChatPage(draft: draft.text),
-                      final String id => ChatPage(conversationId: id),
-                      _ => const ChatPage(),
-                    },
+                    path: 'edit',
+                    builder: (context, state) => const EditProfilePage(),
+                  ),
+                  GoRoute(
+                    path: 'password',
+                    builder: (context, state) => const ChangePasswordPage(),
+                  ),
+                  GoRoute(
+                    path: 'sign-in-methods',
+                    builder: (context, state) => const SignInMethodsPage(),
+                  ),
+                  GoRoute(
+                    path: 'status',
+                    builder: (context, state) => const SystemStatusPage(),
+                  ),
+                  GoRoute(
+                    path: 'notifications',
+                    builder: (context, state) =>
+                        const NotificationSettingsPage(),
+                  ),
+                  GoRoute(
+                    path: 'reminders',
+                    redirect: (context, state) =>
+                        AppRoutes.notificationSettings,
+                  ),
+                  GoRoute(
+                    path: 'plan',
+                    builder: (context, state) => const PlanPage(),
+                  ),
+                  GoRoute(
+                    path: 'privacy',
+                    builder: (context, state) => const PrivacyPage(),
+                  ),
+                  if (AppFeatures.medical)
+                    GoRoute(
+                      path: 'share-grants',
+                      builder: (context, state) => const ShareGrantsPage(),
+                    ),
+                  GoRoute(
+                    path: 'help',
+                    builder: (context, state) => const HelpCenterPage(),
+                    routes: [
+                      GoRoute(
+                        path: ':slug',
+                        builder: (context, state) => HelpArticlePage(
+                          slug: state.pathParameters['slug']!,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ],
           ),
-          if (AppFeatures.medical)
-            StatefulShellBranch(
-              routes: [
-                GoRoute(
-                  path: AppRoutes.professionals,
-                  builder: (context, state) => const ProfessionalsPage(),
-                  routes: [
-                    GoRoute(
-                      path: 'requests',
-                      builder: (context, state) => const ContactRequestsPage(),
-                    ),
-                    GoRoute(
-                      path: ':professionalId',
-                      builder: (context, state) => ProfessionalDetailPage(
-                        id: state.pathParameters['professionalId']!,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
         ],
       ),
     ],

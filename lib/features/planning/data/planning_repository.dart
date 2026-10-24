@@ -7,7 +7,15 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/utils/request_id.dart';
 import 'planning_models.dart';
 
+/// Busca e filtros de receitas. Os campos novos são opcionais nos registros
+/// usados pelo planejamento (`(search: ..., mealType: ...)`).
 typedef RecipeQuery = ({String? search, String? mealType});
+
+/// Filtros extras da área de receitas.
+typedef RecipeFilters = ({String? search, String? mealType, String? tag, int? maxMinutes, bool favorites});
+
+/// Página de receitas e as etiquetas disponíveis para filtrar.
+typedef RecipeResults = ({List<Recipe> recipes, List<String> tags});
 
 class PlanningRepository {
   const PlanningRepository(this._dio);
@@ -33,6 +41,47 @@ class PlanningRepository {
       ),
     );
     return _items(r).map(Recipe.fromJson).toList();
+  }
+
+  Future<RecipeResults> searchRecipes(RecipeFilters f) async {
+    final r = await guard(
+      () => _dio.get<Map<String, dynamic>>(
+        'recipes',
+        queryParameters: {
+          if (f.search != null && f.search!.isNotEmpty) 'q': f.search,
+          'meal_type': ?f.mealType,
+          'tag': ?f.tag,
+          'max_minutes': ?f.maxMinutes,
+          if (f.favorites) 'favorites': 1,
+        },
+      ),
+    );
+    final meta = r.data!['meta'] as Map<String, dynamic>? ?? const {};
+    return (
+      recipes: _items(r).map(Recipe.fromJson).toList(),
+      tags: (meta['tags'] as List<dynamic>? ?? const []).whereType<String>().toList(),
+    );
+  }
+
+  Future<void> setRecipeFavorite(int id, bool favorite) => guard(
+    () => favorite ? _dio.post<void>('recipes/$id/favorite') : _dio.delete<void>('recipes/$id/favorite'),
+  );
+
+  /// Ingredientes na lista de compras do plano, sem planejar a refeição.
+  Future<void> addRecipeToShopping(String planId, {required int recipeId, required double servings}) => guard(
+    () => _dio.post<void>('meal-plans/$planId/shopping-list/recipes', data: {'recipe_id': recipeId, 'servings': servings}),
+  );
+
+  Future<void> removeRecipeFromShopping(String planId, int recipeId) =>
+      guard(() => _dio.delete<void>('meal-plans/$planId/shopping-list/recipes/$recipeId'));
+
+  Future<List<ShoppingExtraRecipe>> shoppingExtras(String planId) async {
+    final r = await guard(() => _dio.get<Map<String, dynamic>>('meal-plans/$planId/shopping-list'));
+    final meta = r.data!['meta'] as Map<String, dynamic>? ?? const {};
+    return (meta['extra_recipes'] as List<dynamic>? ?? const [])
+        .cast<Map<String, dynamic>>()
+        .map(ShoppingExtraRecipe.fromJson)
+        .toList();
   }
 
   Future<Recipe> recipe(int id) async =>
@@ -150,3 +199,12 @@ final mealPlanProvider = FutureProvider.family<MealPlan, String>(
 final shoppingListProvider = FutureProvider.family<List<ShoppingGroup>, String>(
   (ref, id) => ref.watch(planningRepositoryProvider).shoppingList(id),
 );
+
+final recipeSearchProvider = FutureProvider.autoDispose.family<RecipeResults, RecipeFilters>(
+  (ref, f) => ref.watch(planningRepositoryProvider).searchRecipes(f),
+);
+
+final shoppingExtrasProvider = FutureProvider.autoDispose.family<List<ShoppingExtraRecipe>, String>(
+  (ref, planId) => ref.watch(planningRepositoryProvider).shoppingExtras(planId),
+);
+

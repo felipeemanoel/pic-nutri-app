@@ -7,8 +7,8 @@ import '../../../app/env.dart';
 import '../../../app/routes.dart';
 import '../../../core/design/design_system.dart';
 import '../../../shared/widgets/feedback.dart';
-import '../../../shared/widgets/profile_button.dart';
 import '../../../shared/widgets/state_views.dart';
+import '../../notifications/presentation/notification_bell.dart';
 import '../application/device_location.dart';
 import '../data/professional_models.dart';
 import '../data/professional_repository.dart';
@@ -19,9 +19,14 @@ import 'professional_widgets.dart';
 class ProfessionalsPage extends ConsumerWidget {
   const ProfessionalsPage({super.key});
 
-  void _update(WidgetRef ref, ProfessionalFilter Function(ProfessionalFilter f) change) {
+  void _update(
+    WidgetRef ref,
+    ProfessionalFilter Function(ProfessionalFilter f) change,
+  ) {
     final notifier = ref.read(professionalFilterProvider.notifier);
-    notifier.set(change(ref.read(professionalFilterProvider)).copyWith(page: 1));
+    notifier.set(
+      change(ref.read(professionalFilterProvider)).copyWith(page: 1),
+    );
   }
 
   @override
@@ -39,16 +44,22 @@ class ProfessionalsPage extends ConsumerWidget {
             icon: const Icon(Icons.inbox_outlined),
             onPressed: () => context.push(AppRoutes.contactRequests),
           ),
-          const ProfileButton(),
+          const NotificationBell(),
         ],
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.refresh(professionalSearchProvider.future),
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(Space.page, Space.sm, Space.page, Space.xxl),
+          padding: const EdgeInsets.fromLTRB(
+            Space.page,
+            Space.sm,
+            Space.page,
+            Space.xxl,
+          ),
           children: [
             Text(
-              'Nutricionistas e profissionais de educação física com registro no conselho conferido pela equipe do PicNutri.',
+              'Nutricionistas e profissionais de educação física com registro no conselho conferido pela equipe do PicNutri. '
+              'Ao pedir contato, você escolhe se compartilha seu contato e quais dados do app — e pode revogar quando quiser.',
               style: context.text.bodySmall,
             ),
             const SizedBox(height: Space.md),
@@ -59,48 +70,49 @@ class ProfessionalsPage extends ConsumerWidget {
                   ChoiceChip(
                     label: const Text('Todos'),
                     selected: filter.category == null,
-                    onSelected: (_) => _update(ref, (f) => f.copyWith(category: () => null, specialty: () => null)),
+                    onSelected: (_) => _update(
+                      ref,
+                      (f) => f.copyWith(
+                        category: () => null,
+                        specialty: () => null,
+                      ),
+                    ),
                   ),
-                  for (final c in meta?.categories ?? const <ProfessionalCategoryOption>[]) ...[
+                  for (final c
+                      in meta?.categories ??
+                          const <ProfessionalCategoryOption>[]) ...[
                     const SizedBox(width: Space.xs),
                     ChoiceChip(
                       label: Text(c.label),
                       selected: filter.category == c.value,
-                      onSelected: (_) => _update(ref, (f) => f.copyWith(category: () => c.value, specialty: () => null)),
+                      onSelected: (_) => _update(
+                        ref,
+                        (f) => f.copyWith(
+                          category: () => c.value,
+                          specialty: () => null,
+                        ),
+                      ),
                     ),
                   ],
                 ],
               ),
             ),
-            const SizedBox(height: Space.md),
-            SizedBox(
-              width: double.infinity,
-              child: SegmentedButton<String>(
-                segments: const [
-                  ButtonSegment(value: 'any', label: Text('Todos')),
-                  ButtonSegment(value: 'in_person', label: Text('Presencial')),
-                  ButtonSegment(value: 'online', label: Text('Online')),
-                ],
-                selected: {filter.modality},
-                showSelectedIcon: false,
-                onSelectionChanged: (s) => _update(ref, (f) => f.copyWith(modality: s.first)),
-              ),
-            ),
-            if (filter.modality != 'online') ...[
-              const SizedBox(height: Space.md),
-              _PlaceCard(filter: filter, cepLookup: meta?.cepLookup ?? false),
-            ],
             const SizedBox(height: Space.sm),
-            Wrap(
-              spacing: Space.sm,
-              runSpacing: Space.xs,
+            // Filtros avançados e localização sob demanda: os resultados vêm primeiro.
+            Row(
               children: [
-                if (filter.category != null && meta != null)
-                  _SpecialtyChip(options: meta.specialtiesOf(filter.category), selected: filter.specialty),
-                FilterChip(
-                  label: const Text('Aceitando novos atendimentos'),
-                  selected: filter.acceptingOnly,
-                  onSelected: (v) => _update(ref, (f) => f.copyWith(acceptingOnly: v)),
+                Expanded(
+                  child: Text(_summary(filter), style: context.text.bodySmall),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () =>
+                      _openFilters(context, meta?.cepLookup ?? false),
+                  icon: const Icon(Icons.tune_rounded, size: 18),
+                  label: Text(
+                    _activeFilters(filter) == 0
+                        ? 'Filtros'
+                        : 'Filtros (${_activeFilters(filter)})',
+                  ),
                 ),
               ],
             ),
@@ -119,14 +131,107 @@ class ProfessionalsPage extends ConsumerWidget {
   }
 }
 
+int _activeFilters(ProfessionalFilter f) =>
+    (f.modality != 'any' ? 1 : 0) +
+    (f.usesLocation ? 1 : 0) +
+    (f.specialty != null ? 1 : 0) +
+    (f.acceptingOnly ? 1 : 0);
+
+String _summary(ProfessionalFilter f) => [
+  switch (f.modality) {
+    'online' => 'Atendimento online',
+    'in_person' => 'Atendimento presencial',
+    _ => 'Presencial e online',
+  },
+  if (f.acceptingOnly) 'aceitando novos atendimentos',
+].join(' · ');
+
+/// Folha de filtros: modalidade, local, especialidade e disponibilidade.
+Future<void> _openFilters(
+  BuildContext context,
+  bool cepLookup,
+) => showModalBottomSheet<void>(
+  context: context,
+  isScrollControlled: true,
+  showDragHandle: true,
+  builder: (sheet) => Consumer(
+    builder: (context, ref, _) {
+      final filter = ref.watch(professionalFilterProvider);
+      final meta = ref.watch(professionalsMetaProvider).value;
+      void update(ProfessionalFilter Function(ProfessionalFilter f) change) =>
+          ref
+              .read(professionalFilterProvider.notifier)
+              .set(change(filter).copyWith(page: 1));
+      return Padding(
+        padding: EdgeInsets.fromLTRB(
+          Space.page,
+          0,
+          Space.page,
+          MediaQuery.viewInsetsOf(context).bottom + Space.xl,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Filtros', style: context.text.titleLarge),
+              const SizedBox(height: Space.lg),
+              Text('Atendimento', style: context.text.titleSmall),
+              const SizedBox(height: Space.sm),
+              SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(value: 'any', label: Text('Todos')),
+                  ButtonSegment(value: 'in_person', label: Text('Presencial')),
+                  ButtonSegment(value: 'online', label: Text('Online')),
+                ],
+                selected: {filter.modality},
+                showSelectedIcon: false,
+                onSelectionChanged: (s) =>
+                    update((f) => f.copyWith(modality: s.first)),
+              ),
+              if (filter.modality != 'online') ...[
+                const SizedBox(height: Space.lg),
+                _PlaceCard(filter: filter, cepLookup: cepLookup),
+              ],
+              const SizedBox(height: Space.lg),
+              Wrap(
+                spacing: Space.sm,
+                runSpacing: Space.xs,
+                children: [
+                  if (filter.category != null && meta != null)
+                    _SpecialtyChip(
+                      options: meta.specialtiesOf(filter.category),
+                      selected: filter.specialty,
+                    ),
+                  FilterChip(
+                    label: const Text('Aceitando novos atendimentos'),
+                    selected: filter.acceptingOnly,
+                    onSelected: (v) =>
+                        update((f) => f.copyWith(acceptingOnly: v)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: Space.xl),
+              FilledButton(
+                onPressed: () => Navigator.of(sheet).pop(),
+                child: const Text('Ver resultados'),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  ),
+);
+
 class _Results extends ConsumerWidget {
   const _Results({required this.result, required this.filter});
 
   final ProfessionalSearchResult result;
   final ProfessionalFilter filter;
 
-  void _page(WidgetRef ref, int page) =>
-      ref.read(professionalFilterProvider.notifier).set(filter.copyWith(page: page));
+  void _page(WidgetRef ref, int page) => ref
+      .read(professionalFilterProvider.notifier)
+      .set(filter.copyWith(page: page));
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -137,7 +242,10 @@ class _Results extends ConsumerWidget {
               message: result.onlineCount > 0
                   ? 'Não encontramos atendimento presencial nessa região. Veja quem atende online.'
                   : 'Não encontramos atendimento presencial nessa região.',
-              actionLabel: filter.modality == 'online' || result.onlineCount == 0 ? null : 'Só online',
+              actionLabel:
+                  filter.modality == 'online' || result.onlineCount == 0
+                  ? null
+                  : 'Só online',
               onAction: () => ref
                   .read(professionalFilterProvider.notifier)
                   .set(filter.copyWith(modality: 'online', page: 1)),
@@ -152,7 +260,8 @@ class _Results extends ConsumerWidget {
           const EmptyState(
             icon: Icons.person_search_outlined,
             title: 'Nenhum profissional encontrado',
-            message: 'Ainda estamos cadastrando profissionais. Tente outra cidade, outra categoria ou o atendimento online.',
+            message:
+                'Ainda estamos cadastrando profissionais. Tente outra cidade, outra categoria ou o atendimento online.',
           ),
         ],
       );
@@ -163,7 +272,9 @@ class _Results extends ConsumerWidget {
       children: [
         ?suggestion,
         Text(
-          result.total == 1 ? '1 profissional' : '${result.total} profissionais',
+          result.total == 1
+              ? '1 profissional'
+              : '${result.total} profissionais',
           style: context.text.labelLarge,
         ),
         if (filter.usesLocation)
@@ -176,7 +287,10 @@ class _Results extends ConsumerWidget {
           ),
         const SizedBox(height: Space.sm),
         for (final p in result.items) ...[
-          ProfessionalCard(professional: p, onTap: () => context.push(AppRoutes.professional(p.id))),
+          ProfessionalCard(
+            professional: p,
+            onTap: () => context.push(AppRoutes.professional(p.id)),
+          ),
           const SizedBox(height: Space.sm),
         ],
         if (result.lastPage > 1)
@@ -184,13 +298,20 @@ class _Results extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               TextButton.icon(
-                onPressed: result.currentPage > 1 ? () => _page(ref, result.currentPage - 1) : null,
+                onPressed: result.currentPage > 1
+                    ? () => _page(ref, result.currentPage - 1)
+                    : null,
                 icon: const Icon(Icons.chevron_left),
                 label: const Text('Anterior'),
               ),
-              Text('${result.currentPage} de ${result.lastPage}', style: context.text.bodySmall),
+              Text(
+                '${result.currentPage} de ${result.lastPage}',
+                style: context.text.bodySmall,
+              ),
               TextButton.icon(
-                onPressed: result.currentPage < result.lastPage ? () => _page(ref, result.currentPage + 1) : null,
+                onPressed: result.currentPage < result.lastPage
+                    ? () => _page(ref, result.currentPage + 1)
+                    : null,
                 icon: const Icon(Icons.chevron_right),
                 label: const Text('Próxima'),
               ),
@@ -210,7 +331,10 @@ class _PlaceCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final place = [filter.city, filter.state].whereType<String>().where((s) => s.isNotEmpty).join('/');
+    final place = [
+      filter.city,
+      filter.state,
+    ].whereType<String>().where((s) => s.isNotEmpty).join('/');
     final label = filter.usesLocation
         ? 'Perto de você (até ${filter.radiusKm.round()} km)'
         : filter.cep != null && filter.cep!.isNotEmpty
@@ -219,7 +343,10 @@ class _PlaceCard extends ConsumerWidget {
         ? place
         : 'Qualquer local';
     return AppCard(
-      padding: const EdgeInsets.symmetric(horizontal: Space.lg, vertical: Space.md),
+      padding: const EdgeInsets.symmetric(
+        horizontal: Space.lg,
+        vertical: Space.md,
+      ),
       onTap: () => showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
@@ -228,13 +355,19 @@ class _PlaceCard extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          Icon(filter.usesLocation ? Icons.my_location : Icons.place_outlined, color: context.colors.primary),
+          Icon(
+            filter.usesLocation ? Icons.my_location : Icons.place_outlined,
+            color: context.colors.primary,
+          ),
           const SizedBox(width: Space.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Atendimento presencial em', style: context.text.bodySmall),
+                Text(
+                  'Atendimento presencial em',
+                  style: context.text.bodySmall,
+                ),
                 Text(label, style: context.text.titleSmall),
               ],
             ),
@@ -297,10 +430,22 @@ class _PlaceSheetState extends ConsumerState<_PlaceSheet> {
     setState(() => _locating = false);
     switch (result) {
       case LocationFound(:final lat, :final lng):
-        _apply(widget.filter.copyWith(lat: () => lat, lng: () => lng, radiusKm: _radius, cep: () => null));
+        _apply(
+          widget.filter.copyWith(
+            lat: () => lat,
+            lng: () => lng,
+            radiusKm: _radius,
+            cep: () => null,
+          ),
+        );
       case LocationUnavailable(:final message, :final openSettings):
         if (openSettings) {
-          final open = await confirmAction(context, title: 'Localização', message: message, confirmLabel: 'Abrir ajustes');
+          final open = await confirmAction(
+            context,
+            title: 'Localização',
+            message: message,
+            confirmLabel: 'Abrir ajustes',
+          );
           if (open) await location.openSettings();
         } else {
           showMessage(context, message);
@@ -322,12 +467,19 @@ class _PlaceSheetState extends ConsumerState<_PlaceSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Onde você quer ser atendido?', style: context.text.titleMedium),
+            Text(
+              'Onde você quer ser atendido?',
+              style: context.text.titleMedium,
+            ),
             const SizedBox(height: Space.md),
             OutlinedButton.icon(
               onPressed: _locating ? null : _useLocation,
               icon: _locating
-                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   : const Icon(Icons.my_location),
               label: const Text('Usar minha localização'),
             ),
@@ -369,7 +521,10 @@ class _PlaceSheetState extends ConsumerState<_PlaceSheet> {
                     controller: _state,
                     maxLength: 2,
                     textCapitalization: TextCapitalization.characters,
-                    decoration: const InputDecoration(labelText: 'UF', counterText: ''),
+                    decoration: const InputDecoration(
+                      labelText: 'UF',
+                      counterText: '',
+                    ),
                   ),
                 ),
               ],
@@ -379,18 +534,31 @@ class _PlaceSheetState extends ConsumerState<_PlaceSheet> {
               TextField(
                 controller: _cep,
                 keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9-]')), LengthLimitingTextInputFormatter(9)],
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9-]')),
+                  LengthLimitingTextInputFormatter(9),
+                ],
                 decoration: const InputDecoration(
                   labelText: 'Ou CEP',
-                  helperText: 'O CEP é convertido na cidade; não calcula distância.',
+                  helperText:
+                      'O CEP é convertido na cidade; não calcula distância.',
                 ),
               ),
             ],
             const SizedBox(height: Space.lg),
-            FilledButton(onPressed: _applyPlace, child: const Text('Buscar neste local')),
+            FilledButton(
+              onPressed: _applyPlace,
+              child: const Text('Buscar neste local'),
+            ),
             TextButton(
               onPressed: () => _apply(
-                widget.filter.copyWith(city: () => null, state: () => null, cep: () => null, lat: () => null, lng: () => null),
+                widget.filter.copyWith(
+                  city: () => null,
+                  state: () => null,
+                  cep: () => null,
+                  lat: () => null,
+                  lng: () => null,
+                ),
               ),
               child: const Text('Qualquer local'),
             ),
@@ -428,7 +596,9 @@ class _SpecialtyChip extends ConsumerWidget {
                 for (final o in options)
                   ListTile(
                     title: Text(o.label),
-                    trailing: o.value == selected ? const Icon(Icons.check) : null,
+                    trailing: o.value == selected
+                        ? const Icon(Icons.check)
+                        : null,
                     onTap: () => Navigator.of(sheet).pop(o.value),
                   ),
               ],
@@ -439,7 +609,12 @@ class _SpecialtyChip extends ConsumerWidget {
         final f = ref.read(professionalFilterProvider);
         ref
             .read(professionalFilterProvider.notifier)
-            .set(f.copyWith(specialty: () => choice.isEmpty ? null : choice, page: 1));
+            .set(
+              f.copyWith(
+                specialty: () => choice.isEmpty ? null : choice,
+                page: 1,
+              ),
+            );
       },
     );
   }
@@ -463,14 +638,22 @@ class _ForProfessionals extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('É nutricionista ou profissional de educação física?', style: context.text.titleSmall),
+          Text(
+            'É nutricionista ou profissional de educação física?',
+            style: context.text.titleSmall,
+          ),
           const SizedBox(height: Space.xs),
           Text(
             'Envie seu cadastro com o registro no conselho. A equipe confere antes de publicar o perfil.',
             style: context.text.bodySmall,
           ),
           const SizedBox(height: Space.sm),
-          Text(url, style: context.text.bodySmall?.copyWith(color: context.colors.primary)),
+          Text(
+            url,
+            style: context.text.bodySmall?.copyWith(
+              color: context.colors.primary,
+            ),
+          ),
           Align(
             alignment: Alignment.centerRight,
             child: TextButton.icon(

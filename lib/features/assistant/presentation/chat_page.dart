@@ -12,6 +12,8 @@ import '../../../shared/widgets/feedback.dart';
 import '../../../shared/widgets/state_views.dart';
 import '../../ai/data/ai_models.dart';
 import '../../ai/data/ai_repository.dart';
+import '../domain/assistant_scope.dart';
+import 'assistant_usage.dart';
 
 /// Conversa com o assistente. Sem [conversationId], cria uma nova ao enviar a
 /// primeira mensagem. As respostas são geradas no servidor; a tela consulta a
@@ -48,6 +50,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   String? _pendingRequestId;
   Timer? _timer;
   int _polls = 0;
+  String? _notice;
 
   @override
   void initState() {
@@ -109,7 +112,23 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   /// Envia o texto digitado, ou [override] (sugestão ou nova tentativa).
   Future<void> _send([String? override]) async {
     final text = (override ?? _input.text).trim();
-    if (text.isEmpty || _sending) return;
+    if (text.isEmpty ||
+        _sending ||
+        _loading ||
+        (_conversation?.awaitingReply ?? false) ||
+        (_conversation?.isEnded ?? false)) {
+      return;
+    }
+    if (AssistantScope.resolve(text) == null) {
+      setState(() => _notice = AssistantScope.refusal);
+      return;
+    }
+    final status = ref.read(aiStatusProvider).value?.assistant;
+    if (_pendingRequestId == null &&
+        !(status?.canSendAssistantMessage ?? false)) {
+      return;
+    }
+    setState(() => _notice = null);
     if (override != null) _pendingRequestId = null;
     // Mesmo ID em novas tentativas da mesma mensagem (evita duplicar).
     _pendingRequestId ??= newRequestId();
@@ -123,6 +142,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         text,
         requestId: _pendingRequestId!,
       );
+      if (!mounted) return;
       if (override == null) _input.clear();
       _pendingRequestId = null;
       ref
@@ -131,6 +151,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       _polls = 0;
       await _load(conversation.id);
     } on Object catch (error) {
+      ref.invalidate(aiStatusProvider);
       if (mounted) showFailure(context, error);
     } finally {
       if (mounted) setState(() => _sending = false);
@@ -174,6 +195,11 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     final conversation = _conversation;
     final ended = conversation?.isEnded ?? false;
     final awaiting = conversation?.awaitingReply ?? false;
+    final status = ref.watch(aiStatusProvider);
+    final canSend =
+        !_loading &&
+        !(_loadError != null && conversation == null) &&
+        (status.value?.assistant.canSendAssistantMessage ?? false);
 
     return Scaffold(
       appBar: AppBar(
@@ -218,7 +244,39 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       ),
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: Space.lg,
+              vertical: Space.sm,
+            ),
+            child: status.when(
+              data: (s) => AssistantUsage(
+                status: s.assistant,
+                onRefresh: () => ref.invalidate(aiStatusProvider),
+              ),
+              loading: () => const LinearProgressIndicator(),
+              error: (e, _) => StatusBanner(
+                message: 'Não foi possível consultar seu limite.',
+                actionLabel: 'Atualizar',
+                onAction: () => ref.invalidate(aiStatusProvider),
+              ),
+            ),
+          ),
           Expanded(child: _messages(conversation)),
+          if (_notice != null)
+            Padding(
+              padding: const EdgeInsets.all(Space.md),
+              child: StatusBanner(message: _notice!),
+            ),
+          if (awaiting || (_loadError != null && conversation != null))
+            TextButton.icon(
+              onPressed: () {
+                _polls = 0;
+                _load(conversation!.id);
+              },
+              icon: const Icon(Icons.refresh),
+              label: const Text('Atualizar conversa'),
+            ),
           if (ended)
             Padding(
               padding: const EdgeInsets.all(Space.lg),
@@ -233,9 +291,13 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             _Composer(
               controller: _input,
               awaiting: awaiting,
+              enabled: canSend || (_pendingRequestId != null && !_loading),
               sending: _sending,
               onSend: () => _send(),
-              onChanged: () => _pendingRequestId = null,
+              onChanged: () => setState(() {
+                _pendingRequestId = null;
+                _notice = null;
+              }),
             ),
         ],
       ),
@@ -259,20 +321,38 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     if (_loadError != null && conversation == null) {
       return ErrorView(
         message: friendlyMessage(_loadError!),
-        onRetry: () => _load(widget.conversationId!),
+        onRetry: () => _load(_conversation?.id ?? widget.conversationId!),
       );
     }
     final messages = conversation?.messages ?? const <ChatMessage>[];
     if (messages.isEmpty) {
-      return _Welcome(onSuggestion: _sending ? null : _send);
+      return _Welcome(
+        onSuggestion:
+            _sending ||
+                !(ref
+                        .watch(aiStatusProvider)
+                        .value
+                        ?.assistant
+                        .canSendAssistantMessage ??
+                    false)
+            ? null
+            : _send,
+      );
     }
     return ListView.builder(
       controller: _scroll,
-      padding: const EdgeInsets.fromLTRB(Space.lg, Space.md, Space.lg, Space.lg),
+      padding: const EdgeInsets.fromLTRB(
+        Space.lg,
+        Space.md,
+        Space.lg,
+        Space.lg,
+      ),
       itemCount: messages.length,
       itemBuilder: (context, i) => _Bubble(
         message: messages[i],
-        onRetry: messages[i].isFailed && !(conversation?.isEnded ?? false) ? () => _retry(messages[i]) : null,
+        onRetry: messages[i].isFailed && !(conversation?.isEnded ?? false)
+            ? () => _retry(messages[i])
+            : null,
       ),
     );
   }
@@ -288,7 +368,10 @@ class AssistantAvatar extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     width: size,
     height: size,
-    decoration: BoxDecoration(color: context.pic.aiContainer, shape: BoxShape.circle),
+    decoration: BoxDecoration(
+      color: context.pic.aiContainer,
+      shape: BoxShape.circle,
+    ),
     child: Icon(Icons.auto_awesome, size: size * 0.55, color: context.pic.ai),
   );
 }
@@ -298,12 +381,7 @@ class _Welcome extends StatelessWidget {
 
   final ValueChanged<String>? onSuggestion;
 
-  static const _suggestions = [
-    'Como foi minha alimentação nesta semana?',
-    'Estou bebendo água suficiente?',
-    'Como está minha evolução de peso?',
-    'O que são carboidratos complexos?',
-  ];
+  static const _suggestions = AssistantScope.suggestions;
 
   @override
   Widget build(BuildContext context) {
@@ -314,21 +392,41 @@ class _Welcome extends StatelessWidget {
         const SizedBox(height: Space.lg),
         const Center(child: AssistantAvatar(size: 64)),
         const SizedBox(height: Space.lg),
-        Text('Como posso ajudar?', style: context.text.titleLarge, textAlign: TextAlign.center),
+        Text(
+          'Como posso ajudar?',
+          style: context.text.titleLarge,
+          textAlign: TextAlign.center,
+        ),
         const SizedBox(height: Space.xs),
         Text(
-          'Pergunte sobre seus registros, seu histórico ou conceitos de nutrição. '
-          'As respostas usam apenas os dados do seu diário.',
+          '${AssistantScope.description} Escolha uma pergunta abaixo para começar.',
           style: context.text.bodyMedium?.copyWith(color: p.textSecondary),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: Space.xl),
+        ExpansionTile(
+          title: const Text('Todos os assuntos disponíveis'),
+          children: [
+            for (final question in AssistantScope.questions.keys.where(
+              (q) => q != 'Olá!',
+            ))
+              ListTile(
+                title: Text(question),
+                onTap: onSuggestion == null
+                    ? null
+                    : () => onSuggestion!(question),
+              ),
+          ],
+        ),
         for (final s in _suggestions)
           Padding(
             padding: const EdgeInsets.only(bottom: Space.sm),
             child: AppCard(
               onTap: onSuggestion == null ? null : () => onSuggestion!(s),
-              padding: const EdgeInsets.symmetric(horizontal: Space.lg, vertical: Space.md),
+              padding: const EdgeInsets.symmetric(
+                horizontal: Space.lg,
+                vertical: Space.md,
+              ),
               child: Row(
                 children: [
                   Icon(Icons.chat_bubble_outline, size: 18, color: p.ai),
@@ -347,6 +445,7 @@ class _Composer extends StatelessWidget {
   const _Composer({
     required this.controller,
     required this.awaiting,
+    required this.enabled,
     required this.sending,
     required this.onSend,
     required this.onChanged,
@@ -354,6 +453,7 @@ class _Composer extends StatelessWidget {
 
   final TextEditingController controller;
   final bool awaiting;
+  final bool enabled;
   final bool sending;
   final VoidCallback onSend;
   final VoidCallback onChanged;
@@ -369,7 +469,12 @@ class _Composer extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(Space.md, Space.sm, Space.sm, Space.sm),
+          padding: const EdgeInsets.fromLTRB(
+            Space.md,
+            Space.sm,
+            Space.sm,
+            Space.sm,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -382,10 +487,12 @@ class _Composer extends StatelessWidget {
                       minLines: 1,
                       maxLines: 5,
                       maxLength: 1000,
-                      enabled: !awaiting,
+                      enabled: enabled && !awaiting && !sending,
                       textCapitalization: TextCapitalization.sentences,
                       decoration: InputDecoration(
-                        hintText: awaiting ? 'Aguardando resposta…' : 'Escreva sua pergunta',
+                        hintText: awaiting
+                            ? 'Aguardando resposta…'
+                            : 'Escreva sua pergunta',
                         counterText: '',
                         fillColor: p.surfaceMuted,
                         enabledBorder: OutlineInputBorder(
@@ -400,7 +507,10 @@ class _Composer extends StatelessWidget {
                           borderRadius: BorderRadius.circular(Radii.xl),
                           borderSide: BorderSide.none,
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: Space.lg, vertical: Space.md),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: Space.lg,
+                          vertical: Space.md,
+                        ),
                       ),
                       onChanged: (_) => onChanged(),
                     ),
@@ -413,7 +523,13 @@ class _Composer extends StatelessWidget {
                       foregroundColor: context.colors.onTertiary,
                       minimumSize: const Size(48, 48),
                     ),
-                    onPressed: sending || awaiting ? null : onSend,
+                    onPressed:
+                        !enabled ||
+                            sending ||
+                            awaiting ||
+                            controller.text.trim().isEmpty
+                        ? null
+                        : onSend,
                     icon: sending
                         ? const SizedBox(
                             width: 20,
@@ -426,7 +542,7 @@ class _Composer extends StatelessWidget {
               ),
               const SizedBox(height: Space.xs),
               Text(
-                'Respostas geradas por IA podem conter erros e não substituem orientação profissional.',
+                'Consultas aos registros desta conta. Não substitui orientação profissional.',
                 style: context.text.labelSmall,
                 textAlign: TextAlign.center,
               ),
@@ -474,7 +590,11 @@ class _Bubble extends StatelessWidget {
             children: [
               Icon(Icons.error_outline, size: 18, color: p.error),
               const SizedBox(width: Space.xs),
-              Flexible(child: Text(message.errorMessage ?? 'Não foi possível gerar a resposta.')),
+              Flexible(
+                child: Text(
+                  message.errorMessage ?? 'Não foi possível gerar a resposta.',
+                ),
+              ),
             ],
           ),
           if (onRetry != null)
@@ -486,21 +606,31 @@ class _Bubble extends StatelessWidget {
         ],
       );
     } else if (mine) {
-      content = SelectableText(message.content ?? '', style: context.text.bodyMedium);
+      content = SelectableText(
+        message.content ?? '',
+        style: context.text.bodyMedium,
+      );
     } else {
       content = _FormattedText(message.content ?? '');
     }
 
     final bubble = Container(
       margin: const EdgeInsets.symmetric(vertical: Space.xs),
-      padding: const EdgeInsets.symmetric(horizontal: Space.md + 2, vertical: Space.md),
+      padding: const EdgeInsets.symmetric(
+        horizontal: Space.md + 2,
+        vertical: Space.md,
+      ),
       decoration: BoxDecoration(
         color: mine
             ? p.brandContainer
             : message.safetyReply
             ? p.warningContainer
             : scheme.surface,
-        border: mine ? null : Border.all(color: message.safetyReply ? p.warningContainer : p.border),
+        border: mine
+            ? null
+            : Border.all(
+                color: message.safetyReply ? p.warningContainer : p.border,
+              ),
         borderRadius: BorderRadius.only(
           topLeft: const Radius.circular(Radii.lg),
           topRight: const Radius.circular(Radii.lg),
@@ -518,9 +648,16 @@ class _Bubble extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.health_and_safety_outlined, size: 16, color: p.warning),
+                  Icon(
+                    Icons.health_and_safety_outlined,
+                    size: 16,
+                    color: p.warning,
+                  ),
                   const SizedBox(width: Space.xs),
-                  Text('Orientação de segurança', style: context.text.labelMedium),
+                  Text(
+                    'Orientação de segurança',
+                    style: context.text.labelMedium,
+                  ),
                 ],
               ),
             ),
@@ -534,7 +671,9 @@ class _Bubble extends StatelessWidget {
     return Align(
       alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.86),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.sizeOf(context).width * 0.86,
+        ),
         child: mine
             ? bubble
             : Row(
@@ -598,18 +737,33 @@ class _FormattedText extends StatelessWidget {
                       SizedBox(
                         width: 22,
                         child: Text(
-                          RegExp(r'^\s*(\d+[.)])').firstMatch(line)?.group(1) ?? '•',
+                          RegExp(r'^\s*(\d+[.)])').firstMatch(line)?.group(1) ??
+                              '•',
                           style: base,
                         ),
                       ),
                       Expanded(
-                        child: Text.rich(TextSpan(children: _inline(line.replaceFirst(_bullet, ''), base))),
+                        child: Text.rich(
+                          TextSpan(
+                            children: _inline(
+                              line.replaceFirst(_bullet, ''),
+                              base,
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 )
               else if (line.trim().isNotEmpty)
-                Text.rich(TextSpan(children: _inline(line.trim().replaceAll(RegExp(r'^#+\s*'), ''), base))),
+                Text.rich(
+                  TextSpan(
+                    children: _inline(
+                      line.trim().replaceAll(RegExp(r'^#+\s*'), ''),
+                      base,
+                    ),
+                  ),
+                ),
           ],
         ],
       ),

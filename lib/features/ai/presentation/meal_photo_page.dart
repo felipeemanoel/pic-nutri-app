@@ -219,7 +219,17 @@ class _MealPhotoPageState extends ConsumerState<MealPhotoPage> {
             ),
         ],
       ),
-      body: AnimatedSwitcher(
+      body: Column(
+        children: [
+          AiSteps(
+            current: switch (_stage) {
+              _Stage.choose || _Stage.preview || _Stage.uploading || _Stage.uploadFailed => 0,
+              _Stage.analyzing || _Stage.slow => 1,
+              _Stage.result => 2,
+            },
+          ),
+          Expanded(
+            child: AnimatedSwitcher(
         duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : Motion.medium,
         child: KeyedSubtree(
           key: ValueKey(_stage),
@@ -278,9 +288,63 @@ class _MealPhotoPageState extends ConsumerState<MealPhotoPage> {
             ),
           },
         ),
+            ),
+          ),
+        ],
       ),
     );
   }
+}
+
+/// Etapas do registro por IA: envio, análise, revisão e registro.
+/// A revisão e o registro acontecem na tela da refeição (nada é salvo antes).
+class AiSteps extends StatelessWidget {
+  const AiSteps({super.key, required this.current});
+
+  /// 0 = envio, 1 = análise, 2 = revisão, 3 = registro.
+  final int current;
+
+  static const labels = ['Envio', 'Análise', 'Revisão', 'Registro'];
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    label: 'Etapa ${current + 1} de ${labels.length}: ${labels[current]}',
+    excludeSemantics: true,
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(Space.page, Space.sm, Space.page, Space.sm),
+      child: Row(
+        children: [
+          for (var i = 0; i < labels.length; i++) ...[
+            if (i > 0)
+              Expanded(
+                child: Divider(color: i <= current ? context.colors.primary : context.pic.border, thickness: 2),
+              ),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircleAvatar(
+                  radius: 12,
+                  backgroundColor: i <= current ? context.colors.primary : context.pic.surfaceMuted,
+                  foregroundColor: i <= current ? context.colors.onPrimary : context.pic.textSecondary,
+                  child: i < current
+                      ? const Icon(Icons.check, size: 14)
+                      : Text('${i + 1}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                ),
+                const SizedBox(height: Space.xxs),
+                Text(
+                  labels[i],
+                  style: context.text.labelSmall?.copyWith(
+                    color: i == current ? context.colors.onSurface : context.pic.textSecondary,
+                    fontWeight: i == current ? FontWeight.w600 : null,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    ),
+  );
 }
 
 class _ChooseView extends ConsumerWidget {

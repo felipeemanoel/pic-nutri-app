@@ -12,7 +12,7 @@ import '../data/symptom_models.dart';
 import '../data/symptom_repository.dart';
 import 'symptom_form.dart';
 
-/// Sintomas e bem-estar: linha do tempo, registro e resumo para compartilhar.
+/// Bem-estar (sintomas): linha do tempo, registro e resumo para compartilhar.
 class SymptomsPage extends ConsumerWidget {
   const SymptomsPage({super.key});
 
@@ -34,7 +34,7 @@ class SymptomsPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sintomas e bem-estar'),
+        title: const Text('Bem-estar'),
         actions: [
           IconButton(
             tooltip: 'Compartilhar resumo',

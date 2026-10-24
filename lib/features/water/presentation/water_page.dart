@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/design/design_system.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/request_id.dart';
 import '../../../shared/state/refresh.dart';
@@ -10,7 +11,6 @@ import '../../../shared/widgets/charts.dart';
 import '../../../shared/widgets/day_navigator.dart';
 import '../../../shared/widgets/feedback.dart';
 import '../../../shared/widgets/form_fields.dart';
-import '../../../shared/widgets/progress_widgets.dart';
 import '../../../shared/widgets/state_views.dart';
 import '../../auth/application/session_controller.dart';
 import '../../profile/data/profile_repository.dart';
@@ -119,7 +119,7 @@ class _WaterPageState extends ConsumerState<WaterPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Água')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        padding: const EdgeInsets.fromLTRB(Space.page, 0, Space.page, Space.xxl),
         children: [
           const DayNavigator(),
           AsyncValueView<WaterDay>(
@@ -128,65 +128,61 @@ class _WaterPageState extends ConsumerState<WaterPage> {
             data: (w) => Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Stat(
-                          value: Fmt.ml(w.totalMl),
-                          label: 'de ${Fmt.ml(w.goalMl)} (meta de referência)',
-                        ),
-                        const SizedBox(height: 12),
-                        LabeledProgress(
-                          label: 'Progresso do dia',
-                          value: w.totalMl.toDouble(),
-                          unit: 'ml',
-                          goal: w.goalMl,
-                        ),
-                        const SizedBox(height: 12),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            for (final ml in const [150, 200, 300, 500])
-                              ActionChip(
-                                avatar: const Icon(
-                                  Icons.water_drop_outlined,
-                                  size: 18,
-                                ),
-                                label: Text('+$ml ml'),
-                                onPressed: _busy ? null : () => _add(day, ml),
-                              ),
-                            ActionChip(
-                              avatar: const Icon(Icons.edit_outlined, size: 18),
-                              label: const Text('Outro valor'),
-                              onPressed: _busy
-                                  ? null
-                                  : () async {
-                                      final ml = await _askAmount();
-                                      if (ml != null) await _add(day, ml);
-                                    },
-                            ),
-                          ],
-                        ),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: TextButton(
-                            onPressed: _busy ? null : () => _editGoal(w.goalMl),
-                            child: const Text('Ajustar meta diária'),
+                // Consumido, meta e botões rápidos em destaque.
+                AppCard(
+                  semanticLabel: 'Água: ${Fmt.ml(w.totalMl)} de ${Fmt.ml(w.goalMl)}.',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ExcludeSemantics(
+                        child: Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(text: Fmt.ml(w.totalMl), style: context.text.headlineMedium),
+                              TextSpan(text: '  de ${Fmt.ml(w.goalMl)}', style: context.text.bodyLarge),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: Space.md),
+                      ExcludeSemantics(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(Radii.pill),
+                          child: LinearProgressIndicator(
+                            value: w.goalMl > 0 ? (w.totalMl / w.goalMl).clamp(0.0, 1.0) : 0,
+                            minHeight: 10,
+                            color: context.pic.water,
+                            backgroundColor: context.pic.surfaceMuted,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: Space.lg),
+                      Wrap(
+                        spacing: Space.sm,
+                        runSpacing: Space.sm,
+                        children: [
+                          for (final ml in const [150, 200, 300, 500])
+                            FilledButton.tonalIcon(
+                              onPressed: _busy ? null : () => _add(day, ml),
+                              icon: const Icon(Icons.add_rounded),
+                              label: Text('$ml ml'),
+                            ),
+                          OutlinedButton(
+                            onPressed: _busy
+                                ? null
+                                : () async {
+                                    final ml = await _askAmount();
+                                    if (ml != null) await _add(day, ml);
+                                  },
+                            child: const Text('Outro valor'),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'Registros',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+                const SizedBox(height: Space.section),
+                Text('Registros do dia', style: context.text.titleMedium),
                 if (w.entries.isEmpty)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 12),
@@ -240,12 +236,9 @@ class _WaterPageState extends ConsumerState<WaterPage> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          Text(
-            'Últimos 7 dias',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
+          const SizedBox(height: Space.section),
+          Text('Últimos 7 dias', style: context.text.titleMedium),
+          const SizedBox(height: Space.sm),
           history.when(
             data: (days) => DailyBarChart(
               days: [for (final d in days) (d.date, d.totalMl.toDouble())],
@@ -254,6 +247,19 @@ class _WaterPageState extends ConsumerState<WaterPage> {
             loading: () => const LoadingView(),
             error: (e, _) => ErrorView(message: friendlyMessage(e)),
           ),
+          // Meta separada do registro de um copo.
+          const SizedBox(height: Space.section),
+          if (water.value case final w?)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.flag_outlined),
+              title: const Text('Meta diária de água'),
+              subtitle: Text(Fmt.ml(w.goalMl)),
+              trailing: TextButton(
+                onPressed: _busy ? null : () => _editGoal(w.goalMl),
+                child: const Text('Alterar'),
+              ),
+            ),
         ],
       ),
     );

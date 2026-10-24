@@ -30,19 +30,19 @@ const introSteps = [
     icon: Icons.restaurant_menu_rounded,
     title: 'Registre suas refeições',
     message:
-        'Na aba Alimentação, toque em "Refeição". Pode ser por foto, por texto ou buscando os alimentos.',
+        'No Início ou na Alimentação, toque em "Registrar refeição". Pode ser por foto ou buscando os alimentos.',
   ),
   IntroStep(
     icon: Icons.water_drop_rounded,
     title: 'Registre a água',
     message:
-        'No Início, toque em "200 ml" no cartão de água a cada copo. Tocando no cartão, você informa outras quantidades.',
+        'No Início, toque em "200 ml" no cartão de água a cada copo. A seta ao lado oferece outras quantidades.',
   ),
   IntroStep(
     icon: Icons.insights_rounded,
     title: 'Acompanhe metas e evolução',
     message:
-        'O Início mostra suas metas do dia e o resumo da semana. Em Evolução, você vê seu progresso com o tempo.',
+        'O Início mostra suas metas de hoje. Em Evolução, você vê a sequência, o resumo da semana e seu progresso com o tempo.',
   ),
 ];
 

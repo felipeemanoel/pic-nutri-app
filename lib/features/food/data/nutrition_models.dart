@@ -286,6 +286,7 @@ class MealTemplate {
     required this.itemNames,
     required this.usageCount,
     this.mealType,
+    this.items = const [],
   });
 
   factory MealTemplate.fromJson(Map<String, dynamic> json) => MealTemplate(
@@ -298,6 +299,7 @@ class MealTemplate {
         .map((i) => i['name'] as String? ?? '')
         .toList(),
     usageCount: toInt(json['usage_count']) ?? 0,
+    items: (json['items'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>().map(MealItem.fromJson).toList(),
   );
 
   final String id;
@@ -306,6 +308,9 @@ class MealTemplate {
   final Nutrients totals;
   final List<String> itemNames;
   final int usageCount;
+
+  /// Alimentos e quantidades salvos (revisados antes de registrar de novo).
+  final List<MealItem> items;
 }
 
 /// Resultado da busca por código de barras.

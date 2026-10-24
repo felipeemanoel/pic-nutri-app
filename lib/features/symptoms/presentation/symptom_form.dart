@@ -124,27 +124,41 @@ class _SymptomFormState extends ConsumerState<_SymptomForm> {
       data: (o) => ListView(
         padding: EdgeInsets.fromLTRB(Space.page, 0, Space.page, MediaQuery.viewInsetsOf(context).bottom + Space.xl),
         children: [
-          Text('Registrar sintoma', style: context.text.titleLarge),
+          Semantics(header: true, child: Text('Como você está se sentindo?', style: context.text.titleLarge)),
+          const SizedBox(height: Space.xs),
           Text(o.disclaimer, style: context.text.bodySmall),
           const SizedBox(height: Space.lg),
-          DropdownButtonFormField<String>(
-            initialValue: _symptom,
-            isExpanded: true,
-            decoration: const InputDecoration(labelText: 'Sintoma'),
-            items: [for (final s in o.symptoms) DropdownMenuItem(value: s.value, child: Text(s.label))],
-            onChanged: (v) => setState(() => _symptom = v),
+          // Opções frequentes à vista, com um toque.
+          Wrap(
+            spacing: Space.sm,
+            runSpacing: Space.sm,
+            children: [
+              for (final opt in o.symptoms)
+                ChoiceChip(
+                  label: Text(opt.label),
+                  selected: _symptom == opt.value,
+                  onSelected: (v) => setState(() => _symptom = v ? opt.value : null),
+                ),
+            ],
           ),
           if (_symptom == 'other') ...[
             const SizedBox(height: Space.md),
             TextField(controller: _other, maxLength: 80, decoration: const InputDecoration(labelText: 'Qual?')),
           ],
-          const SizedBox(height: Space.lg),
-          Text('Intensidade percebida', style: context.text.titleSmall),
-          const SizedBox(height: Space.xs),
-          SegmentedButton<int>(
-            segments: [for (final i in o.intensities) ButtonSegment(value: int.parse(i.value), label: Text(i.label))],
-            selected: {_intensity},
-            onSelectionChanged: (s) => setState(() => _intensity = s.first),
+          const SizedBox(height: Space.section),
+          Text('Quanto está incomodando?', style: context.text.titleSmall),
+          const SizedBox(height: Space.sm),
+          Wrap(
+            spacing: Space.sm,
+            runSpacing: Space.sm,
+            children: [
+              for (final i in o.intensities)
+                ChoiceChip(
+                  label: Text(i.label),
+                  selected: _intensity == int.parse(i.value),
+                  onSelected: (_) => setState(() => _intensity = int.parse(i.value)),
+                ),
+            ],
           ),
           const SizedBox(height: Space.lg),
           ListTile(
@@ -154,27 +168,7 @@ class _SymptomFormState extends ConsumerState<_SymptomForm> {
             subtitle: Text('${Fmt.shortDate(_at)} às ${Fmt.time(_at)}'),
             trailing: TextButton(onPressed: _pickTime, child: const Text('Alterar')),
           ),
-          Text('Contexto (opcional)', style: context.text.titleSmall),
-          const SizedBox(height: Space.xs),
-          Wrap(
-            spacing: Space.sm,
-            runSpacing: Space.sm,
-            children: [
-              for (final c in o.contexts)
-                ChoiceChip(
-                  label: Text(c.label),
-                  selected: _context == c.value,
-                  onSelected: (v) => setState(() => _context = v ? c.value : null),
-                ),
-            ],
-          ),
-          const SizedBox(height: Space.lg),
-          TextField(
-            controller: _notes,
-            maxLength: 1000,
-            maxLines: 3,
-            decoration: const InputDecoration(labelText: 'Observações (opcional)'),
-          ),
+          // Sinais de alerta continuam à vista: são importantes para a segurança.
           ExpansionTile(
             tilePadding: EdgeInsets.zero,
             leading: Icon(Icons.warning_amber_rounded, color: context.pic.error),
@@ -190,8 +184,39 @@ class _SymptomFormState extends ConsumerState<_SymptomForm> {
                 ),
             ],
           ),
+          // Complementos: contexto e observações.
+          ExpansionTile(
+            tilePadding: EdgeInsets.zero,
+            leading: const Icon(Icons.notes_rounded),
+            title: const Text('Contexto e observações (opcional)'),
+            initiallyExpanded: _context != null || _notes.text.isNotEmpty,
+            children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Wrap(
+                  spacing: Space.sm,
+                  runSpacing: Space.sm,
+                  children: [
+                    for (final c in o.contexts)
+                      ChoiceChip(
+                        label: Text(c.label),
+                        selected: _context == c.value,
+                        onSelected: (v) => setState(() => _context = v ? c.value : null),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: Space.md),
+              TextField(
+                controller: _notes,
+                maxLength: 1000,
+                maxLines: 3,
+                decoration: const InputDecoration(labelText: 'Observações'),
+              ),
+            ],
+          ),
           const SizedBox(height: Space.lg),
-          LoadingButton(label: 'Salvar', loading: _saving, onPressed: _save),
+          LoadingButton(label: 'Registrar', loading: _saving, onPressed: _save),
         ],
       ),
     );

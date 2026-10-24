@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/env.dart';
+import '../../../app/features.dart';
 import '../../../app/routes.dart';
 import '../../../core/design/design_system.dart';
 import '../../../core/design/theme_preference.dart';
@@ -10,6 +11,8 @@ import '../../../core/utils/formatters.dart';
 import '../../../shared/labels.dart';
 import '../../../shared/widgets/feedback.dart';
 import '../../auth/application/session_controller.dart';
+import '../../notifications/presentation/notification_bell.dart';
+import 'profile_photo.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -33,7 +36,10 @@ class ProfilePage extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Perfil')),
+      appBar: AppBar(
+        title: const Text('Perfil'),
+        actions: const [NotificationBell()],
+      ),
       body: ListView(
         children: [
           Padding(
@@ -45,19 +51,7 @@ class ProfilePage extends ConsumerWidget {
             ),
             child: Row(
               children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: context.pic.brandContainer,
-                  foregroundColor: context.pic.onBrandContainer,
-                  child: Text(
-                    account.firstName.isEmpty
-                        ? '?'
-                        : account.firstName[0].toUpperCase(),
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: context.pic.onBrandContainer,
-                    ),
-                  ),
-                ),
+                const ProfilePhoto(),
                 const SizedBox(width: Space.lg),
                 Expanded(
                   child: Column(
@@ -72,45 +66,23 @@ class ProfilePage extends ConsumerWidget {
             ),
           ),
           const Divider(),
-          const _Header('Meu perfil'),
+          // Três grupos: Conta, Preferências e Ajuda. Hábitos, relatórios e
+          // bem-estar ficam na Evolução; receitas e artigos, na aba Conteúdo;
+          // a central de notificações, no sino do topo.
+          const _Header('Conta'),
           ListTile(
             leading: const Icon(Icons.flag_outlined),
-            title: const Text('Objetivo'),
-            subtitle: Text(Labels.of(Labels.goals, profile.goal)),
-          ),
-          ListTile(
-            leading: const Icon(Icons.local_fire_department_outlined),
-            title: const Text('Metas diárias'),
+            title: const Text('Perfil, objetivo e metas'),
             subtitle: Text(
               [
+                Labels.of(Labels.goals, profile.goal),
                 if (profile.dailyCalorieGoal != null)
                   Fmt.kcal(profile.dailyCalorieGoal!),
                 'Água ${Fmt.ml(profile.waterGoalMl)}',
               ].join(' · '),
             ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.edit_outlined),
-            title: const Text('Editar perfil e metas'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push(AppRoutes.editProfile),
-          ),
-          ListTile(
-            leading: const Icon(Icons.notifications_outlined),
-            title: const Text('Notificações e lembretes'),
-            subtitle: Text(
-              profile.notificationsEnabled
-                  ? 'Ativadas neste aparelho'
-                  : 'Desativadas neste aparelho',
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(AppRoutes.notificationSettings),
-          ),
-          ListTile(
-            leading: const Icon(Icons.inbox_outlined),
-            title: const Text('Central de notificações'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(AppRoutes.notifications),
           ),
           ListTile(
             leading: const Icon(Icons.workspace_premium_outlined),
@@ -118,42 +90,27 @@ class ProfilePage extends ConsumerWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push(AppRoutes.plan),
           ),
-          const Divider(),
-          // Telas dentro das abas: `go` troca para a aba (o Perfil fica fora delas).
-          const _Header('Saúde e histórico'),
-          ListTile(
-            leading: const Icon(Icons.healing_outlined),
-            title: const Text('Sintomas e bem-estar'),
-            subtitle: const Text('Registro, linha do tempo e resumo'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.go(AppRoutes.symptoms),
-          ),
-          ListTile(
-            leading: const Icon(Icons.bar_chart_rounded),
-            title: const Text('Relatórios e histórico'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.go(AppRoutes.reports),
-          ),
-          ListTile(
-            leading: const Icon(Icons.emoji_events_outlined),
-            title: const Text('Hábitos e conquistas'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.go(AppRoutes.engagement),
-          ),
-          const Divider(),
-          const _Header('Ajuda'),
-          ListTile(
-            leading: const Icon(Icons.help_outline),
-            title: const Text('Central de ajuda'),
-            subtitle: const Text('Perguntas frequentes e orientações de uso'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(AppRoutes.help),
-          ),
-          const Divider(),
-          const _Header('Aparência'),
-          const _ThemeSelector(),
-          const Divider(),
-          const _Header('Conta e segurança'),
+          if (AppFeatures.medical) ...[
+            ListTile(
+              leading: const Icon(Icons.groups_outlined),
+              title: const Text('Profissionais'),
+              subtitle: const Text(
+                'Encontre nutricionistas e educadores físicos',
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push(AppRoutes.professionals),
+            ),
+            if (!profile.medicationTrackingEnabled)
+              ListTile(
+                leading: const Icon(Icons.medication_outlined),
+                title: const Text('Acompanhar medicamento'),
+                subtitle: const Text(
+                  'Registre aplicações prescritas e sintomas na Evolução',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push(AppRoutes.editProfile),
+              ),
+          ],
           ListTile(
             leading: const Icon(Icons.key_outlined),
             title: const Text('Formas de acesso'),
@@ -169,6 +126,43 @@ class ProfilePage extends ConsumerWidget {
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push(AppRoutes.privacy),
+          ),
+          const Divider(),
+          const _Header('Preferências'),
+          ListTile(
+            leading: const Icon(Icons.notifications_outlined),
+            title: const Text('Notificações e lembretes'),
+            subtitle: Text(
+              profile.notificationsEnabled
+                  ? 'Ativadas neste aparelho'
+                  : 'Desativadas neste aparelho',
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(AppRoutes.notificationSettings),
+          ),
+          const ListTile(
+            leading: Icon(Icons.palette_outlined),
+            title: Text('Tema'),
+            dense: true,
+          ),
+          const _ThemeSelector(),
+          const Divider(),
+          const _Header('Ajuda'),
+          ListTile(
+            leading: const Icon(Icons.auto_awesome_outlined),
+            title: const Text('Assistente'),
+            subtitle: const Text(
+              'Consulte seus registros e tire dúvidas sobre o app',
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(AppRoutes.assistant),
+          ),
+          ListTile(
+            leading: const Icon(Icons.help_outline),
+            title: const Text('Central de ajuda'),
+            subtitle: const Text('Perguntas frequentes e orientações de uso'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(AppRoutes.help),
           ),
           if (env.isDev)
             ListTile(
@@ -198,11 +192,19 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-    child: Text(
-      text,
-      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-        color: Theme.of(context).colorScheme.primary,
+    padding: const EdgeInsets.fromLTRB(
+      Space.page,
+      Space.xxl,
+      Space.page,
+      Space.xs,
+    ),
+    child: Semantics(
+      header: true,
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+          color: Theme.of(context).colorScheme.primary,
+        ),
       ),
     ),
   );

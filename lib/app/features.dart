@@ -5,5 +5,15 @@
 /// com profissionais. A Play Store só aceita esses recursos de contas de
 /// organização. O padrão é `true` (app completo).
 abstract final class AppFeatures {
-  static const medical = bool.fromEnvironment('FEATURE_MEDICAL', defaultValue: true);
+  /// OFF no lançamento: mantém texto/voz guardados para uma etapa futura.
+  /// Reativar exige habilitação explícita no app e no backend.
+  static const mealTextVoice = bool.fromEnvironment(
+    'FEATURE_MEAL_TEXT_VOICE',
+    defaultValue: false,
+  );
+
+  static const medical = bool.fromEnvironment(
+    'FEATURE_MEDICAL',
+    defaultValue: true,
+  );
 }

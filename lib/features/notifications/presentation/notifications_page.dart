@@ -60,10 +60,10 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
     if (n.route == null) return;
     final target = NotificationRoutes.resolve(n.route);
     if (target == AppRoutes.notifications) return;
-    if (target == AppRoutes.notificationSettings) {
-      unawaited(context.push(target));
-    } else {
+    if (AppRoutes.isInTabs(target)) {
       context.go(target);
+    } else {
+      unawaited(context.push(target));
     }
   }
 

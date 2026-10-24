@@ -50,6 +50,7 @@ Account testAccount({
   bool onboarded = true,
   String name = 'Maria Silva',
   bool notificationsEnabled = false,
+  bool medicationTracking = false,
 }) => Account(
   name: name,
   email: 'maria@example.com',
@@ -61,6 +62,7 @@ Account testAccount({
     waterGoalMl: 2400,
     onboardingCompleted: onboarded,
     notificationsEnabled: notificationsEnabled,
+    medicationTrackingEnabled: medicationTracking,
   ),
 );
 

@@ -10,6 +10,7 @@ import '../../../shared/state/refresh.dart';
 import '../../../shared/state/selected_date.dart';
 import '../../../shared/widgets/feedback.dart';
 import '../../../shared/widgets/state_views.dart';
+import '../../ai/presentation/meal_photo_page.dart';
 import '../../assistant/presentation/chat_page.dart';
 import '../data/food_repository.dart';
 import '../data/nutrition_models.dart';
@@ -19,6 +20,9 @@ import 'item_sheets.dart';
 
 /// Criação e edição de refeição. Os totais exibidos são uma prévia; a API
 /// recalcula e grava os valores oficiais.
+/// Como abrir o editor de uma refeição nova.
+enum MealEditorStart { search }
+
 class MealEditorPage extends ConsumerStatefulWidget {
   const MealEditorPage({
     super.key,
@@ -26,7 +30,13 @@ class MealEditorPage extends ConsumerStatefulWidget {
     this.initialItems,
     this.photoAnalysisId,
     this.repeatFrom,
+    this.initialTitle,
+    this.initialType,
+    this.start,
   });
+
+  /// [MealEditorStart.search]: abre direto a busca de alimentos.
+  final MealEditorStart? start;
 
   /// Refeição existente (edição).
   final Meal? meal;
@@ -34,6 +44,10 @@ class MealEditorPage extends ConsumerStatefulWidget {
   /// Refeição usada como base para um NOVO registro ("Repetir refeição"):
   /// alimentos, quantidades e tipo vêm preenchidos; a original não muda.
   final Meal? repeatFrom;
+
+  /// Novo registro a partir de outro conteúdo (ex.: "Comi esta receita").
+  final String? initialTitle;
+  final String? initialType;
 
   /// Itens pré-preenchidos (ex.: revisão da análise por foto).
   final List<MealItem>? initialItems;
@@ -47,7 +61,9 @@ class _MealEditorPageState extends ConsumerState<MealEditorPage> {
   late final _requestId = newRequestId();
   late String _type;
   late DateTime _eatenAt;
-  late final _title = TextEditingController(text: widget.meal?.title ?? widget.repeatFrom?.title);
+  late final _title = TextEditingController(
+    text: widget.meal?.title ?? widget.repeatFrom?.title ?? widget.initialTitle,
+  );
   late final _notes = TextEditingController(text: widget.meal?.notes);
   late final List<MealItem> _items = [
     ...?widget.meal?.items,
@@ -75,11 +91,25 @@ class _MealEditorPageState extends ConsumerState<MealEditorPage> {
                 now.hour,
                 now.minute,
               ));
-    _type = widget.meal?.mealType ?? MealTypes.suggestFor(_eatenAt);
+    _type =
+        widget.meal?.mealType ??
+        widget.initialType ??
+        MealTypes.suggestFor(_eatenAt);
+    if (widget.start == MealEditorStart.search) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _addFromDatabase();
+      });
+    }
     final base = widget.repeatFrom;
     if (base != null) {
       // Dia selecionado no diário, no mesmo horário da refeição original (nunca no futuro).
-      final at = DateTime(selected.year, selected.month, selected.day, base.eatenAt.hour, base.eatenAt.minute);
+      final at = DateTime(
+        selected.year,
+        selected.month,
+        selected.day,
+        base.eatenAt.hour,
+        base.eatenAt.minute,
+      );
       _eatenAt = at.isAfter(now) ? now : at;
       _type = base.mealType;
     }
@@ -173,9 +203,8 @@ class _MealEditorPageState extends ConsumerState<MealEditorPage> {
   Future<void> _saveAsFavorite() =>
       saveFavoriteMeal(context, ref, widget.meal!);
 
-  /// Ações do item: editar, pedir substituições ao assistente ou remover.
+  /// Ações do item: editar, consultar metas ou remover.
   Future<void> _itemActions(int index) async {
-    final item = _items[index];
     final action = await showModalBottomSheet<String>(
       context: context,
       builder: (sheet) => SafeArea(
@@ -189,9 +218,9 @@ class _MealEditorPageState extends ConsumerState<MealEditorPage> {
             ),
             ListTile(
               leading: Icon(Icons.auto_awesome_outlined, color: sheet.pic.ai),
-              title: const Text('Sugerir substituições'),
+              title: const Text('Consultar minhas metas'),
               subtitle: const Text(
-                'Pergunte ao assistente, considerando suas preferências',
+                'Veja as metas que você cadastrou no aplicativo',
               ),
               onTap: () => Navigator.of(sheet).pop('swap'),
             ),
@@ -211,9 +240,8 @@ class _MealEditorPageState extends ConsumerState<MealEditorPage> {
       case 'swap':
         await context.push(
           AppRoutes.chat,
-          extra: ChatDraft(
-            'Quais substituições posso fazer para "${item.name}" (${item.quantityLabel}) '
-            'nesta refeição, considerando minhas metas, preferências e restrições?',
+          extra: const ChatDraft(
+            'Quais são minhas metas registradas no PicNutri?',
           ),
         );
       case 'remove':
@@ -265,6 +293,15 @@ class _MealEditorPageState extends ConsumerState<MealEditorPage> {
         actions: [
           if (_isEdit)
             IconButton(
+              tooltip: 'Consultar minha alimentação de hoje',
+              icon: Icon(Icons.auto_awesome_outlined, color: context.pic.ai),
+              onPressed: () => context.push(
+                AppRoutes.chat,
+                extra: const ChatDraft('Como foi minha alimentação hoje?'),
+              ),
+            ),
+          if (_isEdit)
+            IconButton(
               tooltip: 'Salvar como favorita',
               icon: const Icon(Icons.star_outline_rounded),
               onPressed: _saving ? null : _saveAsFavorite,
@@ -277,9 +314,34 @@ class _MealEditorPageState extends ConsumerState<MealEditorPage> {
             ),
         ],
       ),
+      // Registrar sempre visível, mesmo com a lista de alimentos longa.
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            Space.page,
+            Space.sm,
+            Space.page,
+            Space.md,
+          ),
+          child: LoadingButton(
+            label: _isEdit ? 'Salvar refeição' : 'Registrar refeição',
+            loading: _saving,
+            onPressed: _save,
+          ),
+        ),
+      ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(
+          Space.page,
+          Space.md,
+          Space.page,
+          Space.xxl,
+        ),
         children: [
+          if (widget.photoAnalysisId != null) ...[
+            const AiSteps(current: 2),
+            const SizedBox(height: Space.sm),
+          ],
           if (_isRepeat) ...[
             StatusBanner(
               tone: BannerTone.info,
@@ -289,41 +351,17 @@ class _MealEditorPageState extends ConsumerState<MealEditorPage> {
                   'Revise alimentos, quantidades, tipo, data e horário. '
                   'Nada é salvo até você tocar em "Registrar refeição", e a refeição original não muda.',
             ),
-            const SizedBox(height: Space.md),
+            const SizedBox(height: Space.lg),
           ],
-          DropdownButtonFormField<String>(
-            initialValue: _type,
-            decoration: const InputDecoration(labelText: 'Tipo de refeição'),
-            items: [
-              for (final e in MealTypes.labels.entries)
-                DropdownMenuItem(value: e.key, child: Text(e.value)),
-            ],
-            onChanged: (v) => setState(() => _type = v ?? _type),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _title,
-            decoration: const InputDecoration(
-              labelText: 'Nome personalizado (opcional)',
-              hintText: 'Ex.: Pré-treino',
-            ),
-            maxLength: 80,
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.schedule),
-            title: const Text('Data e horário'),
-            subtitle: Text(
-              '${Fmt.shortDate(_eatenAt)} às ${Fmt.time(_eatenAt)}',
-            ),
-            trailing: const Icon(Icons.edit_outlined),
-            onTap: _pickTime,
-          ),
-          const Divider(),
+          // Alimentos e quantidades: o centro da tela.
           Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Expanded(
-                child: Text('Alimentos', style: theme.textTheme.titleMedium),
+                child: Semantics(
+                  header: true,
+                  child: Text('Alimentos', style: theme.textTheme.titleMedium),
+                ),
               ),
               Text(
                 Fmt.kcal(preview.energyKcal),
@@ -332,7 +370,7 @@ class _MealEditorPageState extends ConsumerState<MealEditorPage> {
             ],
           ),
           Text(
-            'P ${Fmt.grams(preview.proteinG)} · C ${Fmt.grams(preview.carbsG)} · G ${Fmt.grams(preview.fatG)}',
+            'Proteínas ${Fmt.grams(preview.proteinG)} · Carboidratos ${Fmt.grams(preview.carbsG)} · Gorduras ${Fmt.grams(preview.fatG)}',
             style: theme.textTheme.bodySmall,
           ),
           if (hasAi)
@@ -341,15 +379,18 @@ class _MealEditorPageState extends ConsumerState<MealEditorPage> {
               child: StatusBanner(
                 tone: BannerTone.ai,
                 message:
-                    'Itens com o selo de IA são estimativas feitas a partir da foto. '
+                    'Itens com o selo de IA são estimativas. '
                     'Toque em um item para corrigir porções e valores antes de salvar.',
               ),
             ),
-          const SizedBox(height: 8),
+          const SizedBox(height: Space.sm),
           if (_items.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Text('Nenhum alimento adicionado.'),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: Space.lg),
+              child: Text(
+                'Nenhum alimento adicionado ainda.',
+                style: theme.textTheme.bodyMedium,
+              ),
             ),
           for (var i = 0; i < _items.length; i++)
             Dismissible(
@@ -357,7 +398,7 @@ class _MealEditorPageState extends ConsumerState<MealEditorPage> {
               direction: DismissDirection.endToStart,
               background: Container(
                 alignment: Alignment.centerRight,
-                padding: const EdgeInsets.only(right: 16),
+                padding: const EdgeInsets.only(right: Space.lg),
                 color: theme.colorScheme.errorContainer,
                 child: const Icon(Icons.delete_outline),
               ),
@@ -373,11 +414,13 @@ class _MealEditorPageState extends ConsumerState<MealEditorPage> {
                     ],
                   ],
                 ),
+                // Quantidade em destaque: é o que mais se ajusta.
                 subtitle: Text(
                   '${_items[i].quantityLabel} · ${Fmt.kcal(_items[i].nutrients.energyKcal)}',
+                  style: theme.textTheme.bodyMedium,
                 ),
                 trailing: IconButton(
-                  tooltip: 'Remover',
+                  tooltip: 'Remover ${_items[i].name}',
                   icon: const Icon(Icons.close),
                   onPressed: () => setState(() => _items.removeAt(i)),
                 ),
@@ -385,17 +428,17 @@ class _MealEditorPageState extends ConsumerState<MealEditorPage> {
                 onLongPress: () => _itemActions(i),
               ),
             ),
-          const SizedBox(height: 8),
+          const SizedBox(height: Space.sm),
           Row(
             children: [
               Expanded(
-                child: OutlinedButton.icon(
+                child: FilledButton.tonalIcon(
                   onPressed: _addFromDatabase,
                   icon: const Icon(Icons.search),
                   label: const Text('Buscar alimento'),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: Space.sm),
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: _addManual,
@@ -405,20 +448,56 @@ class _MealEditorPageState extends ConsumerState<MealEditorPage> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _notes,
-            decoration: const InputDecoration(
-              labelText: 'Observações (opcional)',
-            ),
-            maxLength: 500,
-            maxLines: 2,
+          const SizedBox(height: Space.section),
+          // Quando e qual refeição.
+          DropdownButtonFormField<String>(
+            initialValue: _type,
+            decoration: const InputDecoration(labelText: 'Tipo de refeição'),
+            items: [
+              for (final e in MealTypes.labels.entries)
+                DropdownMenuItem(value: e.key, child: Text(e.value)),
+            ],
+            onChanged: (v) => setState(() => _type = v ?? _type),
           ),
-          const SizedBox(height: 8),
-          LoadingButton(
-            label: _isEdit ? 'Salvar refeição' : 'Registrar refeição',
-            loading: _saving,
-            onPressed: _save,
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.schedule),
+            title: const Text('Data e horário'),
+            subtitle: Text(
+              '${Fmt.shortDate(_eatenAt)} às ${Fmt.time(_eatenAt)}',
+            ),
+            trailing: const Icon(Icons.edit_outlined),
+            onTap: _pickTime,
+          ),
+          // Opcionais recolhidos: nome personalizado e observações.
+          Theme(
+            data: theme.copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              childrenPadding: EdgeInsets.zero,
+              initiallyExpanded:
+                  _title.text.isNotEmpty || _notes.text.isNotEmpty,
+              title: Text(
+                'Nome e observações (opcional)',
+                style: theme.textTheme.bodyLarge,
+              ),
+              children: [
+                TextField(
+                  controller: _title,
+                  decoration: const InputDecoration(
+                    labelText: 'Nome personalizado',
+                    hintText: 'Ex.: Pré-treino',
+                  ),
+                  maxLength: 80,
+                ),
+                TextField(
+                  controller: _notes,
+                  decoration: const InputDecoration(labelText: 'Observações'),
+                  maxLength: 500,
+                  maxLines: 2,
+                ),
+              ],
+            ),
           ),
         ],
       ),

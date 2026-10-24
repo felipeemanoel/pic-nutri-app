@@ -65,12 +65,12 @@ void main() {
 
     expect(find.text('Nenhuma refeição registrada neste dia.'), findsOneWidget);
     expect(find.text('Suas refeições do dia aparecem aqui.'), findsOneWidget);
-    expect(find.text('Registrar refeição'), findsOneWidget);
-    expect(find.text('500 / 2.000 ml'), findsOneWidget);
-    expect(find.text('25%'), findsOneWidget);
+    expect(find.text('Registrar refeição'), findsOneWidget, reason: 'uma ação principal, sem repetição');
+    expect(find.text('500 de 2.000 ml'), findsOneWidget);
+
   });
 
-  testWidgets('home em celular destaca cuidados e sequência sem estourar', (
+  testWidgets('home em celular: só o essencial de hoje, sem estourar', (
     tester,
   ) async {
     tester.view
@@ -79,10 +79,30 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(_app(Dashboard.fromJson(_dashboardJson())));
     await tester.pumpAndSettle();
-    expect(find.text('Sua sequência'), findsOneWidget);
-    expect(find.text('Seus cuidados de hoje'), findsOneWidget);
-    expect(find.text('Defina sua meta no perfil'), findsOneWidget);
-    expect(find.text('500 ml de 2.000 ml'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    // Sequência, semana e conteúdos foram para a Evolução e a Alimentação.
+    expect(find.text('Sua sequência'), findsNothing);
+    expect(find.text('Hábitos e conquistas'), findsNothing);
+    // O Início é sempre hoje: sem navegador de dias.
+    expect(find.byTooltip('Dia anterior'), findsNothing);
+    // Próximo passo: o que falta, sem repetir os números dos cartões acima.
+    await tester.scrollUntilVisible(find.text('Faltam 1.500 ml de água'), 200);
+    expect(find.text('Registrar água'), findsOneWidget);
+    expect(find.text('Registrar refeição'), findsOneWidget);
+  });
+
+  testWidgets('água: menu com outros volumes além de +200 ml', (tester) async {
+    tester.view
+      ..physicalSize = const Size(800, 2400)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(_app(Dashboard.fromJson(_dashboardJson())));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Outras quantidades de água'));
+    await tester.pumpAndSettle();
+    expect(find.text('+300 ml'), findsOneWidget);
+    expect(find.text('+500 ml'), findsOneWidget);
+    expect(find.text('Outra quantidade'), findsOneWidget);
   });
 
   testWidgets('com refeições, mostra o equilíbrio do dia e a lista', (

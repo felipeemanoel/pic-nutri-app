@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -52,11 +54,17 @@ class ProfileRepository {
   }
 
   /// Conclui o onboarding (o peso inicial, se houver, vira o primeiro registro).
-  Future<Account> finishOnboarding({double? currentWeightKg, required String requestId}) async {
+  Future<Account> finishOnboarding({
+    double? currentWeightKg,
+    required String requestId,
+  }) async {
     final response = await guard(
       () => _dio.post<Map<String, dynamic>>(
         'profile/onboarding/finish',
-        data: {'current_weight_kg': ?currentWeightKg, 'client_request_id': requestId},
+        data: {
+          'current_weight_kg': ?currentWeightKg,
+          'client_request_id': requestId,
+        },
       ),
     );
     return Account.fromJson(response.data!['data'] as Map<String, dynamic>);
@@ -93,6 +101,35 @@ class ProfileRepository {
       () => _dio.patch<Map<String, dynamic>>('me', data: {'name': name.trim()}),
     );
     return Account.fromJson(response.data!['data'] as Map<String, dynamic>);
+  }
+
+  Future<Account> uploadAvatar(Uint8List bytes) async {
+    final response = await guard(
+      () => _dio.post<Map<String, dynamic>>(
+        'me/avatar',
+        data: FormData.fromMap({
+          'photo': MultipartFile.fromBytes(bytes, filename: 'perfil.jpg'),
+        }),
+      ),
+    );
+    return Account.fromJson(response.data!['data'] as Map<String, dynamic>);
+  }
+
+  Future<Account> removeAvatar() async {
+    final response = await guard(
+      () => _dio.delete<Map<String, dynamic>>('me/avatar'),
+    );
+    return Account.fromJson(response.data!['data'] as Map<String, dynamic>);
+  }
+
+  Future<Uint8List> avatarBytes() async {
+    final response = await guard(
+      () => _dio.get<List<int>>(
+        'me/avatar',
+        options: Options(responseType: ResponseType.bytes),
+      ),
+    );
+    return Uint8List.fromList(response.data!);
   }
 
   Future<void> changePassword({

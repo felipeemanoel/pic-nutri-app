@@ -109,6 +109,19 @@ class _DayView extends ConsumerWidget {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(Space.page, Space.md, Space.page, Space.xxl),
         children: [
+          // Dia e semana explícitos.
+          Text(
+            '${_capitalizeWord(DateFormat("EEEE, d 'de' MMMM", 'pt_BR').format(day.date))} · semana de ${weekRange(plan.startsOn, plan.endsOn)}',
+            style: context.text.titleSmall,
+          ),
+          const SizedBox(height: Space.sm),
+          const StatusBanner(
+            icon: Icons.info_outline,
+            message:
+                'O plano é o que você pretende comer. Ele não entra no diário sozinho: '
+                'ao comer, toque em "Registrar no diário" no item para contar nas metas do dia.',
+          ),
+          const SizedBox(height: Space.lg),
           _DayTotals(day: day),
           for (final type in types) ...[
             SectionHeader(title: MealTypes.label(type)),
@@ -222,10 +235,12 @@ class _PlanItemTile extends ConsumerWidget {
           tooltip: 'Ações do item',
           onSelected: (action) => switch (action) {
             'log' => _log(context, ref),
+            'swap' => _swap(context, ref),
             _ => _remove(context, ref),
           },
           itemBuilder: (_) => [
-            if (item.isAvailable) const PopupMenuItem(value: 'log', child: Text('Registrar no diário agora')),
+            if (item.isAvailable) const PopupMenuItem(value: 'log', child: Text('Registrar no diário (comi)')),
+            const PopupMenuItem(value: 'swap', child: Text('Trocar por outra receita')),
             const PopupMenuItem(value: 'remove', child: Text('Remover do plano')),
           ],
         ),
@@ -239,6 +254,22 @@ class _PlanItemTile extends ConsumerWidget {
       Refresh.nutrition(ref);
       if (context.mounted) showMessage(context, '${item.title} registrado no diário.');
     } on Object catch (e) {
+      if (context.mounted) showFailure(context, e);
+    }
+  }
+
+  /// Troca só este item: mesma refeição, mesmo dia e mesmas porções.
+  Future<void> _swap(BuildContext context, WidgetRef ref) async {
+    final recipe = await showRecipePicker(context, mealType: item.mealType);
+    if (recipe == null || !context.mounted) return;
+    final repo = ref.read(planningRepositoryProvider);
+    try {
+      await repo.addRecipe(plan.id, day: item.day, mealType: item.mealType, recipeId: recipe.id, servings: item.servings ?? 1);
+      await repo.removeItem(plan.id, item.id);
+      _refreshPlan(ref, plan.id);
+      if (context.mounted) showMessage(context, '${item.title} trocado por ${recipe.title}.');
+    } on Object catch (e) {
+      _refreshPlan(ref, plan.id);
       if (context.mounted) showFailure(context, e);
     }
   }
@@ -423,7 +454,7 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
 }
 
 /// Pergunta quantas porções da receita entram no plano.
-Future<double?> askServings(BuildContext context, String title) {
+Future<double?> askServings(BuildContext context, String title, {String question = 'Quantas porções?', String confirmLabel = 'Adicionar'}) {
   var servings = 1.0;
   return showDialog<double>(
     context: context,
@@ -433,7 +464,7 @@ Future<double?> askServings(BuildContext context, String title) {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Quantas porções?'),
+            Text(question),
             const SizedBox(height: Space.md),
             SegmentedButton<double>(
               segments: const [
@@ -449,7 +480,7 @@ Future<double?> askServings(BuildContext context, String title) {
         ),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.of(context).pop(servings), child: const Text('Adicionar')),
+          FilledButton(onPressed: () => Navigator.of(context).pop(servings), child: Text(confirmLabel)),
         ],
       ),
     ),
@@ -552,3 +583,6 @@ Future<({int day, String mealType})?> _pickSlot(BuildContext context, MealPlanSu
     ),
   );
 }
+
+String _capitalizeWord(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1).replaceFirst('-feira', '');
+

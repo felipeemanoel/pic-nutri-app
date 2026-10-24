@@ -8,77 +8,121 @@ import '../../../core/design/design_system.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/widgets/charts.dart';
 import '../../../shared/widgets/feedback.dart';
-import '../../../shared/widgets/profile_button.dart';
 import '../../../shared/widgets/progress_widgets.dart';
 import '../../../shared/widgets/state_views.dart';
 import '../../auth/application/session_controller.dart';
+import '../../engagement/data/engagement_repository.dart';
+import '../../engagement/presentation/engagement_widgets.dart';
 import '../../medication/presentation/medication_tab.dart';
+import '../../notifications/presentation/notification_bell.dart';
+import '../../reports/data/report_repository.dart';
+import '../../reports/presentation/weekly_summary_card.dart';
 import '../data/body_models.dart';
 import '../data/body_repository.dart';
 import 'body_forms.dart';
 import 'progress_photos.dart';
 
-/// Evolução: peso, medidas e (opcional) medicamentos.
+/// Evolução: um resumo (sequência, semana, relatórios, hábitos e bem-estar),
+/// peso, medidas, fotos e, quando ativado, o medicamento.
 class ProgressPage extends ConsumerWidget {
   const ProgressPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // A aba de medicamento só aparece para quem ativou o acompanhamento; o
+    // convite para ativar fica no Perfil.
     final medication =
-        ref.watch(currentAccountProvider)?.profile.medicationTrackingEnabled ??
-        false;
+        AppFeatures.medical &&
+        (ref.watch(currentAccountProvider)?.profile.medicationTrackingEnabled ??
+            false);
     final tabs = [
+      const Tab(text: 'Resumo'),
       const Tab(text: 'Peso'),
       const Tab(text: 'Medidas'),
       const Tab(text: 'Fotos'),
-      if (AppFeatures.medical) const Tab(text: 'Medicamento'),
+      if (medication) const Tab(text: 'Medicamento'),
     ];
 
     return DefaultTabController(
+      // A chave recria o controlador quando a aba de medicamento entra ou sai.
+      key: ValueKey(tabs.length),
       length: tabs.length,
       child: Scaffold(
         appBar: AppBar(
-          actions: [
-            IconButton(
-              tooltip: 'Hábitos e conquistas',
-              icon: const Icon(Icons.emoji_events_outlined),
-              onPressed: () => context.push(AppRoutes.engagement),
-            ),
-            IconButton(
-              tooltip: 'Relatórios',
-              icon: const Icon(Icons.bar_chart_rounded),
-              onPressed: () => context.push(AppRoutes.reports),
-            ),
-            const ProfileButton(),
-          ],
+          actions: const [NotificationBell()],
           title: const Text('Evolução'),
           bottom: TabBar(
             tabs: tabs,
-            isScrollable: tabs.length > 3,
-            tabAlignment: tabs.length > 3 ? TabAlignment.start : null,
+            isScrollable: tabs.length > 4,
+            tabAlignment: tabs.length > 4 ? TabAlignment.start : null,
           ),
         ),
         body: TabBarView(
           children: [
+            const _SummaryTab(),
             const _WeightTab(),
             const _MeasurementsTab(),
             const ProgressPhotosTab(),
-            if (AppFeatures.medical)
-              medication
-                  ? const MedicationTab()
-                  : EmptyState(
-                      icon: Icons.medication_outlined,
-                      title: 'Acompanhe seu medicamento',
-                      message:
-                          'Ative o registro de medicamento prescrito no perfil para cadastrar aplicações, locais do corpo e sintomas.',
-                      actionLabel: 'Ativar no perfil',
-                      onAction: () => context.push(AppRoutes.editProfile),
-                    ),
+            if (medication) const MedicationTab(),
           ],
         ),
       ),
     );
   }
+}
+
+/// Visão geral da Evolução: constância, semana e o caminho para relatórios,
+/// hábitos e bem-estar, cada um com rótulo visível.
+class _SummaryTab extends ConsumerWidget {
+  const _SummaryTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => RefreshIndicator(
+    onRefresh: () async {
+      ref
+        ..invalidate(engagementProvider)
+        ..invalidate(periodReportProvider);
+    },
+    child: ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(Space.page),
+      children: [
+        const StreakCard(),
+        const SizedBox(height: Space.md),
+        const WeeklySummaryCard(),
+        const SizedBox(height: Space.section),
+        AppCard(
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.bar_chart_rounded),
+                title: const Text('Relatórios'),
+                subtitle: const Text('Semana, mês e exportação'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push(AppRoutes.reports),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.emoji_events_outlined),
+                title: const Text('Hábitos e conquistas'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push(AppRoutes.engagement),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.spa_outlined),
+                title: const Text('Bem-estar'),
+                subtitle: const Text('Sintomas, linha do tempo e resumo'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push(AppRoutes.symptoms),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class _WeightTab extends ConsumerStatefulWidget {
@@ -138,121 +182,141 @@ class _WeightTabState extends ConsumerState<_WeightTab> {
               data: (p) => Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Stat(
-                                  value: p.series.isEmpty
-                                      ? '—'
-                                      : Fmt.kg(p.series.last.weightKg),
-                                  label: 'último no período',
-                                ),
-                              ),
-                              Expanded(
-                                child: Stat(
-                                  value: signedKg(p.changeKg),
-                                  label: 'variação no período',
-                                ),
-                              ),
-                              Expanded(
-                                child: Stat(
-                                  value: signedKg(p.previousChangeKg),
-                                  label: 'período anterior',
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          if (p.series.length >= 2)
-                            DateLineChart(
-                              points: [
-                                for (final s in p.series) (s.date, s.weightKg),
-                              ],
-                              unit: 'kg',
-                              target: p.goal?.goalWeightKg,
-                              markers: [
-                                if (AppFeatures.medical)
-                                  for (final d in p.doses) d.date,
-                              ],
-                            )
-                          else
-                            const Text(
-                              'Registre o peso em pelo menos dois dias diferentes do período para ver o gráfico.',
-                            ),
-                          if (AppFeatures.medical &&
-                              p.series.length >= 2 &&
-                              p.doses.isNotEmpty) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              'Linhas tracejadas roxas: aplicações registradas (${p.doses.length} no período). '
-                              'Proximidade no tempo não indica causa.',
-                              style: theme.textTheme.bodySmall,
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
+                  // 1. Tendência, em uma frase.
                   _TrendCard(trend: p.trend),
-                  if (p.goal != null) ...[
-                    const SizedBox(height: 12),
-                    SectionCard(
-                      title: 'Objetivo pessoal',
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          LabeledProgress(
-                            label:
-                                'De ${Fmt.kg(p.goal!.startWeightKg)} para ${Fmt.kg(p.goal!.goalWeightKg)}',
-                            value: p.goal!.progressPercent,
-                            unit: '%',
-                            goal: 100,
+                  const SizedBox(height: Space.lg),
+                  // 2. Gráfico com uma explicação curta ao lado.
+                  AppCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Stat(
+                          value: signedKg(p.changeKg),
+                          label: 'variação no período',
+                        ),
+                        const SizedBox(height: Space.lg),
+                        if (p.series.length >= 2)
+                          DateLineChart(
+                            points: [
+                              for (final s in p.series) (s.date, s.weightKg),
+                            ],
+                            unit: 'kg',
+                            target: p.goal?.goalWeightKg,
+                            markers: [
+                              if (AppFeatures.medical)
+                                for (final d in p.doses) d.date,
+                            ],
+                          )
+                        else
+                          const Text(
+                            'Registre o peso em pelo menos dois dias diferentes do período para ver o gráfico.',
                           ),
-                          const SizedBox(height: 8),
+                        if (p.series.length >= 2) ...[
+                          const SizedBox(height: Space.sm),
                           Text(
-                            'Mudanças graduais e sustentáveis tendem a ser mais saudáveis. '
-                            'Converse com um profissional de saúde sobre o ritmo adequado para você.',
+                            p.goal != null
+                                ? 'Cada ponto é um registro de peso. A linha horizontal é o seu objetivo.'
+                                : 'Cada ponto é um registro de peso. Olhe a direção da linha, não um dia isolado.',
                             style: theme.textTheme.bodySmall,
                           ),
                         ],
-                      ),
+                        if (AppFeatures.medical &&
+                            p.series.length >= 2 &&
+                            p.doses.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            'Linhas tracejadas roxas: aplicações registradas (${p.doses.length} no período). '
+                            'Proximidade no tempo não indica causa.',
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
+                      ],
                     ),
-                  ],
-                  const SizedBox(height: 12),
-                  SectionCard(
-                    title: 'IMC',
-                    child: p.bmi.available
-                        ? Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                  ),
+                  // 3. Indicadores secundários, recolhidos.
+                  const SizedBox(height: Space.lg),
+                  ExpansionTile(
+                    tilePadding: EdgeInsets.zero,
+                    title: Text(
+                      'Mais indicadores',
+                      style: theme.textTheme.titleSmall,
+                    ),
+                    subtitle: const Text(
+                      'Último peso, período anterior, objetivo e IMC',
+                    ),
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Stat(
+                              value: p.series.isEmpty
+                                  ? '—'
+                                  : Fmt.kg(p.series.last.weightKg),
+                              label: 'último no período',
+                            ),
+                          ),
+                          Expanded(
+                            child: Stat(
+                              value: signedKg(p.previousChangeKg),
+                              label: 'período anterior',
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (p.goal != null) ...[
+                        const SizedBox(height: Space.md),
+                        SectionCard(
+                          title: 'Objetivo pessoal',
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              Stat(
-                                value: Fmt.decimal(p.bmi.value!),
-                                label: p.bmi.category ?? '',
+                              LabeledProgress(
+                                label:
+                                    'De ${Fmt.kg(p.goal!.startWeightKg)} para ${Fmt.kg(p.goal!.goalWeightKg)}',
+                                value: p.goal!.progressPercent,
+                                unit: '%',
+                                goal: 100,
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                p.bmi.note,
+                                'Mudanças graduais e sustentáveis tendem a ser mais saudáveis. '
+                                'Converse com um profissional de saúde sobre o ritmo adequado para você.',
                                 style: theme.textTheme.bodySmall,
                               ),
                             ],
-                          )
-                        : Text(
-                            p.bmi.reason == 'missing_data'
-                                ? 'Informe sua altura no perfil e registre o peso para calcular o IMC.'
-                                : p.bmi.note,
                           ),
+                        ),
+                      ],
+                      const SizedBox(height: Space.md),
+                      SectionCard(
+                        title: 'IMC',
+                        child: p.bmi.available
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Stat(
+                                    value: Fmt.decimal(p.bmi.value!),
+                                    label: p.bmi.category ?? '',
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    p.bmi.note,
+                                    style: theme.textTheme.bodySmall,
+                                  ),
+                                ],
+                              )
+                            : Text(
+                                p.bmi.reason == 'missing_data'
+                                    ? 'Informe sua altura no perfil e registre o peso para calcular o IMC.'
+                                    : p.bmi.note,
+                              ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: Space.section),
             Text('Histórico', style: theme.textTheme.titleMedium),
             entries.when(
               data: (list) => list.isEmpty

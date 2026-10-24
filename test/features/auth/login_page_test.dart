@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:picnutri/app/app.dart';
+import 'package:picnutri/app/routes.dart';
+import 'package:picnutri/features/ai/data/ai_models.dart';
+import 'package:picnutri/features/ai/data/ai_repository.dart';
 import 'package:picnutri/features/auth/application/session_controller.dart';
 import 'package:picnutri/features/food/data/food_repository.dart';
+import 'package:picnutri/features/food/data/nutrition_models.dart';
+import 'package:picnutri/features/help/data/help_repository.dart';
 import 'package:picnutri/features/home/data/dashboard.dart';
 import 'package:picnutri/features/home/data/dashboard_repository.dart';
+import 'package:picnutri/features/planning/data/planning_models.dart';
+import 'package:picnutri/features/planning/data/planning_repository.dart';
 
 import '../../helpers/fakes.dart';
 
@@ -27,7 +35,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Informe o e-mail'), findsOneWidget);
-    expect(find.text('Senha obrigatório'), findsOneWidget);
+    expect(find.text('Informe a senha'), findsOneWidget);
   });
 
   testWidgets('mostra o aviso de sessão expirada', (tester) async {
@@ -60,39 +68,131 @@ void main() {
     expect(find.text('Bem-vindo(a)'), findsOneWidget);
   });
 
-  testWidgets('com sessão completa, abre o início com as 5 abas', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          ...sessionOverrides(SessionSignedIn(testAccount())),
-          mealsOnDayProvider.overrideWith((ref, day) async => []),
-          // Sem API nos testes: o painel recebe um dia vazio.
-          dashboardProvider.overrideWith(
-            (ref, day) async => Dashboard.fromJson(_emptyDashboard),
-          ),
-        ],
-        child: const PicNutriApp(),
-      ),
-    );
-    await tester.pumpAndSettle();
+  testWidgets(
+    'com sessão completa, abre as 5 abas e acessa o assistente pelo Perfil',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            ...sessionOverrides(SessionSignedIn(testAccount())),
+            mealsOnDayProvider.overrideWith((ref, day) async => []),
+            nutritionSummaryProvider.overrideWith(
+              (ref, day) async => NutritionSummary.fromJson(
+                _emptyDashboard['nutrition']! as Map<String, dynamic>,
+              ),
+            ),
+            recipeSearchProvider.overrideWith(
+              (ref, filters) async => (recipes: <Recipe>[], tags: <String>[]),
+            ),
+            helpArticlesProvider.overrideWith((ref, filters) async => []),
+            conversationsProvider.overrideWith((ref) async => []),
+            aiStatusProvider.overrideWith(
+              (ref) async => AiStatus.fromJson({
+                'photo_analysis': {'available': false},
+                'assistant': {'available': true, 'limit': 3, 'remaining': 3},
+              }),
+            ),
+            // Sem API nos testes: o painel recebe um dia vazio.
+            dashboardProvider.overrideWith(
+              (ref, day) async => Dashboard.fromJson(_emptyDashboard),
+            ),
+          ],
+          child: const PicNutriApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    for (final label in [
-      'Início',
-      'Alimentação',
-      'Evolução',
-      'Assistente',
-      'Profissionais',
-    ]) {
-      expect(find.text(label), findsWidgets);
-    }
+      for (final label in ['Início', 'Alimentação', 'Evolução', 'Conteúdo']) {
+        expect(find.text(label), findsWidgets);
+      }
+      expect(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Assistente'),
+        ),
+        findsNothing,
+      );
+      await tester.tap(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Conteúdo'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Receitas'), findsOneWidget);
+      expect(find.text('Informações de saúde'), findsOneWidget);
+      expect(find.byType(BackButton), findsNothing);
 
-    // Perfil fica fora das abas, no avatar do topo.
-    await tester.tap(find.byTooltip('Perfil e configurações').first);
-    await tester.pumpAndSettle();
-    expect(find.text('Maria Silva'), findsOneWidget);
-  });
+      // O endereço antigo também seleciona a aba Conteúdo.
+      final router = GoRouter.of(tester.element(find.byType(NavigationBar)));
+      router.go(AppRoutes.legacyContents);
+      await tester.pumpAndSettle();
+      expect(
+        router.routeInformationProvider.value.uri.path,
+        AppRoutes.contents,
+      );
+      expect(
+        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+        3,
+      );
+
+      // Profissionais saiu da barra inferior: abre pelo Perfil.
+      expect(find.text('Profissionais'), findsNothing);
+
+      // Perfil fica na quinta aba; o topo oferece somente notificações.
+      await tester.tap(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Perfil'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Maria Silva'), findsOneWidget);
+      expect(find.byTooltip('Perfil e configurações'), findsNothing);
+      expect(find.text('Adicionar foto'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('Assistente'),
+        250,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await Scrollable.ensureVisible(
+        tester.element(find.text('Assistente')),
+        alignment: 0.5,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Assistente'));
+      await tester.pumpAndSettle();
+      expect(find.text('Assistente PicNutri'), findsOneWidget);
+      expect(find.byType(NavigationBar), findsNothing);
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(AppBar, 'Perfil'), findsOneWidget);
+      expect(
+        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+        4,
+      );
+      await tester.tap(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Conteúdo'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+        3,
+      );
+      // Links antigos não abrem a descrição nem solicitam o microfone.
+      await tester.binding.setSurfaceSize(const Size(800, 844));
+      router.go(AppRoutes.mealText);
+      await tester.pumpAndSettle();
+      expect(router.routeInformationProvider.value.uri.path, AppRoutes.food);
+      expect(find.text('Refeição por texto ou voz'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
 
 const _emptyDashboard = <String, dynamic>{

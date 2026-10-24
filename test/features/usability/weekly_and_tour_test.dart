@@ -61,7 +61,7 @@ void main() {
     test('semana em andamento conta só os dias até hoje', () {
       final t = WeeklySummaryText(_report(logged: 3, water: 2));
       expect(t.status, 'Em andamento');
-      expect(t.title, 'Sua semana até agora');
+      expect(t.title, 'Sua semana');
       expect(t.daysLogged, '3 de 4 dias até agora com registros');
       expect(t.goals, [
         'Meta de água: 2 de 4 dias',

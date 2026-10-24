@@ -2,22 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/features.dart';
 import '../../../app/routes.dart';
 import '../../../core/design/design_system.dart';
 import '../../../core/utils/formatters.dart';
-import '../../../core/utils/request_id.dart';
-import '../../../shared/state/refresh.dart';
 import '../../../shared/state/selected_date.dart';
 import '../../../shared/widgets/day_navigator.dart';
 import '../../../shared/widgets/feedback.dart';
-import '../../../shared/widgets/profile_button.dart';
 import '../../../shared/widgets/state_views.dart';
+import '../../notifications/presentation/notification_bell.dart';
+import '../../planning/presentation/recipes_page.dart';
 import '../data/food_repository.dart';
 import '../data/nutrition_models.dart';
 import 'favorite_meal_action.dart';
+import 'meal_editor_page.dart';
 import 'repeat_meal_sheet.dart';
 
-/// Diário alimentar do dia selecionado: resumo, macronutrientes e refeições.
+/// Diário alimentar completo: qualquer dia, resumo com macronutrientes,
+/// refeições e, abaixo, plano alimentar e receitas. Registrar é sempre pelo
+/// botão "Registrar refeição", que reúne todas as formas em um só lugar.
 class FoodPage extends ConsumerWidget {
   const FoodPage({super.key});
 
@@ -30,24 +33,12 @@ class FoodPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Alimentação'),
-        actions: [
-          IconButton(
-            tooltip: 'Plano alimentar',
-            icon: const Icon(Icons.calendar_month_outlined),
-            onPressed: () => context.push(AppRoutes.mealPlans),
-          ),
-          IconButton(
-            tooltip: 'Registrar por foto',
-            icon: Icon(Icons.photo_camera_outlined, color: context.pic.ai),
-            onPressed: () => context.push(AppRoutes.mealPhoto),
-          ),
-          const ProfileButton(),
-        ],
+        actions: const [NotificationBell()],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => chooseHowToAddMeal(context),
         icon: const Icon(Icons.add),
-        label: const Text('Refeição'),
+        label: const Text('Registrar refeição'),
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -65,15 +56,13 @@ class FoodPage extends ConsumerWidget {
           ),
           children: [
             const DayNavigator(),
+            const SizedBox(height: Space.md),
             summary.maybeWhen(
               data: (s) => _SummaryCard(summary: s),
               orElse: () => const SkeletonCard(lines: 2),
             ),
-            SectionHeader(
-              title: 'Refeições',
-              actionLabel: 'Ver favoritas',
-              onAction: () => showFavoriteMealsSheet(context),
-            ),
+            const SizedBox(height: Space.lg),
+            const SectionHeader(title: 'Refeições do dia'),
             AsyncValueView<List<Meal>>(
               value: meals,
               onRetry: () => ref.invalidate(mealsOnDayProvider(day)),
@@ -96,6 +85,9 @@ class FoodPage extends ConsumerWidget {
                       ],
                     ),
             ),
+            const SizedBox(height: Space.section),
+            const SectionHeader(title: 'Planejar e cozinhar'),
+            const _PlanAndRecipes(),
           ],
         ),
       ),
@@ -103,12 +95,92 @@ class FoodPage extends ConsumerWidget {
   }
 }
 
-/// Escolha da forma de registro: foto ou texto/voz (estimativa por IA),
-/// refeição favorita ou manual.
+/// Plano alimentar e receitas com rótulo visível (antes eram só um ícone na
+/// barra e um atalho com nome diferente do destino).
+class _PlanAndRecipes extends StatelessWidget {
+  const _PlanAndRecipes();
+
+  @override
+  Widget build(BuildContext context) => IntrinsicHeight(
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: _Shortcut(
+            icon: Icons.calendar_month_outlined,
+            label: 'Plano alimentar',
+            onTap: () => context.push(AppRoutes.mealPlans),
+          ),
+        ),
+        const SizedBox(width: Space.sm),
+        Expanded(
+          child: _Shortcut(
+            icon: Icons.menu_book_outlined,
+            label: 'Receitas e conteúdos',
+            onTap: () => context.push(AppRoutes.contents),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+/// Atalho de mesmo peso visual (ícone sobre o rótulo).
+class _Shortcut extends StatelessWidget {
+  const _Shortcut({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: label,
+    excludeSemantics: true,
+    child: Material(
+      color: context.colors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: Radii.control,
+        side: BorderSide(color: context.pic.border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: Space.xs,
+            vertical: Space.md,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: context.colors.primary),
+              const SizedBox(height: Space.xs),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: context.text.labelMedium,
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/// Ponto único de registro de refeição (Início e Alimentação): formas disponíveis
+/// de registro e, abaixo, repetir uma recente ou favorita com um toque.
 Future<void> chooseHowToAddMeal(BuildContext context) async {
   final route = await showModalBottomSheet<String>(
     context: context,
     isScrollControlled: true,
+    showDragHandle: true,
     builder: (sheet) => SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(Space.lg, 0, Space.lg, Space.lg),
@@ -118,47 +190,66 @@ Future<void> chooseHowToAddMeal(BuildContext context) async {
           children: [
             Padding(
               padding: const EdgeInsets.only(left: Space.sm, bottom: Space.md),
-              child: Text(
-                'Como deseja registrar?',
-                style: sheet.text.titleMedium,
+              child: Semantics(
+                header: true,
+                child: Text(
+                  'Registrar refeição',
+                  style: sheet.text.titleMedium,
+                ),
               ),
             ),
             _AddOption(
               icon: Icons.photo_camera_outlined,
-              title: 'Por foto',
-              subtitle:
-                  'A IA estima os alimentos e você revisa antes de salvar',
+              title: 'Tirar foto do prato',
+              subtitle: 'A IA estima os alimentos e você revisa',
               ai: true,
               onTap: () => Navigator.of(sheet).pop(AppRoutes.mealPhoto),
             ),
             const SizedBox(height: Space.sm),
             _AddOption(
-              icon: Icons.mic_none_rounded,
-              title: 'Por texto ou voz',
-              subtitle: 'Descreva o que comeu; a IA estima e você revisa',
-              ai: true,
-              onTap: () => Navigator.of(sheet).pop(AppRoutes.mealText),
+              icon: Icons.search_rounded,
+              title: 'Buscar alimentos',
+              subtitle:
+                  'No banco de alimentos, pelo código de barras ou informando os valores',
+              onTap: () => Navigator.of(sheet).pop(_searchRoute),
             ),
-            const SizedBox(height: Space.sm),
-            _AddOption(
-              icon: Icons.replay_rounded,
-              title: 'Repetir refeição',
-              subtitle: 'Escolha uma refeição recente e revise antes de registrar',
-              onTap: () => Navigator.of(sheet).pop(_repeatRoute),
+            // Mantido OFF: texto/voz serão retomados em uma etapa futura.
+            if (AppFeatures.mealTextVoice) ...[
+              const SizedBox(height: Space.sm),
+              _AddOption(
+                icon: Icons.mic_none_rounded,
+                title: 'Falar ou escrever',
+                subtitle: 'Conte o que comeu; a IA estima e você revisa',
+                ai: true,
+                onTap: () => Navigator.of(sheet).pop(AppRoutes.mealText),
+              ),
+            ],
+            const SizedBox(height: Space.lg),
+            Padding(
+              padding: const EdgeInsets.only(left: Space.sm, bottom: Space.sm),
+              child: Text('Comer de novo', style: sheet.text.labelLarge),
             ),
-            const SizedBox(height: Space.sm),
-            _AddOption(
-              icon: Icons.star_outline_rounded,
-              title: 'Refeição favorita',
-              subtitle: 'Registre de novo uma refeição salva',
-              onTap: () => Navigator.of(sheet).pop(_favoritesRoute),
-            ),
-            const SizedBox(height: Space.sm),
-            _AddOption(
-              icon: Icons.edit_note,
-              title: 'Manualmente',
-              subtitle: 'Busque no banco de alimentos ou informe os valores',
-              onTap: () => Navigator.of(sheet).pop(AppRoutes.newMeal),
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: _Shortcut(
+                      icon: Icons.replay_rounded,
+                      label: 'Recentes',
+                      onTap: () => Navigator.of(sheet).pop(_repeatRoute),
+                    ),
+                  ),
+                  const SizedBox(width: Space.sm),
+                  Expanded(
+                    child: _Shortcut(
+                      icon: Icons.star_outline_rounded,
+                      label: 'Favoritas',
+                      onTap: () => Navigator.of(sheet).pop(_favoritesRoute),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -166,19 +257,23 @@ Future<void> chooseHowToAddMeal(BuildContext context) async {
     ),
   );
   if (route == null || !context.mounted) return;
-  if (route == _favoritesRoute) {
-    await showFavoriteMealsSheet(context);
-  } else if (route == _repeatRoute) {
-    await showRecentMealsSheet(context);
-  } else {
-    await context.push(route);
+  switch (route) {
+    case _favoritesRoute:
+      await showFavoriteMealsSheet(context);
+    case _repeatRoute:
+      await showRecentMealsSheet(context);
+    case _searchRoute:
+      await context.push(AppRoutes.newMeal, extra: MealEditorStart.search);
+    default:
+      await context.push(route);
   }
 }
 
 const _favoritesRoute = '#favorites';
 const _repeatRoute = '#repeat';
+const _searchRoute = '#search';
 
-/// Lista de refeições favoritas; um toque registra a refeição agora.
+/// Refeições favoritas; um toque abre a revisão (quantidades) antes de registrar.
 Future<void> showFavoriteMealsSheet(BuildContext context) =>
     showModalBottomSheet<void>(
       context: context,
@@ -211,31 +306,19 @@ class _FavoriteMealsState extends ConsumerState<_FavoriteMeals> {
     if (meal != null && mounted) await saveFavoriteMeal(context, ref, meal);
   }
 
+  /// Mesma revisão de "Repetir refeição": alimentos e quantidades preenchidos,
+  /// no dia selecionado; só grava ao tocar em "Registrar refeição".
   Future<void> _log(MealTemplate t) async {
-    setState(() => _busyId = t.id);
-    final day = ref.read(selectedDateProvider);
-    final now = DateTime.now();
-    final isToday = day == SelectedDate.today();
-    try {
-      await ref
-          .read(foodRepositoryProvider)
-          .logTemplate(
-            t.id,
-            requestId: newRequestId(),
-            eatenAt: isToday
-                ? null
-                : DateTime(day.year, day.month, day.day, now.hour, now.minute),
-          );
-      Refresh.nutrition(ref);
-      ref.invalidate(mealTemplatesProvider);
-      if (!mounted) return;
-      Navigator.of(context).pop();
-      showMessage(context, '"${t.name}" registrada.');
-    } on Object catch (error) {
-      if (mounted) showFailure(context, error);
-    } finally {
-      if (mounted) setState(() => _busyId = null);
-    }
+    if (t.items.isEmpty) return;
+    Navigator.of(context).pop();
+    await context.push(
+      AppRoutes.recipeMeal,
+      extra: RecipeMealDraft(
+        title: t.name,
+        items: t.items,
+        mealType: t.mealType,
+      ),
+    );
   }
 
   Future<void> _remove(MealTemplate t) async {
@@ -563,13 +646,29 @@ class _MealTile extends ConsumerWidget {
           Row(
             children: [
               Expanded(
-                child: Text(meal.displayName, style: context.text.titleSmall),
+                child: Text(meal.displayName, style: context.text.titleMedium),
               ),
               if (fromPhoto) ...[
                 const AiBadge(label: 'Por foto', compact: false),
                 const SizedBox(width: Space.sm),
               ],
               Text(Fmt.time(meal.eatenAt), style: context.text.bodySmall),
+              PopupMenuButton<String>(
+                tooltip: 'Mais ações',
+                onSelected: (v) => v == 'repeat'
+                    ? repeatMeal(context, meal)
+                    : saveFavoriteMeal(context, ref, meal),
+                itemBuilder: (_) => const [
+                  PopupMenuItem(
+                    value: 'repeat',
+                    child: Text('Repetir refeição'),
+                  ),
+                  PopupMenuItem(
+                    value: 'favorite',
+                    child: Text('Salvar como favorita'),
+                  ),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: Space.xs),
@@ -580,21 +679,6 @@ class _MealTile extends ConsumerWidget {
             style: context.text.bodyMedium?.copyWith(
               color: context.pic.textSecondary,
             ),
-          ),
-          Wrap(
-            spacing: Space.xs,
-            children: [
-              TextButton.icon(
-                onPressed: () => repeatMeal(context, meal),
-                icon: const Icon(Icons.replay_rounded, size: 18),
-                label: const Text('Repetir'),
-              ),
-              TextButton.icon(
-                onPressed: () => saveFavoriteMeal(context, ref, meal),
-                icon: const Icon(Icons.star_outline_rounded, size: 18),
-                label: const Text('Salvar favorita'),
-              ),
-            ],
           ),
           const SizedBox(height: Space.sm),
           Row(

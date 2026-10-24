@@ -77,6 +77,13 @@ abstract final class Space {
   /// Margem lateral padrão das telas.
   static const page = 20.0;
 
+  /// Entre seções diferentes de uma tela (24–32 px). Elementos relacionados
+  /// usam os espaços menores (sm/md).
+  static const section = 28.0;
+
+  /// Dentro dos cartões (16–20 px).
+  static const card = 20.0;
+
   /// Espaço no fim de listas com botão flutuante.
   static const fabClearance = 96.0;
 }

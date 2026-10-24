@@ -60,9 +60,9 @@
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>O reconhecimento de voz transforma a descrição falada da refeição em texto para você revisar.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>O PicNutri usa a câmera apenas quando você escolhe fotografar uma refeição, ler o código de barras de um produto ou tirar uma foto de evolução.</string>
+	<string>O PicNutri usa a câmera apenas quando você escolhe fotografar uma refeição, ler o código de barras de um produto tirar uma foto de evolução ou adicionar sua foto de perfil.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>O PicNutri acessa apenas a foto que você escolher na galeria, para estimar os alimentos de uma refeição ou guardar como foto de evolução.</string>
+	<string>O PicNutri acessa apenas a foto que você escolher na galeria, para estimar os alimentos de uma refeição guardar como foto de evolução ou adicionar sua foto de perfil.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

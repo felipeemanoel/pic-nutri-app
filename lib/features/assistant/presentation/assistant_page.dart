@@ -5,13 +5,18 @@ import 'package:go_router/go_router.dart';
 import '../../../app/routes.dart';
 import '../../../core/design/design_system.dart';
 import '../../../core/utils/formatters.dart';
-import '../../../shared/widgets/profile_button.dart';
 import '../../../shared/widgets/state_views.dart';
 import '../../ai/data/ai_models.dart';
 import '../../ai/data/ai_repository.dart';
+import '../../notifications/presentation/notification_bell.dart';
+import '../domain/assistant_scope.dart';
+import 'assistant_usage.dart';
 import 'chat_page.dart';
 
-/// Aba "Assistente": apresentação do assistente de IA e conversas anteriores.
+/// Assistente acessado pelo menu geral: consultas e conversas anteriores.
+/// Perguntas iniciais: abrem uma conversa já preenchida (a pessoa revisa e envia).
+const starterQuestions = AssistantScope.suggestions;
+
 class AssistantPage extends ConsumerWidget {
   const AssistantPage({super.key});
 
@@ -19,10 +24,13 @@ class AssistantPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final status = ref.watch(aiStatusProvider);
     final conversations = ref.watch(conversationsProvider);
-    final available = status.value?.assistant.available ?? false;
+    final available = status.value?.assistant.canSendAssistantMessage ?? false;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Assistente'), actions: const [ProfileButton()]),
+      appBar: AppBar(
+        title: const Text('Assistente'),
+        actions: const [NotificationBell()],
+      ),
       floatingActionButton: available
           ? FloatingActionButton.extended(
               backgroundColor: context.pic.ai,
@@ -51,6 +59,39 @@ class AssistantPage extends ConsumerWidget {
             ),
             children: [
               _Intro(status: s.assistant),
+              const SizedBox(height: Space.md),
+              AssistantUsage(
+                status: s.assistant,
+                onRefresh: () => ref.invalidate(aiStatusProvider),
+              ),
+              if (s.assistant.canSendAssistantMessage) ...[
+                const SectionHeader(title: 'Comece por uma pergunta'),
+                for (final q in starterQuestions)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: Space.sm),
+                    child: AppCard(
+                      onTap: () =>
+                          context.push(AppRoutes.chat, extra: ChatDraft(q)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: Space.lg,
+                        vertical: Space.md,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.chat_bubble_outline,
+                            size: 20,
+                            color: context.pic.ai,
+                          ),
+                          const SizedBox(width: Space.md),
+                          Expanded(
+                            child: Text(q, style: context.text.bodyMedium),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
               const SectionHeader(title: 'Conversas'),
               AsyncValueView<List<Conversation>>(
                 value: conversations,
@@ -152,7 +193,7 @@ class _Intro extends StatelessWidget {
                     ),
                     Text(
                       status.available
-                          ? 'Tira dúvidas a partir dos seus registros'
+                          ? 'Seus registros e ajuda com o aplicativo'
                           : 'Indisponível no momento',
                       style: context.text.bodySmall?.copyWith(
                         color: p.onAiContainer,

@@ -91,6 +91,7 @@ class _ShoppingListPageState extends ConsumerState<ShoppingListPage> {
                     'Quantidades somadas do plano da semana, em peso ou volume do alimento como consumido na receita. Ajuste conforme o que você já tem em casa.',
                     style: context.text.bodySmall,
                   ),
+                  _ExtraRecipes(planId: widget.planId),
                   for (final g in groups) ...[
                     SectionHeader(title: g.category),
                     for (final i in g.items)
@@ -113,3 +114,44 @@ class _ShoppingListPageState extends ConsumerState<ShoppingListPage> {
     );
   }
 }
+
+/// Receitas adicionadas só à lista (sem planejar a refeição), com opção de tirar.
+class _ExtraRecipes extends ConsumerWidget {
+  const _ExtraRecipes({required this.planId});
+
+  final String planId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final extras = ref.watch(shoppingExtrasProvider(planId)).value ?? const <ShoppingExtraRecipe>[];
+    if (extras.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SectionHeader(title: 'Receitas só na lista'),
+        for (final e in extras)
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.menu_book_outlined),
+            title: Text(e.title),
+            subtitle: Text('${Fmt.decimal(e.servings)} porções · não planejada'),
+            trailing: IconButton(
+              tooltip: 'Tirar ${e.title} da lista',
+              icon: const Icon(Icons.remove_circle_outline),
+              onPressed: () async {
+                try {
+                  await ref.read(planningRepositoryProvider).removeRecipeFromShopping(planId, e.recipeId);
+                  ref
+                    ..invalidate(shoppingListProvider(planId))
+                    ..invalidate(shoppingExtrasProvider(planId));
+                } on Object catch (err) {
+                  if (context.mounted) showFailure(context, err);
+                }
+              },
+            ),
+          ),
+      ],
+    );
+  }
+}
+

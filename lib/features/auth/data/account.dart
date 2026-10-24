@@ -9,12 +9,14 @@ class Account {
     required this.onboardingCompleted,
     required this.consents,
     required this.profile,
+    this.avatarVersion,
     this.onboardingStep,
     this.onboardingSkipped = const [],
     this.introTourPending = false,
   });
 
   factory Account.fromJson(Map<String, dynamic> json) => Account(
+    avatarVersion: json['avatar_version'] as String?,
     name: json['name'] as String? ?? '',
     email: json['email'] as String? ?? '',
     onboardingCompleted: json['onboarding_completed'] as bool? ?? false,
@@ -24,13 +26,21 @@ class Account {
     profile: Profile.fromJson(
       json['profile'] as Map<String, dynamic>? ?? const {},
     ),
-    onboardingStep: (json['onboarding'] as Map<String, dynamic>?)?['step'] as String?,
-    onboardingSkipped: ((json['onboarding'] as Map<String, dynamic>?)?['skipped'] as List<dynamic>? ?? const [])
-        .whereType<String>()
-        .toList(),
-    introTourPending: (json['onboarding'] as Map<String, dynamic>?)?['intro_tour_pending'] as bool? ?? false,
+    onboardingStep:
+        (json['onboarding'] as Map<String, dynamic>?)?['step'] as String?,
+    onboardingSkipped:
+        ((json['onboarding'] as Map<String, dynamic>?)?['skipped']
+                    as List<dynamic>? ??
+                const [])
+            .whereType<String>()
+            .toList(),
+    introTourPending:
+        (json['onboarding'] as Map<String, dynamic>?)?['intro_tour_pending']
+            as bool? ??
+        false,
   );
 
+  final String? avatarVersion;
   final String name;
   final String email;
   final bool onboardingCompleted;
@@ -109,27 +119,44 @@ class Profile {
     heightCm: toDouble(json['height_cm']),
     currentWeightKg: toDouble(json['current_weight_kg']),
     goal: json['goal'] as String?,
-    goals: (json['goals'] as List<dynamic>? ?? const []).whereType<String>().toList(),
-    supportPreferences: (json['support_preferences'] as List<dynamic>? ?? const []).whereType<String>().toList(),
-    professionalGuidance: json['professional_guidance'] as String?,
-    professionalGuidanceSource: json['professional_guidance_source'] as String?,
-    careCategories: ((json['care_preferences'] as Map<String, dynamic>?)?['categories'] as List<dynamic>? ?? const [])
+    goals: (json['goals'] as List<dynamic>? ?? const [])
         .whereType<String>()
         .toList(),
-    careModality: (json['care_preferences'] as Map<String, dynamic>?)?['modality'] as String?,
-    careCity: (json['care_preferences'] as Map<String, dynamic>?)?['city'] as String?,
-    careState: (json['care_preferences'] as Map<String, dynamic>?)?['state'] as String?,
+    supportPreferences:
+        (json['support_preferences'] as List<dynamic>? ?? const [])
+            .whereType<String>()
+            .toList(),
+    professionalGuidance: json['professional_guidance'] as String?,
+    professionalGuidanceSource: json['professional_guidance_source'] as String?,
+    careCategories:
+        ((json['care_preferences'] as Map<String, dynamic>?)?['categories']
+                    as List<dynamic>? ??
+                const [])
+            .whereType<String>()
+            .toList(),
+    careModality:
+        (json['care_preferences'] as Map<String, dynamic>?)?['modality']
+            as String?,
+    careCity:
+        (json['care_preferences'] as Map<String, dynamic>?)?['city'] as String?,
+    careState:
+        (json['care_preferences'] as Map<String, dynamic>?)?['state']
+            as String?,
     goalWeightKg: toDouble(json['goal_weight_kg']),
     activityLevel: json['activity_level'] as String?,
     dietaryPreferences: (json['dietary_preferences'] as List<dynamic>? ?? [])
         .whereType<String>()
         .toList(),
     dietaryRestrictions: json['dietary_restrictions'] as String?,
-    allergies: (json['allergies'] as List<dynamic>? ?? []).whereType<String>().toList(),
-    avoidFoods: json['avoid_foods'] as String?,
-    plannedMeals: (json['planned_meals'] as List<dynamic>? ?? const ['breakfast', 'lunch', 'dinner'])
+    allergies: (json['allergies'] as List<dynamic>? ?? [])
         .whereType<String>()
         .toList(),
+    avoidFoods: json['avoid_foods'] as String?,
+    plannedMeals:
+        (json['planned_meals'] as List<dynamic>? ??
+                const ['breakfast', 'lunch', 'dinner'])
+            .whereType<String>()
+            .toList(),
     dailyCalorieGoal: toInt(json['daily_calorie_goal']),
     proteinGoalG: toInt(json['protein_goal_g']),
     carbsGoalG: toInt(json['carbs_goal_g']),
@@ -138,7 +165,8 @@ class Profile {
     timezone: json['timezone'] as String? ?? 'America/Sao_Paulo',
     notificationsEnabled: json['notifications_enabled'] as bool? ?? false,
     medicationTrackingEnabled:
-        AppFeatures.medical && (json['medication_tracking_enabled'] as bool? ?? false),
+        AppFeatures.medical &&
+        (json['medication_tracking_enabled'] as bool? ?? false),
     onboardingCompleted: json['onboarding_completed'] as bool? ?? false,
   );
 
