@@ -6,49 +6,121 @@ import 'package:picnutri/features/symptoms/data/symptom_models.dart';
 
 void main() {
   group('Jornada inicial', () {
-    test('fluxo curto: só as perguntas que fazem sentido, meta logo após os dados', () {
-      final minimal = OnboardingSteps.sequence(consent: false, support: {});
+    test('sem autorização: só objetivo e forma de acompanhamento', () {
+      final minimal = OnboardingFlow.screens(consent: false, support: {});
       expect(minimal, [
-        OnboardingSteps.welcome,
-        OnboardingSteps.consent,
-        OnboardingSteps.goals,
-        OnboardingSteps.support,
-        OnboardingSteps.summary,
+        OnboardingScreen.welcome,
+        OnboardingScreen.consent,
+        OnboardingScreen.goal,
+        OnboardingScreen.support,
+        OnboardingScreen.features,
+        OnboardingScreen.summary,
       ]);
+    });
 
-      final full = OnboardingSteps.sequence(
+    test('com autorização: uma pergunta por tela, meta logo após os dados', () {
+      final full = OnboardingFlow.screens(
         consent: true,
-        support: {'has_professional_plan', 'prescribed_medication', 'find_professional'},
+        support: {'has_professional_plan', 'prescribed_medication'},
+        goal: 'lose_weight',
+        treatmentStage: 'using',
+        hasWeight: true,
+        hasGoalWeight: true,
+        paceApplies: true,
+        medicalFeatures: true,
       );
       expect(full, [
-        OnboardingSteps.welcome,
-        OnboardingSteps.consent,
-        OnboardingSteps.goals,
-        OnboardingSteps.support,
-        OnboardingSteps.essentials,
-        OnboardingSteps.targets,
-        OnboardingSteps.guidance,
-        OnboardingSteps.medication,
-        OnboardingSteps.summary,
+        OnboardingScreen.welcome,
+        OnboardingScreen.goal,
+        OnboardingScreen.motivations,
+        OnboardingScreen.support,
+        OnboardingScreen.treatmentStage,
+        OnboardingScreen.medicationName,
+        OnboardingScreen.medicationFrequency,
+        OnboardingScreen.medicationDose,
+        OnboardingScreen.treatmentStart,
+        OnboardingScreen.challenge,
+        OnboardingScreen.birthDate,
+        OnboardingScreen.sex,
+        OnboardingScreen.height,
+        OnboardingScreen.weight,
+        OnboardingScreen.startWeight,
+        OnboardingScreen.goalWeight,
+        OnboardingScreen.pace,
+        OnboardingScreen.activity,
+        OnboardingScreen.projection,
+        OnboardingScreen.targets,
+        OnboardingScreen.guidance,
+        OnboardingScreen.features,
+        OnboardingScreen.summary,
       ]);
-      // Rotina fica para "Complete seu perfil"; atendimento, para os filtros.
-      expect(full, isNot(contains(OnboardingSteps.routine)));
-      expect(full, isNot(contains(OnboardingSteps.care)));
-      expect(OnboardingSteps.deferred(consent: true), [OnboardingSteps.routine]);
-      expect(OnboardingSteps.deferred(consent: false), isEmpty);
+      // As telas se agrupam nas etapas salvas pela API, sempre em ordem.
+      final steps = [for (final s in full) s.step];
+      final distinct = <String>[];
+      for (final step in steps) {
+        if (distinct.isEmpty || distinct.last != step) distinct.add(step);
+      }
+      expect(distinct.toSet().length, distinct.length);
+    });
+
+    test('sem meta de peso nem medicamento, pula régua de meta e ritmo', () {
+      final seq = OnboardingFlow.screens(
+        consent: true,
+        support: {'organize_eating'},
+        goal: 'improve_habits',
+        hasWeight: true,
+        medicalFeatures: true,
+      );
+      expect(seq, isNot(contains(OnboardingScreen.goalWeight)));
+      expect(seq, isNot(contains(OnboardingScreen.pace)));
+      expect(seq, isNot(contains(OnboardingScreen.projection)));
+      expect(seq, isNot(contains(OnboardingScreen.treatmentStage)));
+    });
+
+    test(
+      'quem ainda não começou o tratamento não informa data nem peso inicial',
+      () {
+        final seq = OnboardingFlow.screens(
+          consent: true,
+          support: {'prescribed_medication'},
+          goal: 'medication_support',
+          treatmentStage: 'not_started',
+          hasWeight: true,
+          medicalFeatures: true,
+        );
+        expect(seq, contains(OnboardingScreen.medicationDose));
+        expect(seq, isNot(contains(OnboardingScreen.treatmentStart)));
+        expect(seq, isNot(contains(OnboardingScreen.startWeight)));
+      },
+    );
+
+    test('sem os recursos médicos, nada de medicamento', () {
+      final seq = OnboardingFlow.screens(
+        consent: true,
+        support: {'prescribed_medication'},
+        medicalFeatures: false,
+      );
+      expect(seq, isNot(contains(OnboardingScreen.treatmentStage)));
     });
 
     test('quem parou numa etapa que saiu do fluxo retoma na seguinte', () {
-      expect(OnboardingSteps.resumeAt(OnboardingSteps.routine), OnboardingSteps.targets);
-      expect(OnboardingSteps.resumeAt(OnboardingSteps.care), OnboardingSteps.summary);
-      expect(OnboardingSteps.resumeAt(OnboardingSteps.goals), OnboardingSteps.goals);
+      expect(
+        OnboardingSteps.resumeAt(OnboardingSteps.routine),
+        OnboardingSteps.targets,
+      );
+      expect(
+        OnboardingSteps.resumeAt(OnboardingSteps.care),
+        OnboardingSteps.summary,
+      );
+      expect(
+        OnboardingSteps.resumeAt(OnboardingSteps.goals),
+        OnboardingSteps.goals,
+      );
       expect(OnboardingSteps.resumeAt(null), isNull);
-    });
-
-    test('sem autorização de dados de saúde, nada de medicamento ou dados corporais', () {
-      final seq = OnboardingSteps.sequence(consent: false, support: {'prescribed_medication', 'find_professional'});
-      expect(seq, isNot(contains(OnboardingSteps.medication)));
-      expect(seq, isNot(contains(OnboardingSteps.essentials)));
+      expect(OnboardingSteps.deferred(consent: true), [
+        OnboardingSteps.routine,
+      ]);
+      expect(OnboardingSteps.deferred(consent: false), isEmpty);
     });
 
     test('etapas obrigatórias não podem ser puladas', () {
@@ -74,7 +146,12 @@ void main() {
     });
 
     test('alerta de segurança urgente', () {
-      final alert = SafetyAlert.fromJson({'level': 'urgent', 'title': 'Procure atendimento', 'message': '...', 'article': 'sinais-de-alerta'});
+      final alert = SafetyAlert.fromJson({
+        'level': 'urgent',
+        'title': 'Procure atendimento',
+        'message': '...',
+        'article': 'sinais-de-alerta',
+      });
       expect(alert.urgent, isTrue);
       expect(alert.article, 'sinais-de-alerta');
     });
@@ -134,7 +211,9 @@ void main() {
       expect(q['lng'], -34.872);
       expect(q['radius_km'], 30);
 
-      final byCity = filter.copyWith(cep: () => null, lat: () => null, lng: () => null).toQuery();
+      final byCity = filter
+          .copyWith(cep: () => null, lat: () => null, lng: () => null)
+          .toQuery();
       expect(byCity['city'], 'Recife');
       expect(byCity['state'], 'PE');
       expect(byCity.containsKey('lat'), isFalse);
@@ -160,7 +239,11 @@ void main() {
 
       final request = ContactRequestItem.fromJson({
         'id': '01JC',
-        'professional': {'id': 'p', 'name': 'Ana', 'category_label': 'Nutricionista'},
+        'professional': {
+          'id': 'p',
+          'name': 'Ana',
+          'category_label': 'Nutricionista',
+        },
         'modality': 'online',
         'status': 'pending',
         'status_label': 'Aguardando resposta',
@@ -172,8 +255,17 @@ void main() {
     });
 
     test('pedido de compartilhamento leva o consentimento explícito', () {
-      const share = ShareRequest(categories: ['weight_progress'], purpose: 'Primeira consulta', days: 30);
-      expect(share.toJson(), {'categories': ['weight_progress'], 'purpose': 'Primeira consulta', 'days': 30, 'consent': true});
+      const share = ShareRequest(
+        categories: ['weight_progress'],
+        purpose: 'Primeira consulta',
+        days: 30,
+      );
+      expect(share.toJson(), {
+        'categories': ['weight_progress'],
+        'purpose': 'Primeira consulta',
+        'days': 30,
+        'consent': true,
+      });
     });
   });
 }

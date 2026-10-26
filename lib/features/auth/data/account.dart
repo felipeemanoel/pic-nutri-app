@@ -88,6 +88,9 @@ class Profile {
     this.goal,
     this.goals = const [],
     this.supportPreferences = const [],
+    this.motivations = const [],
+    this.mainChallenge,
+    this.weeklyPaceKg,
     this.professionalGuidance,
     this.professionalGuidanceSource,
     this.careCategories = const [],
@@ -126,6 +129,11 @@ class Profile {
         (json['support_preferences'] as List<dynamic>? ?? const [])
             .whereType<String>()
             .toList(),
+    motivations: (json['motivations'] as List<dynamic>? ?? const [])
+        .whereType<String>()
+        .toList(),
+    mainChallenge: json['main_challenge'] as String?,
+    weeklyPaceKg: toDouble(json['weekly_pace_kg']),
     professionalGuidance: json['professional_guidance'] as String?,
     professionalGuidanceSource: json['professional_guidance_source'] as String?,
     careCategories:
@@ -182,6 +190,15 @@ class Profile {
 
   /// Como a pessoa quer ser acompanhada (organize_eating, has_professional_plan, ...).
   final List<String> supportPreferences;
+
+  /// O que motiva a pessoa (confidence, energy, ...), só para personalização.
+  final List<String> motivations;
+
+  /// Principal dificuldade hoje (what_to_eat, dose_schedule, ...).
+  final String? mainChallenge;
+
+  /// Ritmo semanal escolhido para a meta de peso (kg por semana).
+  final double? weeklyPaceKg;
   final String? professionalGuidance;
   final String? professionalGuidanceSource;
 

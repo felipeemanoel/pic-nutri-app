@@ -39,6 +39,7 @@ class MedicationRepository {
     required String frequency,
     bool? isActive,
     String? notes,
+    DateTime? startedOn,
     String? requestId,
   }) async {
     final body = {
@@ -48,6 +49,7 @@ class MedicationRepository {
       'frequency': frequency,
       'is_active': ?isActive,
       'notes': (notes?.trim().isEmpty ?? true) ? null : notes!.trim(),
+      'started_on': ?startedOn?.toIso8601String().substring(0, 10),
       'client_request_id': ?requestId,
     };
     final response = await guard(

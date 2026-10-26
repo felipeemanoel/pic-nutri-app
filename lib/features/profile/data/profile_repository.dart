@@ -77,6 +77,7 @@ class ProfileRepository {
     required double weightKg,
     required String activityLevel,
     required String goal,
+    double? weeklyPaceKg,
   }) async {
     final response = await guard(
       () => _dio.post<Map<String, dynamic>>(
@@ -88,6 +89,7 @@ class ProfileRepository {
           'weight_kg': weightKg,
           'activity_level': activityLevel,
           'goal': goal,
+          'weekly_pace_kg': ?weeklyPaceKg,
         },
       ),
     );

@@ -107,7 +107,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Bem-vindo(a)'), findsOneWidget);
+    expect(find.text('Vamos montar o seu plano'), findsOneWidget);
   });
 
   testWidgets(
