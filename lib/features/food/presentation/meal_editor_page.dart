@@ -315,22 +315,28 @@ class _MealEditorPageState extends ConsumerState<MealEditorPage> {
         ],
       ),
       // Registrar sempre visível, mesmo com a lista de alimentos longa.
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            Space.page,
-            Space.sm,
-            Space.page,
-            Space.md,
-          ),
-          child: LoadingButton(
-            label: _isEdit ? 'Salvar refeição' : 'Registrar refeição',
-            loading: _saving,
-            onPressed: _save,
+      bottomNavigationBar: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              Space.page,
+              Space.sm,
+              Space.page,
+              Space.md,
+            ),
+            child: LoadingButton(
+              label: _isEdit ? 'Salvar refeição' : 'Registrar refeição',
+              loading: _saving,
+              onPressed: _save,
+            ),
           ),
         ),
       ),
       body: ListView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.fromLTRB(
           Space.page,
           Space.md,

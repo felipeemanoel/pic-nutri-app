@@ -80,7 +80,7 @@ Future<void> _addMealToday(BuildContext context, WidgetRef ref) {
   return chooseHowToAddMeal(context);
 }
 
-/// Data, saudação com o ícone do período, sino de notificações.
+/// Marca, data, saudação com o ícone do período e sino de notificações.
 class _Header extends StatelessWidget {
   const _Header({required this.name});
 
@@ -100,49 +100,80 @@ class _Header extends StatelessWidget {
     final raw = _date.format(now).replaceFirst('-feira', '');
     final date = raw.isEmpty ? raw : raw[0].toUpperCase() + raw.substring(1);
 
-    return Padding(
-      padding: const EdgeInsets.only(left: Space.xs),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  date,
-                  style: context.text.bodyMedium?.copyWith(
-                    color: context.pic.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: Space.xs),
-                Row(
-                  children: [
-                    Flexible(
-                      child: Semantics(
-                        header: true,
-                        child: Text(
-                          name.isEmpty ? greeting : '$greeting, $name',
-                          style: context.text.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -0.4,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: Space.sm),
-                    ExcludeSemantics(
-                      child: Icon(icon, size: 26, color: iconColor),
-                    ),
-                  ],
-                ),
-              ],
+    final colors = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: PicNutriHorizontalLogo(width: 132),
+              ),
             ),
-          ),
-          const NotificationBell(),
-        ],
-      ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: colors.surface,
+                borderRadius: BorderRadius.circular(Radii.lg),
+                border: Border.all(color: context.pic.border),
+              ),
+              child: const SizedBox.square(
+                dimension: 48,
+                child: NotificationBell(),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: Space.lg),
+        Divider(height: 1, thickness: 1, color: context.pic.border),
+        const SizedBox(height: Space.xl),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      name.isEmpty ? greeting : '$greeting, $name',
+                      style: context.text.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.6,
+                        height: 1.2,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(height: Space.sm),
+                  Text(
+                    date,
+                    style: context.text.bodySmall?.copyWith(
+                      color: context.pic.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: Space.md),
+            ExcludeSemantics(
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.10),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: 24, color: iconColor),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

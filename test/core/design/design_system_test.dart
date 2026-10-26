@@ -130,7 +130,12 @@ void main() {
           theme: theme,
         ),
       );
-      expect(find.text('PicNutri'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is Image && widget.semanticLabel == 'PicNutri',
+        ),
+        findsOneWidget,
+      );
       expect(find.text('Sua evolução, no seu ritmo.'), findsOneWidget);
       expect(find.bySemanticsLabel('Estimativa por IA'), findsOneWidget);
       expect(tester.takeException(), isNull);

@@ -7,6 +7,7 @@ import 'package:picnutri/app/routes.dart';
 import 'package:picnutri/features/ai/data/ai_models.dart';
 import 'package:picnutri/features/ai/data/ai_repository.dart';
 import 'package:picnutri/features/auth/application/session_controller.dart';
+import 'package:picnutri/features/auth/data/social_sign_in.dart';
 import 'package:picnutri/features/food/data/food_repository.dart';
 import 'package:picnutri/features/food/data/nutrition_models.dart';
 import 'package:picnutri/features/help/data/help_repository.dart';
@@ -18,6 +19,47 @@ import 'package:picnutri/features/planning/data/planning_repository.dart';
 import '../../helpers/fakes.dart';
 
 void main() {
+  for (final size in [const Size(390, 844), const Size(320, 568)]) {
+    testWidgets('login sem scroll com todos os provedores em $size', (
+      tester,
+    ) async {
+      tester.view
+        ..physicalSize = size
+        ..devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            ...sessionOverrides(const SessionSignedOut()),
+            socialProvidersProvider.overrideWith(
+              (ref) async => {'google', 'facebook'},
+            ),
+          ],
+          child: const PicNutriApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(SingleChildScrollView), findsNothing);
+      for (final label in [
+        'Entrar',
+        'Continuar com Google',
+        'Continuar com Facebook',
+      ]) {
+        final rect = tester.getRect(find.text(label));
+        expect(rect.top, greaterThanOrEqualTo(0));
+        expect(rect.bottom, lessThanOrEqualTo(size.height));
+      }
+      expect(tester.takeException(), isNull);
+      tester.view.viewInsets = FakeViewPadding(bottom: 260);
+      await tester.pumpAndSettle();
+      expect(
+        tester.getRect(find.text('Entrar')).bottom,
+        lessThanOrEqualTo(size.height - 260),
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets('sem sessão, o app abre no login e valida os campos', (
     tester,
   ) async {
@@ -29,7 +71,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Bem-vindo de volta'), findsOneWidget);
+    expect(find.text('Bem-vindo de volta!'), findsOneWidget);
 
     await tester.tap(find.widgetWithText(FilledButton, 'Entrar'));
     await tester.pumpAndSettle();

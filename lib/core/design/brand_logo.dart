@@ -1,47 +1,40 @@
 import 'package:flutter/material.dart';
 
 import 'pic_colors.dart';
-import 'tokens.dart';
 
-/// Símbolo do PicNutri: um "P" cujo bojo é uma folha, com a nervura vazada
-/// subindo como uma linha de evolução. Mesma geometria de
-/// `tool/brand/symbol.py` (grade de 1024), que gera os ícones do app.
+/// Monograma da nova marca, derivado do PNG oficial.
 class PicNutriSymbol extends StatelessWidget {
   const PicNutriSymbol({super.key, this.size = 48, this.color});
 
   final double size;
-
-  /// Cor do símbolo (padrão: cor primária do tema).
   final Color? color;
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    label: 'PicNutri',
-    image: true,
-    child: SizedBox.square(
-      dimension: size,
-      child: CustomPaint(
-        painter: _SymbolPainter(color ?? Theme.of(context).colorScheme.primary),
-      ),
-    ),
+  Widget build(BuildContext context) => Image.asset(
+    'assets/brand/picnutri_monogram.png',
+    width: size,
+    height: size,
+    fit: BoxFit.contain,
+    color: color,
+    semanticLabel: 'PicNutri',
   );
 }
 
-/// Ícone do app: símbolo branco sobre o quadrado com a cor da marca.
+/// Ícone de instalação aprovado, também usado em contextos compactos.
 class PicNutriAppIcon extends StatelessWidget {
   const PicNutriAppIcon({super.key, this.size = 72});
 
   final double size;
 
   @override
-  Widget build(BuildContext context) => Container(
-    width: size,
-    height: size,
-    decoration: BoxDecoration(
-      color: PicPalette.primary,
-      borderRadius: BorderRadius.circular(size * 232 / 1024),
+  Widget build(BuildContext context) => ClipRRect(
+    borderRadius: BorderRadius.circular(size * 0.22),
+    child: Image.asset(
+      'assets/brand/app_icon_source.png',
+      width: size,
+      height: size,
+      semanticLabel: 'PicNutri',
     ),
-    child: PicNutriSymbol(size: size, color: Colors.white),
   );
 }
 
@@ -58,26 +51,22 @@ class PicNutriWordmark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        PicNutriAppIcon(size: iconSize),
-        SizedBox(height: iconSize * 0.25),
-        Text(
-          'PicNutri',
-          style: theme.textTheme.headlineMedium?.copyWith(
-            color: theme.colorScheme.onSurface,
-            letterSpacing: -0.5,
-          ),
+        Image.asset(
+          'assets/brand/picnutri_logo_square_trimmed.png',
+          width: (iconSize * 3).clamp(140.0, 216.0),
+          fit: BoxFit.contain,
+          semanticLabel: 'PicNutri',
         ),
         if (showTagline) ...[
           const SizedBox(height: 4),
           Text(
             'Sua evolução, no seu ritmo.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: context.pic.textSecondary,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: context.pic.textSecondary),
           ),
         ],
       ],
@@ -85,55 +74,23 @@ class PicNutriWordmark extends StatelessWidget {
   }
 }
 
-class _SymbolPainter extends CustomPainter {
-  const _SymbolPainter(this.color);
+/// Logo horizontal oficial em PNG, com contraste para o tema atual.
+class PicNutriHorizontalLogo extends StatelessWidget {
+  const PicNutriHorizontalLogo({super.key, this.width = 156});
 
-  final Color color;
+  final double width;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final s = size.width / 1024;
-    canvas
-      ..save()
-      ..scale(s)
-      ..translate(0, 20)
-      ..saveLayer(const Rect.fromLTWH(0, -20, 1024, 1024), Paint());
-
-    final fill = Paint()..color = color;
-    final stem = Path()
-      ..moveTo(318, 300)
-      ..lineTo(428, 300)
-      ..lineTo(428, 712)
-      ..arcToPoint(const Offset(318, 712), radius: const Radius.circular(55))
-      ..close();
-    final leaf = Path()
-      ..moveTo(318, 300)
-      ..cubicTo(318, 270, 340, 252, 372, 250)
-      ..lineTo(706, 214)
-      ..cubicTo(740, 420, 650, 590, 428, 592)
-      ..lineTo(318, 592)
-      ..close();
-    canvas
-      ..drawPath(stem, fill)
-      ..drawPath(leaf, fill);
-
-    // Nervura vazada (recorta o símbolo, deixando o fundo aparecer).
-    final rib = Path()
-      ..moveTo(470, 524)
-      ..cubicTo(560, 500, 640, 420, 676, 268);
-    canvas
-      ..drawPath(
-        rib,
-        Paint()
-          ..blendMode = BlendMode.clear
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 30
-          ..strokeCap = StrokeCap.round,
-      )
-      ..restore()
-      ..restore();
+  Widget build(BuildContext context) {
+    final variant = Theme.of(context).brightness == Brightness.dark
+        ? 'white'
+        : 'green';
+    return Image.asset(
+      'assets/brand/picnutri_wordmark_$variant.png',
+      width: width,
+      fit: BoxFit.contain,
+      semanticLabel: 'PicNutri',
+      filterQuality: FilterQuality.medium,
+    );
   }
-
-  @override
-  bool shouldRepaint(_SymbolPainter old) => old.color != color;
 }

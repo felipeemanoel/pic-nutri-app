@@ -38,7 +38,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
-      await ref.read(sessionControllerProvider.notifier).login(email: _email.text, password: _password.text);
+      await ref
+          .read(sessionControllerProvider.notifier)
+          .login(email: _email.text, password: _password.text);
     } on Object catch (error) {
       if (mounted) showFailure(context, error);
     } finally {
@@ -60,19 +62,50 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               Positioned(
                 top: -MediaQuery.paddingOf(context).top,
                 right: 0,
-                width: (MediaQuery.sizeOf(context).width * 0.42).clamp(120, 220),
+                width: (MediaQuery.sizeOf(context).width * 0.56).clamp(
+                  180,
+                  300,
+                ),
                 child: const ExcludeSemantics(
-                  child: Image(image: AssetImage('assets/images/login/login_bowl.png'), fit: BoxFit.fitWidth),
+                  child: Image(
+                    image: AssetImage('assets/images/login/login_bowl.png'),
+                    fit: BoxFit.fitWidth,
+                  ),
                 ),
               ),
-            Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(Space.page, Space.xxl, Space.page, Space.xxl),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 440),
-                  child: _form(context, notice),
-                ),
-              ),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxHeight < 780;
+                final keyboard = MediaQuery.viewInsetsOf(context).bottom > 0;
+                final gap = keyboard
+                    ? 0.3
+                    : compact
+                    ? 0.55
+                    : 0.8;
+                return Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: compact ? 24 : 28,
+                    vertical: compact ? 12 : 24,
+                  ),
+                  child: Center(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.topCenter,
+                      child: SizedBox(
+                        width: (constraints.maxWidth - (compact ? 48 : 56))
+                            .clamp(0.0, 440.0),
+                        child: _form(
+                          context,
+                          notice,
+                          gap: gap,
+                          compact: compact,
+                          keyboard: keyboard,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -80,51 +113,107 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     );
   }
 
-  Widget _form(BuildContext context, String? notice) => AutofillGroup(
+  Widget _form(
+    BuildContext context,
+    String? notice, {
+    required double gap,
+    required bool compact,
+    required bool keyboard,
+  }) => AutofillGroup(
     child: Form(
       key: _formKey,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Align(alignment: Alignment.centerLeft, child: PicNutriWordmark(iconSize: 44)),
-          const SizedBox(height: Space.sm),
-          Text('Um espaço para cuidar de você.', style: context.text.bodyMedium?.copyWith(color: context.pic.textSecondary)),
-          const SizedBox(height: Space.section + Space.lg),
-          Semantics(header: true, child: Text('Bem-vindo de volta', style: context.text.headlineMedium)),
-          const SizedBox(height: Space.sm),
-          Text(
-            'Sua evolução começa com um pequeno passo.',
-            style: context.text.bodyLarge?.copyWith(color: context.pic.textSecondary),
+          if (!keyboard)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Image.asset(
+                'assets/brand/picnutri_logo_square_trimmed.png',
+                width: compact ? 104 : 140,
+                semanticLabel: 'PicNutri',
+              ),
+            ),
+          SizedBox(height: Space.sm * gap),
+          if (!keyboard)
+            Text(
+              'Um espaço para cuidar de você.',
+              style: context.text.bodyMedium?.copyWith(
+                color: context.pic.textSecondary,
+              ),
+            ),
+          SizedBox(height: keyboard ? 0 : 48 * gap),
+          Semantics(
+            header: true,
+            child: Text(
+              'Bem-vindo de volta!',
+              style: context.text.headlineMedium?.copyWith(
+                fontSize: compact ? 25 : 28,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.8,
+                height: 1.15,
+              ),
+            ),
           ),
-          const SizedBox(height: Space.section),
+          SizedBox(height: Space.sm * gap),
+          Text(
+            'Entre para acompanhar sua evolução.',
+            style: context.text.bodyLarge?.copyWith(
+              color: context.pic.textSecondary,
+            ),
+          ),
+          SizedBox(height: Space.section * gap),
           if (notice != null) ...[
             StatusBanner(message: notice),
-            const SizedBox(height: Space.lg),
+            SizedBox(height: Space.lg * gap),
           ],
+          Text(
+            'E-mail',
+            style: context.text.bodyLarge?.copyWith(
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          SizedBox(height: Space.sm * gap),
           TextFormField(
             controller: _email,
-            decoration: const InputDecoration(labelText: 'E-mail', prefixIcon: Icon(Icons.mail_outline_rounded)),
+            decoration: const InputDecoration(
+              hintText: 'Seu e-mail',
+              prefixIcon: Icon(Icons.mail_outline_rounded),
+            ),
             keyboardType: TextInputType.emailAddress,
             autofillHints: const [AutofillHints.email],
             textInputAction: TextInputAction.next,
             validator: Validators.email,
           ),
-          const SizedBox(height: Space.lg),
+          SizedBox(height: Space.lg * gap),
+          Text(
+            'Senha',
+            style: context.text.bodyLarge?.copyWith(
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          SizedBox(height: Space.sm * gap),
           TextFormField(
             controller: _password,
             decoration: InputDecoration(
-              labelText: 'Senha',
+              hintText: 'Sua senha',
               prefixIcon: const Icon(Icons.lock_outline_rounded),
               suffixIcon: IconButton(
                 tooltip: _obscure ? 'Mostrar senha' : 'Ocultar senha',
-                icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                icon: Icon(
+                  _obscure
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                ),
                 onPressed: () => setState(() => _obscure = !_obscure),
               ),
             ),
             obscureText: _obscure,
             autofillHints: const [AutofillHints.password],
             onFieldSubmitted: (_) => _submit(),
-            validator: (v) => (v == null || v.isEmpty) ? 'Informe a senha' : null,
+            validator: (v) =>
+                (v == null || v.isEmpty) ? 'Informe a senha' : null,
           ),
           Align(
             alignment: Alignment.centerRight,
@@ -133,24 +222,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               child: const Text('Esqueci minha senha'),
             ),
           ),
-          const SizedBox(height: Space.sm),
+          SizedBox(height: Space.md * gap),
           LoadingButton(label: 'Entrar', loading: _loading, onPressed: _submit),
-          const SizedBox(height: Space.lg),
+          SizedBox(height: Space.lg * gap),
           Wrap(
             alignment: WrapAlignment.center,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Text('Ainda não tem conta?', style: context.text.bodyMedium),
-              TextButton(onPressed: () => context.push(AppRoutes.register), child: const Text('Criar conta')),
+              TextButton(
+                onPressed: () => context.push(AppRoutes.register),
+                child: const Text('Criar conta'),
+              ),
             ],
           ),
           const SocialButtons(),
-          const SizedBox(height: Space.section),
-          Text(
-            'Sua evolução, no seu ritmo.',
-            textAlign: TextAlign.center,
-            style: context.text.bodySmall,
-          ),
         ],
       ),
     ),

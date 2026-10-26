@@ -9,12 +9,19 @@ Código: `lib/core/design/` (tokens, cores semânticas, marca e componentes) e `
 
 | Arquivo | Uso |
 | --- | --- |
-| `tool/brand/symbol.py` | Geometria oficial do símbolo (grade de 1024) |
+| `assets/brand/app_icon_source.png` | Imagem aprovada para o ícone de instalação |
+| `tool/brand/launcher.py` | Regenera os ícones Android, iOS e Play Store com Pillow (`python3 tool/brand/launcher.py`) |
+| `tool/brand/symbol.py` | Geometria antiga aposentada; não usar para gerar marca |
+| `assets/brand/picnutri_logo_square.png` | PNG quadrado oficial recebido |
+| `assets/brand/picnutri_logo_square_trimmed.png` | Mesma logo com margens externas aparadas para uso nas telas |
+| `assets/brand/picnutri_monogram.png` | Monograma derivado da nova logo |
 | `tool/brand/generate.py` | Gera todos os ícones e o splash (`python3 tool/brand/generate.py`) |
-| `assets/brand/picnutri_icon.svg` | Ícone com fundo esmeralda (referência) |
+| `assets/brand/picnutri_icon.svg` | Ícone de instalação com a imagem aprovada (PNG incorporado) |
 | `assets/brand/picnutri_symbol.svg` | Símbolo esmeralda sem fundo (referência) |
 | `assets/brand/picnutri_icon_512.png` | Ícone 512 px (lojas, materiais) |
-| `lib/core/design/brand_logo.dart` | `PicNutriSymbol`, `PicNutriAppIcon`, `PicNutriWordmark` (desenhados em código) |
+| `assets/brand/picnutri_wordmark_green.png` / `picnutri_wordmark_white.png` | Logo horizontal verde no tema claro e branca no escuro |
+| `assets/brand/picnutri_wordmark_black_on_white.png` / `picnutri_wordmark_white_on_black.png` | Logo com fundo branco e preto para materiais |
+| `lib/core/design/brand_logo.dart` | `PicNutriSymbol`, `PicNutriAppIcon`, `PicNutriWordmark` (PNGs oficiais), `PicNutriHorizontalLogo` (PNG oficial no topo da home) |
 
 **Símbolo**: um "P" cujo bojo é uma folha com a ponta subindo para a direita; a nervura vazada é uma linha de evolução. Sem balança, fita métrica ou silhuetas. Legível a partir de 16 px.
 
@@ -23,7 +30,7 @@ Código: `lib/core/design/` (tokens, cores semânticas, marca e componentes) e `
 | Plataforma | Arquivos | Tamanhos |
 | --- | --- | --- |
 | Android (legado) | `mipmap-*/ic_launcher.png` | 48, 72, 96, 144, 192 px |
-| Android (adaptativo, 8+) | `mipmap-anydpi-v26/ic_launcher.xml` + `mipmap-*/ic_launcher_foreground.png` (fundo `@color/ic_launcher_background` #087F5B) | 108 dp: 108–432 px |
+| Android (adaptativo, 8+) | `mipmap-anydpi-v26/ic_launcher.xml` + `mipmap-*/ic_launcher_foreground.png` (fundo `@color/ic_launcher_background` #00C853) | 108 dp: 108–432 px |
 | Android 13+ (temático) | `mipmap-*/ic_launcher_monochrome.png` | 108–432 px |
 | Splash Android ≤ 11 | `drawable/launch_background.xml` + `drawable-*/splash_symbol.png` | 96–384 px |
 | Splash Android 12+ | `values-v31/styles.xml` (`windowSplashScreen*`) | ícone adaptativo |
@@ -135,3 +142,13 @@ Material Icons (já incluídos no Flutter): estilo *outlined* para itens inativo
 - Calorias sempre em relação à meta do usuário; acima da meta aparece como "acima da meta", sem alarme.
 - Estimativas de IA sempre com o selo de IA e opção de corrigir.
 - Estados vazios explicam o que fazer e oferecem uma ação; nunca números fictícios.
+
+### Aplicação da nova logo quadrada
+
+- Login: `PicNutriWordmark` no cabeçalho.
+- Cadastro e recuperação de senha: `AuthLayout` usa o mesmo componente.
+- Abertura Flutter e onboarding: `PicNutriWordmark`.
+- Símbolos isolados: `PicNutriSymbol` usa o novo monograma.
+- Splash nativo iOS e Android até 11: logo completa branca, regenerada por `tool/brand/generate.py`.
+- Android 12+: ícone adaptativo já atualizado.
+- Home: preserva a logo horizontal oficial; instalação mantém o ícone aprovado.

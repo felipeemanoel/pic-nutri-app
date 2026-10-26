@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/design/theme_preference.dart';
 import '../core/notifications/local_notifications.dart';
 import '../features/auth/application/session_controller.dart';
+import '../shared/widgets/keyboard_dismiss.dart';
 import 'env.dart';
 import 'router.dart';
 import 'theme/app_theme.dart';
@@ -26,6 +27,8 @@ class PicNutriApp extends ConsumerWidget {
 
     return MaterialApp.router(
       title: 'PicNutri',
+      builder: (context, child) =>
+          KeyboardDismiss(child: child ?? const SizedBox.shrink()),
       debugShowCheckedModeBanner: env.isDev,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),

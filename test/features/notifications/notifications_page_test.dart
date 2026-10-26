@@ -73,6 +73,29 @@ Widget _app(
 );
 
 void main() {
+  testWidgets(
+    'central em celular com fonte ampliada mantém título e ações visíveis',
+    (tester) async {
+      tester.view
+        ..physicalSize = const Size(390, 844)
+        ..devicePixelRatio = 1;
+      tester.platformDispatcher.textScaleFactorTestValue = 1.5;
+      addTearDown(tester.view.reset);
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await tester.pumpWidget(
+        _app(FakeNotificationRepository(), notificationsEnabled: false),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Notificações'), findsOneWidget);
+      expect(find.text('Marcar todas como lidas'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.text('Marcar todas como lidas'));
+      await tester.pumpAndSettle();
+      expect(find.text('Tudo lido'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('lista mensagens, mostra não lidas e marca todas como lidas', (
     tester,
   ) async {

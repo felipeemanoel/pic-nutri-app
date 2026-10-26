@@ -78,17 +78,12 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
   @override
   Widget build(BuildContext context) {
     final inbox = ref.watch(notificationInboxProvider);
-    final unread = inbox.value?.unreadCount ?? 0;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Notificações'),
+        centerTitle: false,
         actions: [
-          if (unread > 0)
-            TextButton(
-              onPressed: _markAll,
-              child: const Text('Marcar todas como lidas'),
-            ),
           IconButton(
             tooltip: 'Configurar notificações',
             icon: const Icon(Icons.tune_rounded),
@@ -111,6 +106,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                 return _Header(
                   unread: state.unreadCount,
                   empty: state.items.isEmpty,
+                  onMarkAll: _markAll,
                 );
               }
               if (index == state.items.length + 1) {
@@ -142,7 +138,18 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                 return const SizedBox.shrink();
               }
               final n = state.items[index - 1];
-              return _NotificationTile(notification: n, onTap: () => _open(n));
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  Space.page,
+                  0,
+                  Space.page,
+                  Space.sm,
+                ),
+                child: _NotificationTile(
+                  notification: n,
+                  onTap: () => _open(n),
+                ),
+              );
             },
           ),
         ),
@@ -153,10 +160,15 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
 
 /// Contador de não lidas e aviso quando o push está desligado.
 class _Header extends ConsumerWidget {
-  const _Header({required this.unread, required this.empty});
+  const _Header({
+    required this.unread,
+    required this.empty,
+    required this.onMarkAll,
+  });
 
   final int unread;
   final bool empty;
+  final VoidCallback onMarkAll;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -176,6 +188,13 @@ class _Header extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Text(
+            'Seu acompanhamento, por aqui',
+            style: context.text.bodyMedium?.copyWith(
+              color: context.pic.textSecondary,
+            ),
+          ),
+          const SizedBox(height: Space.lg),
           if (pushOff) ...[
             StatusBanner(
               tone: BannerTone.info,
@@ -188,17 +207,42 @@ class _Header extends ConsumerWidget {
             const SizedBox(height: Space.md),
           ],
           if (!empty)
-            Semantics(
-              liveRegion: true,
-              child: Text(
-                unread == 0
-                    ? 'Tudo lido'
-                    : '$unread não lida${unread == 1 ? '' : 's'}',
-                style: context.text.labelLarge?.copyWith(
-                  color: context.pic.textSecondary,
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: Space.sm,
+              runSpacing: Space.xs,
+              children: [
+                Semantics(
+                  liveRegion: true,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: Space.md,
+                      vertical: Space.sm,
+                    ),
+                    decoration: BoxDecoration(
+                      color: context.pic.brandContainer,
+                      borderRadius: BorderRadius.circular(Radii.pill),
+                    ),
+                    child: Text(
+                      unread == 0
+                          ? 'Tudo lido'
+                          : '$unread não lida${unread == 1 ? '' : 's'}',
+                      style: context.text.labelMedium?.copyWith(
+                        color: context.pic.onBrandContainer,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                if (unread > 0)
+                  TextButton.icon(
+                    onPressed: onMarkAll,
+                    icon: const Icon(Icons.done_all_rounded, size: 18),
+                    label: const Text('Marcar todas como lidas'),
+                  ),
+              ],
             ),
+          const SizedBox(height: Space.sm),
         ],
       ),
     );
@@ -229,63 +273,82 @@ class _NotificationTile extends StatelessWidget {
     final unread = !notification.read;
     return Semantics(
       label: unread ? 'Não lida' : null,
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          color: unread
-              ? context.pic.brandContainer.withValues(alpha: 0.35)
-              : null,
-          padding: const EdgeInsets.symmetric(
-            horizontal: Space.page,
-            vertical: Space.md,
+      child: Material(
+        color: context.colors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(Radii.lg),
+          side: BorderSide(
+            color: unread
+                ? context.colors.primary.withValues(alpha: 0.25)
+                : context.pic.border,
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 6, right: Space.md),
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: unread ? context.colors.primary : Colors.transparent,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      notification.title,
-                      style: context.text.titleSmall?.copyWith(
-                        fontWeight: unread ? FontWeight.w700 : FontWeight.w500,
-                      ),
-                    ),
-                    if (notification.body.isNotEmpty) ...[
-                      const SizedBox(height: Space.xxs),
-                      Text(notification.body, style: context.text.bodyMedium),
-                    ],
-                    const SizedBox(height: Space.xs),
-                    Text(
-                      _when,
-                      style: context.text.bodySmall?.copyWith(
-                        color: context.pic.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (notification.route != null)
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: Space.lg,
+              vertical: Space.lg,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Padding(
-                  padding: const EdgeInsets.only(left: Space.sm, top: 2),
-                  child: Icon(
-                    Icons.chevron_right,
-                    color: context.pic.textSecondary,
+                  padding: const EdgeInsets.only(top: 6, right: Space.md),
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: unread
+                          ? context.colors.primary
+                          : Colors.transparent,
+                    ),
                   ),
                 ),
-            ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        notification.title,
+                        style: context.text.titleSmall?.copyWith(
+                          fontWeight: unread
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                        ),
+                      ),
+                      if (notification.body.isNotEmpty) ...[
+                        const SizedBox(height: Space.xs),
+                        Text(
+                          notification.body,
+                          style: context.text.bodyMedium?.copyWith(
+                            color: context.pic.textSecondary,
+                            height: 1.45,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: Space.md),
+                      Text(
+                        _when,
+                        style: context.text.bodySmall?.copyWith(
+                          color: context.pic.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (notification.route != null)
+                  Padding(
+                    padding: const EdgeInsets.only(left: Space.sm, top: 2),
+                    child: Icon(
+                      Icons.chevron_right,
+                      color: context.pic.textSecondary,
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

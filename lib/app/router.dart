@@ -80,7 +80,9 @@ final routerProvider = Provider<GoRouter>((ref) {
   final listenable = _SessionListenable();
   ref.listen(sessionControllerProvider, (_, _) => listenable.changed());
 
+  final rootNavigatorKey = GlobalKey<NavigatorState>();
   final router = GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: AppRoutes.splash,
     refreshListenable: listenable,
     redirect: (context, state) =>
@@ -324,6 +326,8 @@ final routerProvider = Provider<GoRouter>((ref) {
                   ),
                   GoRoute(
                     path: 'notifications',
+                    // Abre sobre a central sem empilhar novamente o shell das abas.
+                    parentNavigatorKey: rootNavigatorKey,
                     builder: (context, state) =>
                         const NotificationSettingsPage(),
                   ),
