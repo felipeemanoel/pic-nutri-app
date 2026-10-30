@@ -10,6 +10,7 @@ import '../../../shared/widgets/charts.dart';
 import '../../../shared/widgets/feedback.dart';
 import '../../../shared/widgets/progress_widgets.dart';
 import '../../../shared/widgets/state_views.dart';
+import '../../activity/presentation/activity_page.dart';
 import '../../auth/application/session_controller.dart';
 import '../../engagement/data/engagement_repository.dart';
 import '../../engagement/presentation/engagement_widgets.dart';
@@ -37,6 +38,7 @@ class ProgressPage extends ConsumerWidget {
             false);
     final tabs = [
       const Tab(text: 'Resumo'),
+      const Tab(text: 'Atividade'),
       const Tab(text: 'Peso'),
       const Tab(text: 'Medidas'),
       const Tab(text: 'Fotos'),
@@ -53,13 +55,14 @@ class ProgressPage extends ConsumerWidget {
           title: const Text('Evolução'),
           bottom: TabBar(
             tabs: tabs,
-            isScrollable: tabs.length > 4,
-            tabAlignment: tabs.length > 4 ? TabAlignment.start : null,
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
           ),
         ),
         body: TabBarView(
           children: [
             const _SummaryTab(),
+            const ActivityView(embedded: true),
             const _WeightTab(),
             const _MeasurementsTab(),
             const ProgressPhotosTab(),

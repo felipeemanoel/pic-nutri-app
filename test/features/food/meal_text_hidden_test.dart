@@ -1,9 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:picnutri/app/features.dart';
 import 'package:picnutri/core/error/app_failure.dart';
 import 'package:picnutri/features/ai/data/ai_repository.dart';
+import 'package:picnutri/features/food/data/food_repository.dart';
 import 'package:picnutri/features/food/presentation/food_page.dart';
 
 void main() {
@@ -12,12 +14,15 @@ void main() {
   ) async {
     expect(AppFeatures.mealTextVoice, isFalse);
     await tester.pumpWidget(
-      MaterialApp(
-        home: Builder(
-          builder: (context) => Scaffold(
-            body: FilledButton(
-              onPressed: () => chooseHowToAddMeal(context),
-              child: const Text('Abrir'),
+      ProviderScope(
+        overrides: [recentMealsProvider.overrideWith((ref) async => [])],
+        child: MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: FilledButton(
+                onPressed: () => chooseHowToAddMeal(context),
+                child: const Text('Abrir'),
+              ),
             ),
           ),
         ),
@@ -27,7 +32,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Falar ou escrever'), findsNothing);
     expect(find.text('Ditar por voz'), findsNothing);
+    expect(find.text('Como você quer registrar?'), findsOneWidget);
     expect(find.text('Tirar foto do prato'), findsOneWidget);
+    expect(find.text('Usar foto da galeria'), findsOneWidget);
+    // Sem o Início, a folha mostra só as formas de registrar refeição.
+    expect(find.text('Também registrar'), findsNothing);
     expect(find.text('Buscar alimentos'), findsOneWidget);
     expect(find.text('Recentes'), findsOneWidget);
     expect(find.text('Favoritas'), findsOneWidget);

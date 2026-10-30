@@ -1,7 +1,7 @@
 name: picnutri
 description: PicNutri — acompanhamento nutricional com IA.
 publish_to: none
-version: 0.2.0+4
+version: 0.3.0+5
 
 environment:
   sdk: ^3.12.0
@@ -29,6 +29,7 @@ dependencies:
   in_app_purchase: ^3.3.0
   intl: any
   mobile_scanner: ^7.4.1
+  package_info_plus: ^10.2.2
   path_provider: ^2.1.5
   sentry_flutter: ^10.0.0
   share_plus: ^13.3.1

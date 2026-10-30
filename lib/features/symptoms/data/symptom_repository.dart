@@ -97,3 +97,12 @@ final symptomTimelineProvider = FutureProvider<SymptomTimeline>((ref) {
   final to = DateTime.now();
   return ref.watch(symptomRepositoryProvider).timeline(from: to.subtract(Duration(days: days - 1)), to: to);
 });
+
+/// Sintomas dos últimos 90 dias, marcados no gráfico de nível estimado.
+final levelSymptomsProvider = FutureProvider<List<SymptomItem>>((ref) async {
+  final to = DateTime.now();
+  final timeline = await ref
+      .watch(symptomRepositoryProvider)
+      .timeline(from: to.subtract(const Duration(days: 89)), to: to);
+  return timeline.items;
+});

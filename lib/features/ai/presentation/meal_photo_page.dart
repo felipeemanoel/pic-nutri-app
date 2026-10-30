@@ -12,36 +12,45 @@ import '../../../app/routes.dart';
 import '../../../core/design/design_system.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/request_id.dart';
+import '../../../shared/state/refresh.dart';
+import '../../../shared/state/selected_date.dart';
 import '../../../shared/widgets/feedback.dart';
 import '../../../shared/widgets/state_views.dart';
+import '../../food/data/food_repository.dart';
 import '../../food/data/nutrition_models.dart';
 import '../data/ai_models.dart';
 import '../data/ai_repository.dart';
 
 /// Dados passados para a revisão da análise no editor de refeição.
 class PhotoReview {
-  const PhotoReview({required this.analysisId, required this.items});
+  const PhotoReview({required this.analysisId, required this.items, this.mealType});
 
   final String analysisId;
   final List<MealItem> items;
+
+  /// Tipo escolhido no resultado (o editor abre com ele marcado).
+  final String? mealType;
 }
 
-/// Registro de refeição por foto:
-/// 1. escolher/capturar → 2. pré-visualizar → 3. confirmar o envio →
-/// 4. processamento (estados reais do servidor) → 5. resultado →
-/// 6. revisão no editor → 7. confirmação no diário.
-/// Nada é salvo sem a confirmação do usuário.
+/// Registro de refeição por foto, em três telas:
+/// 1. capturar (ou escolher na galeria) → 2. análise sobre a própria foto,
+/// com as etapas reais do servidor → 3. resultado pronto para salvar (tipo,
+/// horário, calorias e itens), com "Ajustar itens" para editar antes.
+/// Nada é salvo sem o toque em "Salvar refeição".
 class MealPhotoPage extends ConsumerStatefulWidget {
-  const MealPhotoPage({super.key, this.textMode = false});
+  const MealPhotoPage({super.key, this.textMode = false, this.initialSource});
 
   /// Registro por texto ou voz (descrição da refeição) em vez de foto.
   final bool textMode;
+
+  /// Abre direto a câmera ou a galeria (vindo da folha "Registrar").
+  final ImageSource? initialSource;
 
   @override
   ConsumerState<MealPhotoPage> createState() => _MealPhotoPageState();
 }
 
-enum _Stage { choose, preview, uploading, analyzing, result, slow, uploadFailed }
+enum _Stage { choose, uploading, analyzing, result, slow, uploadFailed }
 
 class _MealPhotoPageState extends ConsumerState<MealPhotoPage> {
   static const _pollEvery = Duration(seconds: 2);
@@ -57,6 +66,28 @@ class _MealPhotoPageState extends ConsumerState<MealPhotoPage> {
   String? _path;
   String? _description;
   String? _uploadError;
+
+  @override
+  void initState() {
+    super.initState();
+    final source = widget.initialSource;
+    if (source != null && !widget.textMode) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _autoPick(source));
+    }
+  }
+
+  /// Abre a câmera/galeria direto só quando a análise por foto está
+  /// disponível e com cota; senão a tela mostra o motivo (IA desligada,
+  /// limite do dia) e a opção de registrar manualmente.
+  Future<void> _autoPick(ImageSource source) async {
+    try {
+      final photo = (await ref.read(aiStatusProvider.future)).photoAnalysis;
+      if (!photo.available || !photo.hasQuota) return;
+    } on Object {
+      return;
+    }
+    if (mounted) await _pick(source);
+  }
 
   @override
   void dispose() {
@@ -87,13 +118,13 @@ class _MealPhotoPageState extends ConsumerState<MealPhotoPage> {
       return;
     }
     if (file == null || !mounted) return;
-    setState(() {
-      _path = file!.path;
-      _stage = _Stage.preview;
-    });
+    // Sem tela de pré-visualização: a análise começa assim que a foto chega.
+    _path = file.path;
+    _description = null;
+    await _upload();
   }
 
-  /// Envia a foto da pré-visualização. Em nova tentativa após falha de rede,
+  /// Envia a foto escolhida. Em nova tentativa após falha de rede,
   /// reaproveita o mesmo identificador (o servidor não duplica a análise).
   Future<void> _upload({bool newAttempt = true}) async {
     final path = _path;
@@ -167,11 +198,11 @@ class _MealPhotoPageState extends ConsumerState<MealPhotoPage> {
     _poll();
   }
 
-  Future<void> _review() async {
+  Future<void> _review(String mealType) async {
     final analysis = _analysis!;
     final saved = await context.push<bool>(
       AppRoutes.photoReview,
-      extra: PhotoReview(analysisId: analysis.id, items: analysis.items),
+      extra: PhotoReview(analysisId: analysis.id, items: analysis.items, mealType: mealType),
     );
     if (saved == true && mounted) context.pop(true);
   }
@@ -210,7 +241,7 @@ class _MealPhotoPageState extends ConsumerState<MealPhotoPage> {
     final busy = _stage == _Stage.uploading || _stage == _Stage.analyzing;
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.textMode ? 'Refeição por texto ou voz' : 'Refeição por foto'),
+        title: Text(widget.textMode ? 'Refeição por texto ou voz' : 'Registrar refeição'),
         actions: [
           if (!busy)
             const Padding(
@@ -219,17 +250,7 @@ class _MealPhotoPageState extends ConsumerState<MealPhotoPage> {
             ),
         ],
       ),
-      body: Column(
-        children: [
-          AiSteps(
-            current: switch (_stage) {
-              _Stage.choose || _Stage.preview || _Stage.uploading || _Stage.uploadFailed => 0,
-              _Stage.analyzing || _Stage.slow => 1,
-              _Stage.result => 2,
-            },
-          ),
-          Expanded(
-            child: AnimatedSwitcher(
+      body: AnimatedSwitcher(
         duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : Motion.medium,
         child: KeyedSubtree(
           key: ValueKey(_stage),
@@ -237,25 +258,16 @@ class _MealPhotoPageState extends ConsumerState<MealPhotoPage> {
             _Stage.choose => widget.textMode
                 ? DescribeMealView(initial: _description, onSubmit: _describe, onManual: _manual)
                 : _ChooseView(onPick: _pick, onManual: _manual),
-            _Stage.preview => _PreviewView(
-              path: _path!,
-              onConfirm: _upload,
-              onChooseAnother: _chooseAnother,
-            ),
             _Stage.uploading => _ProcessingView(
               path: _path,
-              title: widget.textMode ? 'Enviando descrição' : 'Enviando foto',
-              message: widget.textMode
-                  ? 'Aguarde um instante.'
-                  : 'Aguarde enquanto a foto é enviada com segurança.',
+              step: 0,
+              textMode: widget.textMode,
               progress: _progress,
             ),
             _Stage.analyzing => _ProcessingView(
               path: _path,
-              title: _analysis?.status == 'processing' ? 'Identificando alimentos' : 'Foto recebida',
-              message: _analysis?.status == 'processing'
-                  ? 'Estimando alimentos e porções. Costuma levar alguns segundos.'
-                  : 'A análise vai começar em instantes.',
+              step: _analysis?.status == 'processing' ? 2 : 1,
+              textMode: widget.textMode,
             ),
             _Stage.slow => _Problem(
               icon: Icons.hourglass_bottom,
@@ -280,6 +292,7 @@ class _MealPhotoPageState extends ConsumerState<MealPhotoPage> {
               analysis: _analysis!,
               path: _path,
               onReview: _review,
+              onSaved: () => context.pop(true),
               onDiscard: _discard,
               onRetrySame: _upload,
               onChooseAnother: _chooseAnother,
@@ -288,9 +301,6 @@ class _MealPhotoPageState extends ConsumerState<MealPhotoPage> {
             ),
           },
         ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -437,11 +447,10 @@ class _ChooseView extends ConsumerWidget {
 
 /// Foto escolhida, com bordas arredondadas e decodificada em tamanho reduzido.
 class _Photo extends StatelessWidget {
-  const _Photo({required this.path, this.height = 280, this.dimmed = false});
+  const _Photo({required this.path, this.height = 280});
 
   final String path;
   final double height;
-  final bool dimmed;
 
   @override
   Widget build(BuildContext context) => Semantics(
@@ -456,8 +465,6 @@ class _Photo extends StatelessWidget {
           File(path),
           fit: BoxFit.cover,
           cacheWidth: 900,
-          color: dimmed ? Colors.black.withValues(alpha: 0.25) : null,
-          colorBlendMode: dimmed ? BlendMode.darken : null,
           errorBuilder: (_, _, _) => ColoredBox(
             color: context.pic.surfaceMuted,
             child: const Center(child: Icon(Icons.broken_image_outlined)),
@@ -468,92 +475,170 @@ class _Photo extends StatelessWidget {
   );
 }
 
-class _PreviewView extends StatelessWidget {
-  const _PreviewView({required this.path, required this.onConfirm, required this.onChooseAnother});
+/// Análise em andamento: a própria foto em destaque, com uma linha de leitura
+/// animada e as etapas reais do servidor (envio, fila, identificação).
+class _ProcessingView extends StatefulWidget {
+  const _ProcessingView({required this.step, required this.textMode, this.path, this.progress});
 
-  final String path;
-  final VoidCallback onConfirm;
-  final VoidCallback onChooseAnother;
-
-  @override
-  Widget build(BuildContext context) => ListView(
-    padding: const EdgeInsets.all(Space.page),
-    children: [
-      _Photo(path: path, height: 320),
-      const SizedBox(height: Space.lg),
-      Text('A foto está boa?', style: context.text.titleMedium),
-      const SizedBox(height: Space.xs),
-      Text(
-        'Confira se todos os alimentos aparecem e se a imagem está nítida. '
-        'Depois de enviar, a IA estima alimentos, porções, calorias e macronutrientes.',
-        style: context.text.bodyMedium?.copyWith(color: context.pic.textSecondary),
-      ),
-      const SizedBox(height: Space.xl),
-      FilledButton.icon(
-        onPressed: onConfirm,
-        icon: const Icon(Icons.auto_awesome),
-        label: const Text('Analisar foto'),
-      ),
-      const SizedBox(height: Space.sm),
-      TextButton(onPressed: onChooseAnother, child: const Text('Escolher outra foto')),
-    ],
-  );
-}
-
-class _ProcessingView extends StatelessWidget {
-  const _ProcessingView({required this.title, required this.message, this.path, this.progress});
-
-  final String title;
-  final String message;
+  /// 0 = enviando, 1 = recebida (na fila), 2 = identificando, 3 = calculando.
+  final int step;
+  final bool textMode;
   final String? path;
   final double? progress;
 
   @override
+  State<_ProcessingView> createState() => _ProcessingViewState();
+}
+
+class _ProcessingViewState extends State<_ProcessingView> with SingleTickerProviderStateMixin {
+  late final _scan = AnimationController(vsync: this, duration: const Duration(milliseconds: 1800));
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _scan.stop();
+    } else if (!_scan.isAnimating) {
+      _scan.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _scan.dispose();
+    super.dispose();
+  }
+
+  List<String> get _steps => [
+    if (widget.textMode) 'Enviando descrição' else 'Enviando foto',
+    if (widget.textMode) 'Lendo a descrição' else 'Foto recebida',
+    'Identificando alimentos e porções',
+    'Calculando calorias e macros',
+  ];
+
+  @override
   Widget build(BuildContext context) {
     final p = context.pic;
+    final path = widget.path;
+    final step = widget.step;
+    final title = switch (step) {
+      0 => widget.textMode ? 'Enviando sua descrição' : 'Enviando a foto',
+      1 => 'A análise vai começar',
+      _ => 'Separando alimentos e porções',
+    };
     return ListView(
       padding: const EdgeInsets.all(Space.page),
       children: [
         if (path != null)
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              _Photo(path: path!, height: 240, dimmed: true),
-              Container(
-                padding: const EdgeInsets.all(Space.md),
-                decoration: BoxDecoration(color: p.aiContainer, shape: BoxShape.circle),
-                child: SizedBox.square(
-                  dimension: 36,
-                  child: CircularProgressIndicator(
-                    value: progress == null || progress == 0 ? null : progress,
-                    strokeWidth: 3,
-                    color: p.ai,
-                    semanticsLabel: title,
+          ClipRRect(
+            borderRadius: Radii.card,
+            child: SizedBox(
+              height: 300,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  _Photo(path: path, height: 300),
+                  // Linha de leitura passando pela foto.
+                  AnimatedBuilder(
+                    animation: _scan,
+                    builder: (context, _) => Align(
+                      alignment: Alignment(0, -0.9 + 1.8 * Curves.easeInOut.transform(_scan.value)),
+                      child: Container(
+                        height: 3,
+                        width: double.infinity,
+                        margin: const EdgeInsets.symmetric(horizontal: Space.lg),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          borderRadius: BorderRadius.circular(Radii.pill),
+                          boxShadow: [BoxShadow(color: p.ai.withValues(alpha: 0.6), blurRadius: 12)],
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                  Positioned(
+                    left: Space.md,
+                    top: Space.md,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: Space.md, vertical: Space.xs + 2),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.62),
+                        borderRadius: BorderRadius.circular(Radii.pill),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.auto_awesome, size: 16, color: Colors.white),
+                          const SizedBox(width: Space.xs),
+                          Text(
+                            step == 0 ? 'Enviando' : 'Analisando prato',
+                            style: context.text.labelLarge?.copyWith(color: Colors.white),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         const SizedBox(height: Space.xl),
         Semantics(
           liveRegion: true,
-          child: Text(title, style: context.text.titleMedium, textAlign: TextAlign.center),
+          child: Text(
+            title,
+            style: context.text.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+            textAlign: TextAlign.center,
+          ),
         ),
         const SizedBox(height: Space.xs),
         Text(
-          message,
+          'Estimamos calorias e macronutrientes. Costuma levar alguns segundos.',
           style: context.text.bodyMedium?.copyWith(color: p.textSecondary),
           textAlign: TextAlign.center,
         ),
+        const SizedBox(height: Space.xl),
+        for (final (i, label) in _steps.indexed)
+          Padding(
+            padding: const EdgeInsets.only(bottom: Space.sm),
+            child: Row(
+              children: [
+                SizedBox.square(
+                  dimension: 20,
+                  child: i < step
+                      ? Icon(Icons.check_circle_rounded, size: 20, color: context.colors.primary)
+                      : i == step
+                      ? CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: p.ai,
+                          value: i == 0 && (widget.progress ?? 0) > 0 ? widget.progress : null,
+                        )
+                      : Icon(Icons.radio_button_unchecked, size: 20, color: p.border),
+                ),
+                const SizedBox(width: Space.md),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: context.text.bodyMedium?.copyWith(
+                      color: i <= step ? null : p.textSecondary,
+                      fontWeight: i == step ? FontWeight.w600 : null,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }
 }
 
-class _ResultView extends StatelessWidget {
+/// Resultado pronto para salvar: nome, tipo de refeição, horário, calorias em
+/// destaque, macros e itens. "Ajustar itens" abre o editor completo.
+class _ResultView extends ConsumerStatefulWidget {
   const _ResultView({
     required this.analysis,
     required this.onReview,
+    required this.onSaved,
     required this.onDiscard,
     required this.onRetrySame,
     required this.onChooseAnother,
@@ -565,28 +650,93 @@ class _ResultView extends StatelessWidget {
   final bool textMode;
   final MealAnalysis analysis;
   final String? path;
-  final VoidCallback onReview;
+  final ValueChanged<String> onReview;
+  final VoidCallback onSaved;
   final VoidCallback onDiscard;
   final VoidCallback onRetrySame;
   final VoidCallback onChooseAnother;
   final VoidCallback onManual;
 
+  @override
+  ConsumerState<_ResultView> createState() => _ResultViewState();
+}
+
+class _ResultViewState extends ConsumerState<_ResultView> {
+  late final _requestId = newRequestId();
+  late DateTime _eatenAt;
+  late String _type;
+  bool _saving = false;
+
+  MealAnalysis get analysis => widget.analysis;
+
+  @override
+  void initState() {
+    super.initState();
+    final selected = ref.read(selectedDateProvider);
+    final now = DateTime.now();
+    _eatenAt = selected == SelectedDate.today()
+        ? now
+        : DateTime(selected.year, selected.month, selected.day, now.hour, now.minute);
+    _type = MealTypes.suggestFor(_eatenAt);
+  }
+
   /// Confiança baixa em todos os itens: sugerir revisão cuidadosa.
   bool get _lowConfidence =>
       analysis.items.isNotEmpty && analysis.items.every((i) => (i.aiConfidence ?? 1) < 0.45);
 
+  /// Nome curto do prato a partir dos itens: "Arroz, feijão e frango".
+  String get _title {
+    final names = [for (final i in analysis.items.take(3)) i.name];
+    if (names.isEmpty) return 'Refeição';
+    final more = analysis.items.length > 3 ? ' e mais' : '';
+    if (names.length == 1) return names.first;
+    final head = names.sublist(0, names.length - 1).join(', ');
+    return more.isEmpty ? '$head e ${names.last.toLowerCase()}' : '${names.join(', ')}$more';
+  }
+
+  Future<void> _pickTime() async {
+    final time = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_eatenAt));
+    if (time == null || !mounted) return;
+    final at = DateTime(_eatenAt.year, _eatenAt.month, _eatenAt.day, time.hour, time.minute);
+    setState(() => _eatenAt = at.isAfter(DateTime.now()) ? DateTime.now() : at);
+  }
+
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    try {
+      await ref
+          .read(foodRepositoryProvider)
+          .saveMeal(
+            mealType: _type,
+            eatenAt: _eatenAt,
+            items: analysis.items,
+            requestId: _requestId,
+            photoAnalysisId: analysis.id,
+          );
+      Refresh.nutrition(ref);
+      if (!mounted) return;
+      showMessage(context, 'Refeição registrada.');
+      widget.onSaved();
+    } on Object catch (error) {
+      if (mounted) showFailure(context, error);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final textMode = widget.textMode;
     if (analysis.isFailed) {
       return _Problem(
         icon: Icons.error_outline,
         title: textMode ? 'Não foi possível analisar a descrição' : 'Não foi possível analisar a foto',
         message: analysis.errorMessage ?? 'Tente novamente ou registre a refeição manualmente.',
         primaryLabel: 'Tentar novamente',
-        onPrimary: onRetrySame,
+        onPrimary: widget.onRetrySame,
         secondaryLabel: textMode ? 'Editar descrição' : 'Escolher outra foto',
-        onSecondary: onChooseAnother,
-        onManual: onManual,
+        onSecondary: widget.onChooseAnother,
+        onManual: widget.onManual,
       );
     }
     if (analysis.notFood || analysis.items.isEmpty) {
@@ -599,42 +749,77 @@ class _ResultView extends StatelessWidget {
             ? 'Descreva os alimentos e as quantidades, por exemplo: "2 ovos mexidos e 1 pão francês".'
             : 'Tente outra foto, com o prato inteiro visível e boa iluminação, ou informe os alimentos manualmente.',
         primaryLabel: textMode ? 'Editar descrição' : 'Escolher outra foto',
-        onPrimary: onChooseAnother,
-        onManual: onManual,
+        onPrimary: widget.onChooseAnother,
+        onManual: widget.onManual,
       );
     }
 
     final totals = analysis.totals ?? const Nutrients();
+    final p = context.pic;
     return ListView(
       padding: const EdgeInsets.fromLTRB(Space.page, Space.sm, Space.page, Space.xxl),
       children: [
-        if (path != null) ...[_Photo(path: path!, height: 180), const SizedBox(height: Space.lg)],
+        if (widget.path != null) ...[_Photo(path: widget.path!, height: 200), const SizedBox(height: Space.lg)],
         if (analysis.description != null) ...[
           AppCard(
-            color: context.pic.surfaceMuted,
+            color: p.surfaceMuted,
             child: Text('“${analysis.description}”', style: context.text.bodyMedium),
           ),
           const SizedBox(height: Space.lg),
         ],
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Semantics(
+                header: true,
+                child: Text(
+                  _title,
+                  style: context.text.headlineSmall?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.6),
+                ),
+              ),
+            ),
+            const SizedBox(width: Space.sm),
+            TextButton.icon(
+              onPressed: _pickTime,
+              icon: const Icon(Icons.schedule_rounded, size: 18),
+              label: Text(Fmt.relativeDayTime(_eatenAt)),
+            ),
+          ],
+        ),
+        const SizedBox(height: Space.md),
+        Wrap(
+          spacing: Space.sm,
+          runSpacing: Space.sm,
+          children: [
+            for (final type in _MealChips.types)
+              ChoiceChip(
+                label: Text(_MealChips.label(type)),
+                avatar: Icon(_MealChips.icon(type), size: 18),
+                showCheckmark: false,
+                selected: _type == type,
+                onSelected: (_) => setState(() => _type = type),
+              ),
+          ],
+        ),
+        const SizedBox(height: Space.lg),
         AppCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
                 children: [
-                  Expanded(child: Text('Estimativa da refeição', style: context.text.titleMedium)),
+                  Expanded(child: Text('Calorias', style: context.text.labelLarge?.copyWith(color: p.textSecondary))),
                   const AiBadge(label: 'Estimativa'),
                 ],
               ),
-              const SizedBox(height: Space.md),
+              const SizedBox(height: Space.xs),
               MetricValue(value: Fmt.integer(totals.energyKcal), unit: 'kcal', large: true),
               const SizedBox(height: Space.lg),
               MacroSummary(proteinG: totals.proteinG, carbsG: totals.carbsG, fatG: totals.fatG),
             ],
           ),
         ),
-        const SizedBox(height: Space.md),
-        StatusBanner(tone: BannerTone.ai, message: analysis.disclaimer),
         if (analysis.lowQuality || _lowConfidence) ...[
           const SizedBox(height: Space.sm),
           StatusBanner(
@@ -642,12 +827,12 @@ class _ResultView extends StatelessWidget {
             title: 'Revise com atenção',
             message: analysis.lowQuality
                 ? 'A foto tem pouca nitidez ou iluminação; a estimativa pode ser menos precisa.'
-                : 'A IA teve pouca confiança na identificação. Se preferir, informe os alimentos manualmente.',
-            actionLabel: 'Registrar manualmente',
-            onAction: onManual,
+                : 'A IA teve pouca confiança na identificação. Confira os itens antes de salvar.',
+            actionLabel: 'Ajustar itens',
+            onAction: () => widget.onReview(_type),
           ),
         ],
-        const SectionHeader(title: 'Alimentos identificados'),
+        const SizedBox(height: Space.lg),
         AppCard(
           padding: const EdgeInsets.symmetric(vertical: Space.xs),
           child: Column(
@@ -657,16 +842,15 @@ class _ResultView extends StatelessWidget {
                 ListTile(
                   title: Text(item.name),
                   subtitle: Text('${item.quantityLabel} · ${Fmt.kcal(item.nutrients.energyKcal)}'),
-                  trailing: item.aiConfidence == null
-                      ? null
-                      : _ConfidenceLabel(confidence: item.aiConfidence!),
+                  trailing: item.aiConfidence == null ? null : _ConfidenceLabel(confidence: item.aiConfidence!),
+                  onTap: () => widget.onReview(_type),
                 ),
               ],
             ],
           ),
         ),
         if (analysis.notes.isNotEmpty) ...[
-          const SectionHeader(title: 'Observações da análise'),
+          const SizedBox(height: Space.md),
           for (final note in analysis.notes)
             Padding(
               padding: const EdgeInsets.only(bottom: Space.xs),
@@ -675,25 +859,61 @@ class _ResultView extends StatelessWidget {
                 children: [
                   Padding(
                     padding: const EdgeInsets.only(top: 3),
-                    child: Icon(Icons.info_outline, size: 16, color: context.pic.textSecondary),
+                    child: Icon(Icons.info_outline, size: 16, color: p.textSecondary),
                   ),
                   const SizedBox(width: Space.sm),
-                  Expanded(child: Text(note, style: context.text.bodyMedium)),
+                  Expanded(child: Text(note, style: context.text.bodySmall)),
                 ],
               ),
             ),
         ],
+        const SizedBox(height: Space.sm),
+        Text(
+          '${analysis.disclaimer.isEmpty ? 'Estimativa feita por IA.' : analysis.disclaimer} Toque em um item para ajustar.',
+          style: context.text.bodySmall?.copyWith(color: p.textSecondary),
+        ),
         const SizedBox(height: Space.xl),
         FilledButton.icon(
-          onPressed: onReview,
-          icon: const Icon(Icons.edit_note),
-          label: const Text('Revisar e salvar'),
+          onPressed: _saving ? null : _save,
+          icon: _saving
+              ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
+              : const Icon(Icons.check_rounded),
+          label: const Text('Salvar refeição'),
         ),
         const SizedBox(height: Space.sm),
-        TextButton(onPressed: onDiscard, child: const Text('Descartar análise')),
+        OutlinedButton.icon(
+          onPressed: _saving ? null : () => widget.onReview(_type),
+          icon: const Icon(Icons.edit_note),
+          label: const Text('Ajustar itens'),
+        ),
+        const SizedBox(height: Space.xs),
+        TextButton(onPressed: _saving ? null : widget.onDiscard, child: const Text('Descartar análise')),
       ],
     );
   }
+}
+
+/// Tipos de refeição como chips curtos, com ícone.
+abstract final class _MealChips {
+  static const types = ['breakfast', 'morning_snack', 'lunch', 'afternoon_snack', 'dinner', 'supper'];
+
+  static String label(String type) => switch (type) {
+    'breakfast' => 'Café',
+    'morning_snack' => 'Lanche manhã',
+    'lunch' => 'Almoço',
+    'afternoon_snack' => 'Lanche tarde',
+    'dinner' => 'Jantar',
+    'supper' => 'Ceia',
+    _ => MealTypes.label(type),
+  };
+
+  static IconData icon(String type) => switch (type) {
+    'breakfast' => Icons.free_breakfast_outlined,
+    'lunch' => Icons.lunch_dining_outlined,
+    'dinner' => Icons.dinner_dining_outlined,
+    'supper' => Icons.nightlight_outlined,
+    _ => Icons.bakery_dining_outlined,
+  };
 }
 
 class _ConfidenceLabel extends StatelessWidget {

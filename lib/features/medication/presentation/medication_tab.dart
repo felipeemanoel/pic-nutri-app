@@ -4,10 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/design/design_system.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/widgets/state_views.dart';
+import '../../symptoms/data/symptom_repository.dart';
+import '../application/medication_overview.dart';
 import '../data/medication_models.dart';
 import '../data/medication_repository.dart';
 import 'medication_forms.dart';
 import 'medication_instructions_page.dart';
+import 'medication_level_card.dart';
 
 /// Aba "Medicamento" da Evolução: medicamentos informados, aplicações e
 /// sintomas. Registro informativo, sem orientação de dose.
@@ -33,7 +36,8 @@ class MedicationTab extends ConsumerWidget {
         onRefresh: () async {
           ref
             ..invalidate(medicationsProvider)
-            ..invalidate(recentDosesProvider);
+            ..invalidate(recentDosesProvider)
+            ..invalidate(levelSymptomsProvider);
           await ref.read(medicationsProvider.future);
         },
         child: AsyncValueView<MedicationOptions>(
@@ -42,6 +46,12 @@ class MedicationTab extends ConsumerWidget {
           data: (opts) => ListView(
             padding: const EdgeInsets.fromLTRB(Space.page, Space.md, Space.page, Space.fabClearance),
             children: [
+              // Nível estimado no topo, quando o princípio ativo é reconhecido.
+              if (ref.watch(medicationOverviewProvider).value case final overview?
+                  when overview.level != null) ...[
+                MedicationLevelCard(overview: overview),
+                const SizedBox(height: Space.md),
+              ],
               _Disclaimer(text: opts.disclaimer),
               const SizedBox(height: Space.section),
               // 1. Cadastro

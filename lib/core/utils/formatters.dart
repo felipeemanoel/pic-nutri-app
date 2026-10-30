@@ -21,6 +21,25 @@ abstract final class Fmt {
   static String shortDate(DateTime d) => _shortDate.format(d);
   static String time(DateTime d) => _time.format(d.toLocal());
   static String monthYear(DateTime d) => _monthYear.format(d);
+  static final _weekday = DateFormat('EEE', 'pt_BR');
+
+  /// Dia relativo e hora: "hoje, 18:27", "amanhã, 09:00", "ontem, 09:00" ou
+  /// "qui, 23 de out, 09:00".
+  static String relativeDayTime(DateTime d, {DateTime? now}) {
+    final local = d.toLocal();
+    final ref = now ?? DateTime.now();
+    final day = DateTime(local.year, local.month, local.day);
+    final today = DateTime(ref.year, ref.month, ref.day);
+    final diff = (day.difference(today).inHours / 24).round();
+    final hour = time(local);
+    return switch (diff) {
+      0 => 'hoje, $hour',
+      1 => 'amanhã, $hour',
+      -1 => 'ontem, $hour',
+      _ => '${_weekday.format(local).replaceAll('.', '')}, '
+          '${dayMonth(local).replaceAll('.', '')}, $hour',
+    };
+  }
 
   /// Data no formato da API (YYYY-MM-DD), sem fuso.
   static String apiDate(DateTime d) =>

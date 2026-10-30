@@ -1,6 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/notifications/local_notifications.dart';
+import '../../activity/application/activity_reminders.dart';
+import '../../activity/data/activity_models.dart';
+import '../../activity/data/activity_repository.dart';
 import '../../auth/application/session_controller.dart';
 import '../../home/data/dashboard.dart';
 import '../../home/data/dashboard_repository.dart';
@@ -61,6 +64,17 @@ class ReminderScheduler {
       }
     }
 
+    // Atividade física: horários das metas e eventos (sem rede, fica sem).
+    var activityPlans = const <ActivityPlan>[];
+    var activityEvents = const <ActivityEvent>[];
+    try {
+      final repo = _ref.read(activityRepositoryProvider);
+      activityPlans = await repo.plans();
+      activityEvents = await repo.events();
+    } on Object {
+      // Mantém só os lembretes da conta.
+    }
+
     await notifications.replaceAll(
       plan(
         active,
@@ -68,6 +82,13 @@ class ReminderScheduler {
         today: today,
         now: now,
         status: todayStatus,
+        extra: ActivityReminders.plan(
+          plans: activityPlans,
+          events: activityEvents,
+          today: today,
+          now: now,
+          preferences: preferences,
+        ),
       ),
       timezone: profile.timezone,
     );
@@ -80,6 +101,7 @@ class ReminderScheduler {
     required DateTime now,
     NotificationPreferences? preferences,
     Dashboard? status,
+    List<(DateTime, WeeklyNotification)> extra = const [],
   }) {
     final waterMet =
         status != null && status.waterTotalMl >= status.waterGoalMl;
@@ -159,7 +181,9 @@ class ReminderScheduler {
       }
     }
 
-    result.sort((a, b) => a.$1.compareTo(b.$1));
+    result
+      ..addAll(extra)
+      ..sort((a, b) => a.$1.compareTo(b.$1));
     return [
       for (final (_, n) in result.take(LocalNotifications.maxScheduled)) n,
     ];

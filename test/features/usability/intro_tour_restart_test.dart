@@ -62,14 +62,14 @@ void main() {
       await tester.tap(find.text('Concluir'));
       await tester.pumpAndSettle();
       expect(find.byType(IntroTourPage), findsNothing);
-      expect(find.text('Seu dia em equilíbrio'), findsOneWidget);
+      expect(find.text('Calorias de hoje'), findsOneWidget);
       // A API continua retornando pending=true: o recibo local deve impedir o loop.
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pumpAndSettle();
       await tester.pumpWidget(app());
       await tester.pumpAndSettle();
       expect(find.byType(IntroTourPage), findsNothing);
-      expect(find.text('Seu dia em equilíbrio'), findsOneWidget);
+      expect(find.text('Calorias de hoje'), findsOneWidget);
     },
   );
 }

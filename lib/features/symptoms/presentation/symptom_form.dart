@@ -6,6 +6,7 @@ import '../../../app/routes.dart';
 import '../../../core/design/design_system.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/request_id.dart';
+import '../../../shared/state/refresh.dart';
 import '../../../shared/widgets/feedback.dart';
 import '../../../shared/widgets/state_views.dart';
 import '../data/symptom_models.dart';
@@ -106,7 +107,7 @@ class _SymptomFormState extends ConsumerState<_SymptomForm> {
         warningSigns: _warnings.toList(),
         requestId: _requestId,
       );
-      ref.invalidate(symptomTimelineProvider);
+      Refresh.symptoms(ref);
       if (mounted) Navigator.of(context).pop(alert);
     } on Object catch (e) {
       if (mounted) showFailure(context, e);
@@ -124,41 +125,51 @@ class _SymptomFormState extends ConsumerState<_SymptomForm> {
       data: (o) => ListView(
         padding: EdgeInsets.fromLTRB(Space.page, 0, Space.page, MediaQuery.viewInsetsOf(context).bottom + Space.xl),
         children: [
-          Semantics(header: true, child: Text('Como você está se sentindo?', style: context.text.titleLarge)),
-          const SizedBox(height: Space.xs),
-          Text(o.disclaimer, style: context.text.bodySmall),
+          Semantics(
+            header: true,
+            child: Text(
+              'Como você está se sentindo?',
+              style: context.text.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+            ),
+          ),
           const SizedBox(height: Space.lg),
-          // Opções frequentes à vista, com um toque.
-          Wrap(
-            spacing: Space.sm,
-            runSpacing: Space.sm,
-            children: [
-              for (final opt in o.symptoms)
-                ChoiceChip(
-                  label: Text(opt.label),
-                  selected: _symptom == opt.value,
-                  onSelected: (v) => setState(() => _symptom = v ? opt.value : null),
-                ),
-            ],
+          // Grade de 2 colunas com ícone: escolher com um toque.
+          LayoutBuilder(
+            builder: (context, box) {
+              final width = (box.maxWidth - Space.sm) / 2;
+              return Wrap(
+                spacing: Space.sm,
+                runSpacing: Space.sm,
+                children: [
+                  for (final opt in o.symptoms)
+                    SizedBox(
+                      width: width,
+                      child: _SymptomTile(
+                        icon: symptomIcon(opt.value),
+                        label: opt.label,
+                        selected: _symptom == opt.value,
+                        onTap: () => setState(() => _symptom = _symptom == opt.value ? null : opt.value),
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
           if (_symptom == 'other') ...[
             const SizedBox(height: Space.md),
             TextField(controller: _other, maxLength: 80, decoration: const InputDecoration(labelText: 'Qual?')),
           ],
           const SizedBox(height: Space.section),
-          Text('Quanto está incomodando?', style: context.text.titleSmall),
+          Text('Intensidade', style: context.text.titleSmall),
           const SizedBox(height: Space.sm),
-          Wrap(
-            spacing: Space.sm,
-            runSpacing: Space.sm,
-            children: [
+          SegmentedButton<int>(
+            showSelectedIcon: false,
+            segments: [
               for (final i in o.intensities)
-                ChoiceChip(
-                  label: Text(i.label),
-                  selected: _intensity == int.parse(i.value),
-                  onSelected: (_) => setState(() => _intensity = int.parse(i.value)),
-                ),
+                ButtonSegment(value: int.parse(i.value), label: Text(_capitalize(i.label))),
             ],
+            selected: {_intensity},
+            onSelectionChanged: (v) => setState(() => _intensity = v.first),
           ),
           const SizedBox(height: Space.lg),
           ListTile(
@@ -215,9 +226,83 @@ class _SymptomFormState extends ConsumerState<_SymptomForm> {
               ),
             ],
           ),
+          const SizedBox(height: Space.md),
+          Text(o.disclaimer, style: context.text.bodySmall),
           const SizedBox(height: Space.lg),
           LoadingButton(label: 'Registrar', loading: _saving, onPressed: _save),
         ],
+      ),
+    );
+  }
+}
+
+String _capitalize(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+
+/// Ícone ilustrativo por sintoma (o nome sempre aparece ao lado).
+IconData symptomIcon(String code) => switch (code) {
+  'nausea' || 'vomiting' => Icons.sick_outlined,
+  'diarrhea' || 'constipation' || 'bloating' => Icons.airline_seat_recline_normal_outlined,
+  'heartburn' => Icons.local_fire_department_outlined,
+  'abdominal_pain' => Icons.healing_outlined,
+  'low_appetite' => Icons.no_meals_outlined,
+  'headache' => Icons.psychology_alt_outlined,
+  'fatigue' => Icons.battery_2_bar_rounded,
+  'dizziness' => Icons.cyclone_outlined,
+  'injection_site_reaction' => Icons.vaccines_outlined,
+  'poor_sleep' => Icons.bedtime_outlined,
+  _ => Icons.edit_note_rounded,
+};
+
+class _SymptomTile extends StatelessWidget {
+  const _SymptomTile({required this.icon, required this.label, required this.selected, required this.onTap});
+
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.pic;
+    final primary = context.colors.primary;
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      excludeSemantics: true,
+      child: Material(
+        color: selected ? p.brandContainer : context.colors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(Radii.lg),
+          side: BorderSide(color: selected ? primary : p.border, width: selected ? 1.6 : 1),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 84),
+            child: Padding(
+              padding: const EdgeInsets.all(Space.md),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, color: selected ? primary : p.textSecondary),
+                  const SizedBox(height: Space.xs),
+                  Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: context.text.bodyMedium?.copyWith(
+                      color: selected ? p.onBrandContainer : null,
+                      fontWeight: selected ? FontWeight.w600 : null,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

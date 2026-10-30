@@ -10,8 +10,13 @@ import '../../../shared/state/selected_date.dart';
 import '../../../shared/widgets/day_navigator.dart';
 import '../../../shared/widgets/feedback.dart';
 import '../../../shared/widgets/state_views.dart';
+import '../../activity/presentation/activity_forms.dart';
+import '../../auth/application/session_controller.dart';
+import '../../medication/presentation/medication_forms.dart';
 import '../../notifications/presentation/notification_bell.dart';
 import '../../planning/presentation/recipes_page.dart';
+import '../../progress/presentation/body_forms.dart';
+import '../../symptoms/presentation/symptom_form.dart';
 import '../data/food_repository.dart';
 import '../data/nutrition_models.dart';
 import 'favorite_meal_action.dart';
@@ -174,10 +179,15 @@ class _Shortcut extends StatelessWidget {
   );
 }
 
-/// Ponto único de registro de refeição (Início e Alimentação): formas disponíveis
-/// de registro e, abaixo, repetir uma recente ou favorita com um toque.
-Future<void> chooseHowToAddMeal(BuildContext context) async {
-  final route = await showModalBottomSheet<String>(
+/// Ponto único de registro (Início e Alimentação): "Como você quer
+/// registrar?" com foto, galeria e busca; abaixo, repetir uma refeição
+/// recente com um toque. Com [otherLogs], também aplicação, sintoma, peso e
+/// água (o botão "Registrar" do Início).
+Future<void> chooseHowToAddMeal(
+  BuildContext context, {
+  bool otherLogs = false,
+}) async {
+  final choice = await showModalBottomSheet<Object>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
@@ -193,25 +203,27 @@ Future<void> chooseHowToAddMeal(BuildContext context) async {
               child: Semantics(
                 header: true,
                 child: Text(
-                  'Registrar refeição',
-                  style: sheet.text.titleMedium,
+                  'Como você quer registrar?',
+                  style: sheet.text.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),
             _AddOption(
               icon: Icons.photo_camera_outlined,
               title: 'Tirar foto do prato',
-              subtitle: 'A IA estima os alimentos e você revisa',
+              subtitle: 'A IA estima alimentos, porções e macros',
               ai: true,
-              onTap: () => Navigator.of(sheet).pop(AppRoutes.mealPhoto),
+              onTap: () => Navigator.of(sheet).pop(_cameraRoute),
             ),
             const SizedBox(height: Space.sm),
             _AddOption(
-              icon: Icons.search_rounded,
-              title: 'Buscar alimentos',
-              subtitle:
-                  'No banco de alimentos, pelo código de barras ou informando os valores',
-              onTap: () => Navigator.of(sheet).pop(_searchRoute),
+              icon: Icons.photo_library_outlined,
+              title: 'Usar foto da galeria',
+              subtitle: 'Escolha uma foto que você já tirou',
+              ai: true,
+              onTap: () => Navigator.of(sheet).pop(_galleryRoute),
             ),
             // Mantido OFF: texto/voz serão retomados em uma etapa futura.
             if (AppFeatures.mealTextVoice) ...[
@@ -224,11 +236,20 @@ Future<void> chooseHowToAddMeal(BuildContext context) async {
                 onTap: () => Navigator.of(sheet).pop(AppRoutes.mealText),
               ),
             ],
+            const SizedBox(height: Space.sm),
+            _AddOption(
+              icon: Icons.search_rounded,
+              title: 'Buscar alimentos',
+              subtitle:
+                  'No banco de alimentos, pelo código de barras ou informando os valores',
+              onTap: () => Navigator.of(sheet).pop(_searchRoute),
+            ),
             const SizedBox(height: Space.lg),
             Padding(
               padding: const EdgeInsets.only(left: Space.sm, bottom: Space.sm),
               child: Text('Comer de novo', style: sheet.text.labelLarge),
             ),
+            _RecentInline(onPick: (meal) => Navigator.of(sheet).pop(meal)),
             IntrinsicHeight(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -251,21 +272,149 @@ Future<void> chooseHowToAddMeal(BuildContext context) async {
                 ],
               ),
             ),
+            if (otherLogs) ...[
+              const SizedBox(height: Space.lg),
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: Space.sm,
+                  bottom: Space.sm,
+                ),
+                child: Text('Também registrar', style: sheet.text.labelLarge),
+              ),
+              Consumer(
+                builder: (context, ref, _) {
+                  final medication =
+                      ref
+                          .watch(currentAccountProvider)
+                          ?.profile
+                          .medicationTrackingEnabled ??
+                      false;
+                  return Wrap(
+                    spacing: Space.sm,
+                    runSpacing: Space.sm,
+                    children: [
+                      if (medication)
+                        ActionChip(
+                          avatar: const Icon(Icons.vaccines_outlined, size: 18),
+                          label: const Text('Aplicação'),
+                          onPressed: () => Navigator.of(sheet).pop(_doseRoute),
+                        ),
+                      ActionChip(
+                        avatar: const Icon(
+                          Icons.directions_run_rounded,
+                          size: 18,
+                        ),
+                        label: const Text('Treino'),
+                        onPressed: () =>
+                            Navigator.of(sheet).pop(_activityRoute),
+                      ),
+                      ActionChip(
+                        avatar: const Icon(Icons.spa_outlined, size: 18),
+                        label: const Text('Sintoma'),
+                        onPressed: () => Navigator.of(sheet).pop(_symptomRoute),
+                      ),
+                      ActionChip(
+                        avatar: const Icon(
+                          Icons.monitor_weight_outlined,
+                          size: 18,
+                        ),
+                        label: const Text('Peso'),
+                        onPressed: () => Navigator.of(sheet).pop(_weightRoute),
+                      ),
+                      ActionChip(
+                        avatar: const Icon(Icons.water_drop_outlined, size: 18),
+                        label: const Text('Água'),
+                        onPressed: () =>
+                            Navigator.of(sheet).pop(AppRoutes.water),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ],
           ],
         ),
       ),
     ),
   );
-  if (route == null || !context.mounted) return;
-  switch (route) {
+  if (choice == null || !context.mounted) return;
+  switch (choice) {
+    case final Meal meal:
+      await repeatMeal(context, meal);
     case _favoritesRoute:
       await showFavoriteMealsSheet(context);
     case _repeatRoute:
       await showRecentMealsSheet(context);
     case _searchRoute:
       await context.push(AppRoutes.newMeal, extra: MealEditorStart.search);
-    default:
+    case _cameraRoute:
+      await context.push('${AppRoutes.mealPhoto}?source=camera');
+    case _galleryRoute:
+      await context.push('${AppRoutes.mealPhoto}?source=gallery');
+    case _doseRoute:
+      await openDoseForm(context);
+    case _symptomRoute:
+      await showSymptomForm(context);
+    case _activityRoute:
+      await showActivitySessionForm(context);
+    case _weightRoute:
+      await showWeightForm(context);
+    case final String route:
       await context.push(route);
+  }
+}
+
+const _cameraRoute = '#camera';
+const _galleryRoute = '#gallery';
+const _doseRoute = '#dose';
+const _symptomRoute = '#symptom';
+const _activityRoute = '#activity';
+const _weightRoute = '#weight';
+
+/// As três refeições mais recentes, para repetir com um toque (abre a revisão
+/// preenchida antes de registrar).
+class _RecentInline extends ConsumerWidget {
+  const _RecentInline({required this.onPick});
+
+  final ValueChanged<Meal> onPick;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final meals = ref.watch(recentMealsProvider).value ?? const <Meal>[];
+    if (meals.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Space.sm),
+      child: AppCard(
+        padding: const EdgeInsets.symmetric(vertical: Space.xs),
+        child: Column(
+          children: [
+            for (final (i, meal) in meals.take(3).indexed) ...[
+              if (i > 0) const Divider(height: 1, indent: Space.lg),
+              ListTile(
+                dense: true,
+                title: Text(
+                  [
+                    MealTypes.label(meal.mealType),
+                    meal.title ??
+                        (meal.items.isEmpty
+                            ? null
+                            : meal.items.take(3).map((i) => i.name).join(', ')),
+                  ].nonNulls.join(' · '),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Text(recentMealWhen(meal.eatenAt)),
+                trailing: Text(
+                  Fmt.kcal(meal.totals.energyKcal),
+                  style: context.text.labelLarge,
+                ),
+                onTap: () => onPick(meal),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }
 

@@ -12,6 +12,8 @@ abstract final class AppRoutes {
   static const food = '/food';
   static const progress = '/progress';
   static const contents = '/contents';
+  static const articles = '/contents/articles';
+  static String article(String slug) => '/contents/articles/$slug';
 
   // Assistente: acesso eventual pelo menu de Perfil.
   static const assistant = '/assistant';
@@ -36,6 +38,8 @@ abstract final class AppRoutes {
 
   // Telas internas.
   static const water = '/home/water';
+  // Atividade física: metas, treinos e eventos.
+  static const activity = '/home/activity';
   // Bem-estar (sintomas): parte da Evolução.
   static const symptoms = '/progress/symptoms';
   static const help = '/profile/help';

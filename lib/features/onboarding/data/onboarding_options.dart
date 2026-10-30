@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../app/features.dart';
 
+export '../../medication/data/medication_catalog.dart';
+
 /// Uma opção de resposta do onboarding (cartão com ícone).
 class OnboardingOption {
   const OnboardingOption(this.value, this.title, {this.subtitle, this.icon});
@@ -217,91 +219,4 @@ abstract final class OnboardingOptions {
       subtitle: 'Sem essa informação, você define as metas manualmente',
     ),
   ];
-}
-
-/// Medicamento conhecido, para facilitar o cadastro inicial. As doses são as
-/// apresentações da bula, para a pessoa marcar a que já usa: o app não
-/// sugere nem calcula doses.
-class KnownMedication {
-  const KnownMedication({
-    required this.id,
-    required this.name,
-    required this.ingredient,
-    required this.form,
-    required this.frequency,
-    required this.doses,
-  });
-
-  final String id;
-  final String name;
-  final String ingredient;
-
-  /// Valor da API: injection ou oral.
-  final String form;
-
-  /// Frequência mais comum na bula (pré-selecionada, pode ser trocada).
-  final String frequency;
-
-  /// Apresentações em mg.
-  final List<double> doses;
-
-  static const other = 'other';
-
-  static const all = [
-    KnownMedication(
-      id: 'mounjaro',
-      name: 'Mounjaro',
-      ingredient: 'tirzepatida',
-      form: 'injection',
-      frequency: 'weekly',
-      doses: [2.5, 5, 7.5, 10, 12.5, 15],
-    ),
-    KnownMedication(
-      id: 'ozempic',
-      name: 'Ozempic',
-      ingredient: 'semaglutida',
-      form: 'injection',
-      frequency: 'weekly',
-      doses: [0.25, 0.5, 1, 2],
-    ),
-    KnownMedication(
-      id: 'wegovy',
-      name: 'Wegovy',
-      ingredient: 'semaglutida',
-      form: 'injection',
-      frequency: 'weekly',
-      doses: [0.25, 0.5, 1, 1.7, 2.4],
-    ),
-    KnownMedication(
-      id: 'saxenda',
-      name: 'Saxenda',
-      ingredient: 'liraglutida',
-      form: 'injection',
-      frequency: 'daily',
-      doses: [0.6, 1.2, 1.8, 2.4, 3],
-    ),
-    KnownMedication(
-      id: 'victoza',
-      name: 'Victoza',
-      ingredient: 'liraglutida',
-      form: 'injection',
-      frequency: 'daily',
-      doses: [0.6, 1.2, 1.8],
-    ),
-    KnownMedication(
-      id: 'rybelsus',
-      name: 'Rybelsus',
-      ingredient: 'semaglutida oral',
-      form: 'oral',
-      frequency: 'daily',
-      doses: [3, 7, 14],
-    ),
-  ];
-
-  static KnownMedication? byId(String? id) {
-    for (final m in all) {
-      if (m.id == id) return m;
-    }
-    return null;
-  }
 }

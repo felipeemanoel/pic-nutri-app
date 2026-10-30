@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../../app/routes.dart';
 import '../../../core/design/design_system.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../shared/state/refresh.dart';
 import '../../../shared/widgets/feedback.dart';
 import '../../../shared/widgets/state_views.dart';
 import '../data/symptom_models.dart';
@@ -122,7 +123,7 @@ class _SymptomTile extends ConsumerWidget {
     if (!ok) return;
     try {
       await ref.read(symptomRepositoryProvider).delete(item.id);
-      ref.invalidate(symptomTimelineProvider);
+      Refresh.symptoms(ref);
     } on Object catch (e) {
       if (context.mounted) showFailure(context, e);
     }

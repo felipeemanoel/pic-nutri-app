@@ -5,6 +5,9 @@ import 'package:intl/intl.dart';
 
 import '../../../app/routes.dart';
 import '../../../core/design/design_system.dart';
+import '../../content/data/article_models.dart';
+import '../../content/data/article_repository.dart';
+import '../../content/presentation/article_widgets.dart';
 import '../../help/data/help_repository.dart';
 import '../../notifications/presentation/notification_bell.dart';
 import '../data/planning_models.dart';
@@ -26,6 +29,7 @@ const _savedRecipes = (
   favorites: true,
 );
 const _allArticles = (search: null, category: null);
+const _editorial = (category: null, search: null);
 
 /// Conteúdos: receitas e artigos de saúde, com autoria, fonte e data.
 /// Aba principal de Conteúdo; também acessível pelos atalhos de Alimentação.
@@ -35,6 +39,7 @@ class ContentsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final recipes = ref.watch(recipeSearchProvider(_allRecipes));
+    final editorial = ref.watch(articlesProvider(_editorial));
     final saved =
         ref.watch(recipeSearchProvider(_savedRecipes)).value?.recipes ??
         const [];
@@ -53,6 +58,7 @@ class ContentsPage extends ConsumerWidget {
         onRefresh: () async {
           ref
             ..invalidate(recipeSearchProvider)
+            ..invalidate(articlesProvider(_editorial))
             ..invalidate(helpArticlesProvider(_allArticles));
         },
         child: ListView(
@@ -61,7 +67,7 @@ class ContentsPage extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: Space.page),
               child: Text(
-                'Receitas e informações da equipe PicNutri. São sugestões gerais: não substituem '
+                'Receitas, dicas e guias da equipe PicNutri. São sugestões gerais: não substituem '
                 'um plano feito por um profissional para você.',
                 style: context.text.bodyMedium?.copyWith(
                   color: context.pic.textSecondary,
@@ -85,6 +91,29 @@ class ContentsPage extends ConsumerWidget {
                 text: 'Não foi possível carregar as receitas.',
                 onRetry: () =>
                     ref.invalidate(recipeSearchProvider(_allRecipes)),
+              ),
+              _ => const Padding(
+                padding: EdgeInsets.all(Space.xl),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            },
+            const SizedBox(height: Space.section),
+            _SectionTitle(
+              title: 'Dicas e guias',
+              action: 'Ver todos',
+              onAction: () => context.push(AppRoutes.articles),
+            ),
+            const SizedBox(height: Space.md),
+            switch (editorial) {
+              AsyncData(:final value) when value.isNotEmpty => _ArticleCarousel(
+                articles: value.take(8).toList(),
+              ),
+              AsyncData() => const _Empty(
+                text: 'Dicas e guias da equipe aparecem aqui.',
+              ),
+              AsyncError() => _Empty(
+                text: 'Não foi possível carregar as dicas.',
+                onRetry: () => ref.invalidate(articlesProvider(_editorial)),
               ),
               _ => const Padding(
                 padding: EdgeInsets.all(Space.xl),
@@ -164,6 +193,28 @@ class _RecipeCarousel extends StatelessWidget {
             onTap: () => context.push(AppRoutes.recipe(recipes[i].id)),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ArticleCarousel extends StatelessWidget {
+  const _ArticleCarousel({required this.articles});
+
+  final List<Article> articles;
+
+  @override
+  Widget build(BuildContext context) {
+    final scale = MediaQuery.textScalerOf(context).scale(16) / 16;
+    return SizedBox(
+      height: 290 * scale.clamp(1, 1.6),
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: Space.page),
+        itemCount: articles.length,
+        separatorBuilder: (_, _) => const SizedBox(width: Space.md),
+        itemBuilder: (context, i) =>
+            SizedBox(width: 250, child: ArticleCard(article: articles[i])),
       ),
     );
   }

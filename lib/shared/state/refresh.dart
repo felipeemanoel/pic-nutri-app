@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../features/activity/data/activity_repository.dart';
 import '../../features/engagement/data/engagement_repository.dart';
 import '../../features/food/data/food_repository.dart';
 import '../../features/home/data/dashboard_repository.dart';
@@ -9,6 +10,7 @@ import '../../features/medication/data/medication_repository.dart';
 import '../../features/progress/data/body_repository.dart';
 import '../../features/reminders/application/reminder_scheduler.dart';
 import '../../features/reports/data/report_repository.dart';
+import '../../features/symptoms/data/symptom_repository.dart';
 import '../../features/water/data/water_repository.dart';
 
 /// Recarrega os dados afetados após uma alteração, mantendo painel, diário e
@@ -40,7 +42,26 @@ abstract final class Refresh {
     ref
       ..invalidate(medicationsProvider)
       ..invalidate(recentDosesProvider)
+      ..invalidate(levelSymptomsProvider)
       ..invalidate(dashboardProvider);
+  }
+
+  /// Sintomas registrados fora da aplicação (linha do tempo e gráfico de nível).
+  static void symptoms(WidgetRef ref) {
+    ref
+      ..invalidate(symptomTimelineProvider)
+      ..invalidate(levelSymptomsProvider);
+  }
+
+  /// Metas, treinos e eventos de atividade física (e os lembretes deles).
+  static void activity(WidgetRef ref) {
+    ref
+      ..invalidate(activitySummaryProvider)
+      ..invalidate(activityPlansProvider)
+      ..invalidate(activityEventsProvider)
+      ..invalidate(activitySessionsProvider)
+      ..invalidate(engagementProvider);
+    _resyncReminders(ref);
   }
 
   static void body(WidgetRef ref) {

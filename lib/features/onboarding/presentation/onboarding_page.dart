@@ -71,6 +71,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   String? _treatmentStage;
   String? _medicationId;
   final _otherMedication = TextEditingController();
+  String _medicationQuery = '';
   String? _frequency;
   String? _doseChoice;
   final _customDose = TextEditingController();
@@ -478,6 +479,19 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     }
   }
 
+  /// Nome salvo no cadastro: a marca do catálogo; numa entrada por princípio
+  /// ativo, o nome da embalagem (se informado) com o princípio ativo.
+  String get _medicationName {
+    final known = KnownMedication.byId(_medicationId);
+    final typed = _otherMedication.text.trim();
+    if (known == null) return typed;
+    if (!known.genericEntry || typed.isEmpty) return known.name;
+    final ingredient = known.ingredient.label;
+    return KnownMedication.normalize(typed).contains(KnownMedication.normalize(ingredient))
+        ? typed
+        : '$typed ($ingredient)';
+  }
+
   double? get _dose => switch (_doseChoice) {
     null || 'unknown' => null,
     'custom' => Validators.parseNumber(_customDose.text),
@@ -487,7 +501,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   Future<void> _saveMedication() async {
     if (_medicationSaved || _medicationId == null) return;
     final known = KnownMedication.byId(_medicationId);
-    final name = known?.name ?? _otherMedication.text.trim();
+    final name = _medicationName;
     if (name.length < 2) return;
     final (frequency, frequencyNote) = OnboardingOptions.apiFrequency(
       _frequency ?? known?.frequency ?? 'other',

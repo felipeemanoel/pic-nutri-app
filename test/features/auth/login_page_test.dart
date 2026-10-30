@@ -8,6 +8,8 @@ import 'package:picnutri/features/ai/data/ai_models.dart';
 import 'package:picnutri/features/ai/data/ai_repository.dart';
 import 'package:picnutri/features/auth/application/session_controller.dart';
 import 'package:picnutri/features/auth/data/social_sign_in.dart';
+import 'package:picnutri/features/content/data/article_models.dart';
+import 'package:picnutri/features/content/data/article_repository.dart';
 import 'package:picnutri/features/food/data/food_repository.dart';
 import 'package:picnutri/features/food/data/nutrition_models.dart';
 import 'package:picnutri/features/help/data/help_repository.dart';
@@ -129,6 +131,7 @@ void main() {
               (ref, filters) async => (recipes: <Recipe>[], tags: <String>[]),
             ),
             helpArticlesProvider.overrideWith((ref, filters) async => []),
+            articlesProvider.overrideWith((ref, query) async => <Article>[]),
             conversationsProvider.overrideWith((ref) async => []),
             aiStatusProvider.overrideWith(
               (ref) async => AiStatus.fromJson({

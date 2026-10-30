@@ -9,10 +9,11 @@ import '../../../shared/validators.dart';
 import '../../../shared/widgets/feedback.dart';
 import '../../../shared/widgets/form_fields.dart';
 import '../../../shared/widgets/state_views.dart';
-import '../data/injection_guides.dart';
+import '../data/medication_catalog.dart';
 import '../data/medication_models.dart';
 import '../data/medication_repository.dart';
 import 'injection_guidance.dart';
+import 'medication_catalog_picker.dart';
 
 /// Cadastro/edição de medicamento.
 Future<void> showMedicationForm(
@@ -143,30 +144,24 @@ class _MedicationFormState extends ConsumerState<_MedicationForm> {
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Preencher nome pelo catálogo (opcional)',
-                  helperText:
-                      'A apresentação será confirmada ao registrar uma aplicação.',
-                  helperMaxLines: 2,
-                ),
-                items: [
-                  for (final guide in InjectionGuide.catalog)
-                    DropdownMenuItem(
-                      value: guide.id,
-                      child: Text(
-                        '${guide.brand} · ${guide.manufacturer}',
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                ],
-                onChanged: (id) {
-                  final guide = InjectionGuide.catalog
-                      .where((g) => g.id == id)
-                      .firstOrNull;
-                  if (guide != null) _name.text = guide.brand;
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final m = await showMedicationCatalogPicker(context);
+                  if (m == null || !mounted) return;
+                  setState(() {
+                    _name.text = m.genericEntry ? '${m.name} ' : m.name;
+                    _form = m.form;
+                    _unit = 'mg';
+                    _frequency = m.frequency;
+                  });
                 },
+                icon: const Icon(Icons.list_alt_rounded),
+                label: const Text('Escolher na lista de canetas'),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Preenche nome, forma e frequência. Você pode ajustar depois.',
+                style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -178,6 +173,7 @@ class _MedicationFormState extends ConsumerState<_MedicationForm> {
                 textCapitalization: TextCapitalization.sentences,
                 validator: (v) =>
                     (v?.trim().length ?? 0) < 2 ? 'Informe o nome.' : null,
+                onChanged: (_) => setState(() {}),
               ),
               _Dropdown(
                 label: 'Forma',
@@ -239,6 +235,7 @@ class _MedicationFormState extends ConsumerState<_MedicationForm> {
 
 class _Dropdown extends StatelessWidget {
   const _Dropdown({
+    super.key,
     required this.label,
     required this.value,
     required this.options,
@@ -253,7 +250,7 @@ class _Dropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) => DropdownButtonFormField<String>(
     // Recria o campo quando o valor muda por fora (ex.: troca de medicamento).
-    key: ValueKey('$label:$value'),
+    key: ValueKey('$label:$value:$key'),
     initialValue: options.any((o) => o.value == value) ? value : null,
     isExpanded: true,
     decoration: InputDecoration(labelText: label),
@@ -294,9 +291,57 @@ class _DoseFormPageState extends ConsumerState<_DoseFormPage> {
   };
   late final _notes = TextEditingController(text: widget.dose?.notes);
   bool _saving = false;
+  bool _adding = false;
+  int _catalogNonce = 0;
   String? _presentation;
 
+  static const _fromCatalog = '#catalog';
+
   bool get _isEdit => widget.dose != null;
+
+  /// Escolhe no catálogo completo. Se a pessoa ainda não tem esse
+  /// medicamento cadastrado, ele é cadastrado na hora (frequência da bula).
+  Future<void> _chooseFromCatalog(List<Medication> registered) async {
+    // Volta o campo para o medicamento atual enquanto a lista está aberta.
+    setState(() => _catalogNonce++);
+    final known = await showMedicationCatalogPicker(context);
+    if (known == null || !mounted) return;
+    final key = KnownMedication.normalize(known.name);
+    final existing = registered
+        .where((m) => m.isActive && KnownMedication.normalize(m.name) == key)
+        .firstOrNull;
+    if (existing != null) {
+      _select(existing);
+      return;
+    }
+    setState(() => _adding = true);
+    try {
+      final created = await ref
+          .read(medicationRepositoryProvider)
+          .saveMedication(
+            name: known.name,
+            form: known.form,
+            doseUnit: 'mg',
+            frequency: known.frequency,
+            requestId: newRequestId(),
+          );
+      Refresh.medication(ref);
+      await ref.read(medicationsProvider.future);
+      if (mounted) _select(created);
+    } on Object catch (error) {
+      if (mounted) showFailure(context, error);
+    } finally {
+      if (mounted) setState(() => _adding = false);
+    }
+  }
+
+  void _select(Medication m) => setState(() {
+    _medicationId = m.id;
+    _site = null;
+    _presentation = null;
+    _amount.clear();
+    _unit = m.doseUnit;
+  });
 
   @override
   void dispose() {
@@ -419,7 +464,7 @@ class _DoseFormPageState extends ConsumerState<_DoseFormPage> {
             ),
         ],
       ),
-      body: options == null || medications == null
+      body: options == null || medications == null || _adding
           ? const LoadingView()
           : Builder(
               builder: (context) {
@@ -431,11 +476,13 @@ class _DoseFormPageState extends ConsumerState<_DoseFormPage> {
                     .where((m) => m.id == _medicationId)
                     .firstOrNull;
                 if (medication == null) {
-                  return const EmptyState(
+                  return EmptyState(
                     icon: Icons.medication_outlined,
-                    title: 'Nenhum medicamento em uso',
+                    title: 'Qual medicamento você aplicou?',
                     message:
-                        'Cadastre um medicamento antes de registrar aplicações.',
+                        'Escolha na lista de canetas para registrar a aplicação.',
+                    actionLabel: 'Escolher medicamento',
+                    onAction: () => _chooseFromCatalog(medications),
                   );
                 }
                 _unit ??= medication.doseUnit;
@@ -478,19 +525,22 @@ class _DoseFormPageState extends ConsumerState<_DoseFormPage> {
                             ),
                             const SizedBox(height: Space.sm),
                             _Dropdown(
+                              key: ValueKey(_catalogNonce),
                               label: 'Medicamento',
                               value: _medicationId,
                               options: [
                                 for (final m in available) Option(m.id, m.name),
+                                if (!_isEdit)
+                                  const Option(
+                                    _fromCatalog,
+                                    'Outro medicamento (ver todas as canetas)',
+                                  ),
                               ],
-                              onChanged: (v) => setState(() {
-                                _medicationId = v;
-                                _site = null;
-                                _amount.clear();
-                                _unit = available
-                                    .firstWhere((m) => m.id == v)
-                                    .doseUnit;
-                              }),
+                              onChanged: (v) => v == _fromCatalog
+                                  ? _chooseFromCatalog(medications)
+                                  : _select(
+                                      available.firstWhere((m) => m.id == v),
+                                    ),
                             ),
                             ListTile(
                               contentPadding: EdgeInsets.zero,
@@ -529,6 +579,32 @@ class _DoseFormPageState extends ConsumerState<_DoseFormPage> {
                                 ),
                               ],
                             ),
+                            if (KnownMedication.byName(medication.name)
+                                    ?.doses
+                                    case final doses?
+                                when doses.isNotEmpty && !_isEdit) ...[
+                              const SizedBox(height: Space.sm),
+                              Wrap(
+                                spacing: Space.sm,
+                                runSpacing: Space.sm,
+                                children: [
+                                  for (final d in doses)
+                                    ChoiceChip(
+                                      label: Text('${Fmt.decimal(d)} mg'),
+                                      selected:
+                                          _unit == 'mg' &&
+                                          Validators.parseNumber(
+                                                _amount.text,
+                                              ) ==
+                                              d,
+                                      onSelected: (_) => setState(() {
+                                        _amount.text = Fmt.decimal(d);
+                                        _unit = 'mg';
+                                      }),
+                                    ),
+                                ],
+                              ),
+                            ],
                             if (medication.isInjection) ...[
                               const SizedBox(height: Space.section),
                               Text(

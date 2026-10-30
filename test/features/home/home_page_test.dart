@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:picnutri/features/activity/data/activity_models.dart';
+import 'package:picnutri/features/activity/data/activity_repository.dart';
 import 'package:picnutri/features/auth/application/session_controller.dart';
 import 'package:picnutri/features/food/data/food_repository.dart';
 import 'package:picnutri/features/food/data/nutrition_models.dart';
 import 'package:picnutri/features/home/data/dashboard.dart';
 import 'package:picnutri/features/home/data/dashboard_repository.dart';
 import 'package:picnutri/features/home/presentation/home_page.dart';
+import 'package:picnutri/features/medication/application/medication_overview.dart';
+import 'package:picnutri/features/medication/data/medication_models.dart';
+import 'package:picnutri/features/medication/domain/medication_schedule.dart';
 
 import '../../helpers/fakes.dart';
 
@@ -14,6 +19,7 @@ Map<String, dynamic> _dashboardJson({
   int meals = 0,
   double kcal = 0,
   Map<String, dynamic>? weight,
+  bool medication = false,
 }) => {
   'date': '2026-10-13',
   'is_today': true,
@@ -31,14 +37,52 @@ Map<String, dynamic> _dashboardJson({
   'water': {'total_ml': 500, 'goal_ml': 2000},
   'weight': weight,
   'goal': null,
-  'medication_tracking_enabled': false,
+  'medication_tracking_enabled': medication,
 };
 
-Widget _app(Dashboard data, {List<Meal> meals = const []}) => ProviderScope(
+const _activityJson = <String, dynamic>{
+  'week': {
+    'start': '2026-10-26',
+    'end': '2026-11-01',
+    'sessions': 1,
+    'minutes': 60,
+    'active_days': 1,
+    'distance_km': 0,
+  },
+  'weekly_goal': 3,
+  'streak_weeks': 0,
+  'plans': [
+    {
+      'id': 'p1',
+      'type': 'strength',
+      'type_label': 'Musculação',
+      'title': 'Academia',
+      'times_per_week': 3,
+      'days': [1, 3, 5],
+      'time': '07:00',
+      'reminder_enabled': true,
+      'is_active': true,
+      'done_this_week': 1,
+      'done_days': [1],
+    },
+  ],
+  'upcoming_events': <Object>[],
+  'recent_sessions': <Object>[],
+};
+
+Widget _app(
+  Dashboard data, {
+  List<Meal> meals = const [],
+  MedicationOverview? medication,
+}) => ProviderScope(
   overrides: [
     ...sessionOverrides(SessionSignedIn(testAccount())),
     dashboardProvider.overrideWith((ref, day) async => data),
     mealsOnDayProvider.overrideWith((ref, day) async => meals),
+    medicationOverviewProvider.overrideWith((ref) async => medication),
+    activitySummaryProvider.overrideWith(
+      (ref) async => ActivitySummary.fromJson(_activityJson),
+    ),
   ],
   child: const MaterialApp(home: HomePage()),
 );
@@ -65,9 +109,18 @@ void main() {
 
     expect(find.text('Nenhuma refeição registrada neste dia.'), findsOneWidget);
     expect(find.text('Suas refeições do dia aparecem aqui.'), findsOneWidget);
-    expect(find.text('Registrar refeição'), findsOneWidget, reason: 'uma ação principal, sem repetição');
-    expect(find.text('500 de 2.000 ml'), findsOneWidget);
-
+    expect(
+      find.text('Registrar'),
+      findsOneWidget,
+      reason: 'uma ação principal, sem repetição',
+    );
+    expect(find.text('0,5 / 2 L'), findsOneWidget);
+    expect(
+      find.byTooltip('Desfazer o último registro de água'),
+      findsOneWidget,
+    );
+    // Sem acompanhamento de medicação, o cartão da próxima aplicação não aparece.
+    expect(find.text('Próxima aplicação'), findsNothing);
   });
 
   testWidgets('home em celular: só o essencial de hoje, sem estourar', (
@@ -88,7 +141,7 @@ void main() {
     // Próximo passo: o que falta, sem repetir os números dos cartões acima.
     await tester.scrollUntilVisible(find.text('Faltam 1.500 ml de água'), 200);
     expect(find.text('Registrar água'), findsOneWidget);
-    expect(find.text('Registrar refeição'), findsOneWidget);
+    expect(find.text('Registrar'), findsOneWidget);
   });
 
   testWidgets('água: menu com outros volumes além de +200 ml', (tester) async {
@@ -120,10 +173,73 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('1.250'), findsOneWidget);
-    expect(find.text('de 1.800 kcal'), findsOneWidget);
-    expect(find.text('550 kcal'), findsOneWidget);
+    expect(find.text('1.250 / 1.800 kcal'), findsOneWidget);
+    expect(find.text('550 kcal para sua meta'), findsOneWidget);
     expect(find.text('Almoço'), findsOneWidget);
     expect(find.text('Registrado · 320 kcal'), findsOneWidget);
+  });
+
+  testWidgets('com medicação, a próxima aplicação abre o Início', (
+    tester,
+  ) async {
+    tester.view
+      ..physicalSize = const Size(390, 1400)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final last = DateTime.now().subtract(const Duration(days: 2, minutes: 55));
+    final medication = Medication(
+      id: 'm1',
+      name: 'Mounjaro',
+      form: 'injection',
+      doseUnit: 'mg',
+      frequency: 'weekly',
+      isActive: true,
+      lastDoseAt: last,
+    );
+    final dose = MedicationDose(
+      id: 'd1',
+      medicationId: 'm1',
+      takenAt: last,
+      localDate: '',
+      doseUnit: 'mg',
+      doseAmount: 2.5,
+      symptoms: const [],
+    );
+    await tester.pumpWidget(
+      _app(
+        Dashboard.fromJson(_dashboardJson(medication: true)),
+        medication: MedicationOverview(
+          medication: medication,
+          doses: [dose],
+          lastDose: dose,
+          level: MedicationLevel(
+            ingredient: ActiveIngredient.tirzepatide,
+            doses: [dose],
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(tester.takeException(), isNull);
+    expect(find.text('Próxima aplicação'), findsOneWidget);
+    expect(find.text('4d 23h'), findsOneWidget);
+    expect(find.text('Mounjaro · 2,5 mg'), findsOneWidget);
+    expect(find.text('Registrar aplicação'), findsOneWidget);
+    expect(find.textContaining('mg'), findsWidgets);
+  });
+
+  testWidgets('atividade física: treinos da semana e metas no Início', (
+    tester,
+  ) async {
+    tester.view
+      ..physicalSize = const Size(800, 2400)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(_app(Dashboard.fromJson(_dashboardJson())));
+    await tester.pumpAndSettle();
+    expect(find.text('Atividade física'), findsOneWidget);
+    expect(find.text('1 / 3 treinos na semana'), findsOneWidget);
+    expect(find.text('Academia 1/3'), findsOneWidget);
+    expect(find.text('Registrar treino'), findsOneWidget);
   });
 }

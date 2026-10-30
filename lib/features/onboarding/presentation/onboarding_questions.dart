@@ -207,20 +207,36 @@ extension _Questions on _OnboardingPageState {
   ];
 
   List<Widget> _medicationNameScreen() {
-    final options = [
-      for (final m in KnownMedication.all)
-        OnboardingOption(
-          m.id,
-          m.name,
-          subtitle:
-              '${m.ingredient} · ${m.form == 'oral' ? 'comprimido' : 'injetável'}',
-        ),
-      const OnboardingOption(
-        KnownMedication.other,
-        'Outro medicamento',
-        subtitle: 'Digite o nome',
-      ),
-    ];
+    OnboardingOption option(KnownMedication m) {
+      final details = [
+        if (m.maker != null) m.maker!,
+        if (m.purpose != null) m.purpose!,
+        if (m.form == 'oral') 'comprimido',
+      ].join(' · ');
+      return OnboardingOption(
+        m.id,
+        m.name,
+        subtitle: details.isEmpty ? null : details,
+      );
+    }
+    void select(String v) {
+      if (v != _medicationId) {
+        _doseChoice = null;
+        _frequency = KnownMedication.byId(v)?.frequency;
+        _otherMedication.clear();
+      }
+      _medicationId = v;
+    }
+
+    bool advance(String v) =>
+        v != KnownMedication.other &&
+        !(KnownMedication.byId(v)?.genericEntry ?? false);
+
+    final query = _medicationQuery;
+    final brands = KnownMedication.brands.where((m) => m.matches(query)).toList();
+    final selected = KnownMedication.byId(_medicationId);
+    final askName = _medicationId == KnownMedication.other || (selected?.genericEntry ?? false);
+
     return [
       _title(
         _usingMedication
@@ -228,22 +244,72 @@ extension _Questions on _OnboardingPageState {
             : 'Qual medicamento foi prescrito?',
         'Usado só para organizar seus registros e lembretes.',
       ),
-      ..._single(options, _medicationId, (v) {
-        if (v != _medicationId) {
-          _doseChoice = null;
-          _frequency = KnownMedication.byId(v)?.frequency;
-        }
-        _medicationId = v;
-      }, advanceFor: (v) => v != KnownMedication.other),
-      if (_medicationId == KnownMedication.other)
+      TextFormField(
+        initialValue: _medicationQuery,
+        decoration: const InputDecoration(
+          prefixIcon: Icon(Icons.search_rounded),
+          hintText: 'Buscar pela marca ou princípio ativo',
+        ),
+        textInputAction: TextInputAction.search,
+        onChanged: (v) => _update(() => _medicationQuery = v),
+      ),
+      const SizedBox(height: Space.md),
+      for (final ingredient in MedicationIngredient.values)
+        if (brands.any((m) => m.ingredient == ingredient)) ...[
+          Padding(
+            padding: const EdgeInsets.only(top: Space.sm, bottom: Space.xs, left: Space.xs),
+            child: Text(
+              ingredient.groupTitle,
+              style: context.text.labelLarge?.copyWith(color: context.pic.textSecondary),
+            ),
+          ),
+          ..._single(
+            [for (final m in brands.where((m) => m.ingredient == ingredient)) option(m)],
+            _medicationId,
+            select,
+            advanceFor: advance,
+          ),
+        ],
+      Padding(
+        padding: const EdgeInsets.only(top: Space.md, bottom: Space.xs, left: Space.xs),
+        child: Text(
+          'Genérico, similar ou outra marca',
+          style: context.text.labelLarge?.copyWith(color: context.pic.textSecondary),
+        ),
+      ),
+      ..._single(
+        [
+          for (final m in KnownMedication.genericEntries)
+            OnboardingOption(
+              m.id,
+              'Outra caneta de ${m.ingredient.label}',
+              subtitle: 'Genéricos, similares e outras marcas',
+            ),
+          const OnboardingOption(
+            KnownMedication.other,
+            'Outro medicamento',
+            subtitle: 'Digite o nome',
+          ),
+        ],
+        _medicationId,
+        select,
+        advanceFor: advance,
+      ),
+      if (askName) ...[
+        const SizedBox(height: Space.sm),
         TextFormField(
           controller: _otherMedication,
           autofocus: true,
           textCapitalization: TextCapitalization.words,
           maxLength: 80,
-          decoration: const InputDecoration(labelText: 'Nome do medicamento'),
+          decoration: InputDecoration(
+            labelText: _medicationId == KnownMedication.other
+                ? 'Nome do medicamento'
+                : 'Nome na embalagem (opcional)',
+          ),
           onChanged: (_) => _update(() {}),
         ),
+      ],
     ];
   }
 
@@ -481,7 +547,6 @@ extension _Questions on _OnboardingPageState {
         keys.isEmpty
         ? 'Não informado'
         : keys.map((k) => labels[k] ?? k).join(', ');
-    final known = KnownMedication.byId(_medicationId);
     final dose = _dose;
     final about = [
       if (_birthDate != null) '${_ageOn(_birthDate!)} anos',
@@ -503,7 +568,7 @@ extension _Questions on _OnboardingPageState {
             _medicationId == null
                 ? 'Para cadastrar depois'
                 : [
-                    known?.name ?? _otherMedication.text.trim(),
+                    _medicationName,
                     if (dose != null) '${Fmt.decimal(dose)} mg',
                   ].join(' · '),
             OnboardingScreen.treatmentStage,
@@ -538,11 +603,93 @@ extension _Questions on _OnboardingPageState {
             .map((s) => OnboardingSteps.labels[s]!)
             .toList();
 
+    final calories = int.tryParse(_calories.text.trim());
+    final waterMl = int.tryParse(_water.text.trim());
+    final hasPlan = _consent && (calories != null || waterMl != null);
+    final weight = _weightKg;
+    final goalWeight = _goalWeightKg;
+
     return [
       _title(
-        'Tudo pronto!',
-        'Confira suas respostas. Você pode mudar qualquer uma depois no Perfil.',
+        hasPlan ? 'Seu plano está pronto' : 'Tudo pronto!',
+        hasPlan
+            ? 'Montado com as suas respostas. Você pode mudar qualquer valor depois no Perfil.'
+            : 'Confira suas respostas. Você pode mudar qualquer uma depois no Perfil.',
       ),
+      if (hasPlan) ...[
+        // Metas do dia em cartões grandes, sem promessa de resultado.
+        if (calories != null)
+          AppCard(
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: context.pic.brandContainer,
+                  child: Icon(
+                    Icons.local_fire_department_rounded,
+                    color: context.pic.onBrandContainer,
+                  ),
+                ),
+                const SizedBox(width: Space.lg),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Calorias por dia',
+                        style: context.text.bodySmall?.copyWith(
+                          color: context.pic.textSecondary,
+                        ),
+                      ),
+                      Text(
+                        '${Fmt.integer(calories)} kcal',
+                        style: context.text.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.8,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        const SizedBox(height: Space.sm),
+        Row(
+          children: [
+            _MacroTile('Proteínas', _protein.text, 'g', context.pic.protein),
+            const SizedBox(width: Space.sm),
+            _MacroTile('Carboidratos', _carbs.text, 'g', context.pic.carbs),
+            const SizedBox(width: Space.sm),
+            _MacroTile('Gorduras', _fat.text, 'g', context.pic.fat),
+          ],
+        ),
+        const SizedBox(height: Space.sm),
+        Row(
+          children: [
+            _MacroTile(
+              'Água por dia',
+              waterMl == null ? '' : Fmt.decimal(waterMl / 1000),
+              'L',
+              context.pic.water,
+            ),
+            if (weight != null && goalWeight != null) ...[
+              const SizedBox(width: Space.sm),
+              _MacroTile(
+                'Meta: ${Fmt.kg(goalWeight)}',
+                Fmt.decimal(weight),
+                'kg hoje',
+                context.colors.primary,
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: Space.lg),
+        Padding(
+          padding: const EdgeInsets.only(left: Space.xs, bottom: Space.sm),
+          child: Text('Suas respostas', style: context.text.titleSmall),
+        ),
+      ],
       AppCard(
         padding: const EdgeInsets.symmetric(
           horizontal: Space.lg,

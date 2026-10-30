@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
+import '../features/activity/presentation/activity_page.dart';
 import '../features/ai/presentation/meal_photo_page.dart';
 import '../features/assistant/presentation/assistant_page.dart';
 import '../features/assistant/presentation/chat_page.dart';
@@ -12,6 +14,7 @@ import '../features/auth/presentation/register_page.dart';
 import '../features/auth/presentation/reset_password_page.dart';
 import '../features/auth/presentation/sign_in_methods_page.dart';
 import '../features/auth/presentation/splash_page.dart';
+import '../features/content/presentation/article_pages.dart';
 import '../features/engagement/presentation/engagement_page.dart';
 import '../features/food/data/nutrition_models.dart';
 import '../features/food/presentation/food_page.dart';
@@ -168,6 +171,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                     path: 'water',
                     builder: (context, state) => const WaterPage(),
                   ),
+                  GoRoute(
+                    path: 'activity',
+                    builder: (context, state) => const ActivityPage(),
+                  ),
                   // Endereço antigo de Bem-estar (agora na Evolução).
                   GoRoute(
                     path: 'symptoms',
@@ -200,7 +207,14 @@ final routerProvider = Provider<GoRouter>((ref) {
                   ),
                   GoRoute(
                     path: 'photo',
-                    builder: (context, state) => const MealPhotoPage(),
+                    builder: (context, state) => MealPhotoPage(
+                      initialSource:
+                          switch (state.uri.queryParameters['source']) {
+                            'camera' => ImageSource.camera,
+                            'gallery' => ImageSource.gallery,
+                            _ => null,
+                          },
+                    ),
                   ),
                   GoRoute(
                     path: 'text',
@@ -265,6 +279,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                       return MealEditorPage(
                         initialItems: review?.items,
                         photoAnalysisId: review?.analysisId,
+                        initialType: review?.mealType,
                       );
                     },
                   ),
@@ -299,6 +314,21 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: AppRoutes.contents,
                 builder: (context, state) => const ContentsPage(),
+                routes: [
+                  GoRoute(
+                    path: 'articles',
+                    builder: (context, state) => ArticlesPage(
+                      initialCategory: state.uri.queryParameters['categoria'],
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: ':slug',
+                        builder: (context, state) =>
+                            ArticlePage(slug: state.pathParameters['slug']!),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),
