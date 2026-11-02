@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/design/design_system.dart';
+import '../../../core/utils/picked_file.dart';
 import '../../../shared/widgets/account_avatar.dart';
 import '../../../shared/widgets/feedback.dart';
 import '../../auth/application/session_controller.dart';
@@ -87,13 +88,16 @@ class _ProfilePhotoState extends ConsumerState<ProfilePhoto> {
         maxHeight: 1024,
         imageQuality: 85,
       );
-      if (file == null || !mounted) return;
-      if (await file.length() > 5 * 1024 * 1024) {
-        if (mounted) showMessage(context, 'Escolha uma foto de até 5 MB.');
+      if (file == null) return;
+      final tooBig = await file.length() > 5 * 1024 * 1024;
+      final bytes = tooBig ? null : await file.readAsBytes();
+      // A foto fica só em memória: a cópia temporária sai do aparelho.
+      await discardPickedFile(file.path);
+      if (!mounted) return;
+      if (bytes == null) {
+        showMessage(context, 'Escolha uma foto de até 5 MB.');
         return;
       }
-      final bytes = await file.readAsBytes();
-      if (!mounted) return;
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (dialog) => AlertDialog(

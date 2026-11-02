@@ -77,9 +77,11 @@ final accountKeyProvider = Provider<String?>(
       ref.watch(currentAccountProvider.select((account) => account?.email)),
 );
 
-final notificationRepositoryProvider = Provider<NotificationRepository>(
-  (ref) => NotificationRepository(ref.watch(dioProvider)),
-);
+final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
+  // Recriado a cada troca de conta: descarta o cache da conta anterior.
+  ref.watch(sessionScopeProvider);
+  return NotificationRepository(ref.watch(dioProvider));
+});
 
 final notificationPreferencesProvider = FutureProvider<NotificationPreferences>(
   (ref) {

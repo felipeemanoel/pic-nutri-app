@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/error/app_failure.dart';
 import '../../../core/network/api_client.dart';
+import '../../auth/application/session_controller.dart';
 import 'medication_models.dart';
 
 /// Registro informativo de medicamentos e aplicações. O app não calcula,
@@ -113,9 +114,11 @@ class MedicationRepository {
       guard(() => _dio.delete<void>('medication-doses/$id'));
 }
 
-final medicationRepositoryProvider = Provider<MedicationRepository>(
-  (ref) => MedicationRepository(ref.watch(dioProvider)),
-);
+final medicationRepositoryProvider = Provider<MedicationRepository>((ref) {
+  // Recriado a cada troca de conta: descarta o cache da conta anterior.
+  ref.watch(sessionScopeProvider);
+  return MedicationRepository(ref.watch(dioProvider));
+});
 
 final medicationOptionsProvider = FutureProvider<MedicationOptions>(
   (ref) => ref

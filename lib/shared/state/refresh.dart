@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/activity/data/activity_repository.dart';
+import '../../features/engagement/data/daily_missions.dart';
 import '../../features/engagement/data/engagement_repository.dart';
 import '../../features/food/data/food_repository.dart';
 import '../../features/home/data/dashboard_repository.dart';
@@ -20,6 +21,7 @@ abstract final class Refresh {
     ref
       ..invalidate(mealsOnDayProvider)
       ..invalidate(nutritionSummaryProvider)
+      ..invalidate(dailyMissionsProvider)
       ..invalidate(dashboardProvider)
       ..invalidate(engagementProvider)
       ..invalidate(periodReportProvider)
@@ -31,6 +33,7 @@ abstract final class Refresh {
     ref
       ..invalidate(waterDayProvider)
       ..invalidate(waterHistoryProvider)
+      ..invalidate(dailyMissionsProvider)
       ..invalidate(dashboardProvider)
       ..invalidate(engagementProvider)
       ..invalidate(periodReportProvider)
@@ -43,12 +46,14 @@ abstract final class Refresh {
       ..invalidate(medicationsProvider)
       ..invalidate(recentDosesProvider)
       ..invalidate(levelSymptomsProvider)
+      ..invalidate(dailyMissionsProvider)
       ..invalidate(dashboardProvider);
   }
 
   /// Sintomas registrados fora da aplicação (linha do tempo e gráfico de nível).
   static void symptoms(WidgetRef ref) {
     ref
+      ..invalidate(dailyMissionsProvider)
       ..invalidate(symptomTimelineProvider)
       ..invalidate(levelSymptomsProvider);
   }
@@ -56,6 +61,7 @@ abstract final class Refresh {
   /// Metas, treinos e eventos de atividade física (e os lembretes deles).
   static void activity(WidgetRef ref) {
     ref
+      ..invalidate(dailyMissionsProvider)
       ..invalidate(activitySummaryProvider)
       ..invalidate(activityPlansProvider)
       ..invalidate(activityEventsProvider)
@@ -69,12 +75,14 @@ abstract final class Refresh {
       ..invalidate(bodyProgressProvider)
       ..invalidate(weightEntriesProvider)
       ..invalidate(measurementsProvider)
+      ..invalidate(dailyMissionsProvider)
       ..invalidate(dashboardProvider)
       ..invalidate(engagementProvider);
   }
 
   /// Avisos condicionais (meta de água, registro do dia) dependem do que foi
   /// registrado hoje: reagenda em segundo plano, sem bloquear a tela.
-  static void _resyncReminders(WidgetRef ref) =>
-      unawaited(ref.read(reminderSchedulerProvider).sync().catchError((Object _) {}));
+  static void _resyncReminders(WidgetRef ref) => unawaited(
+    ref.read(reminderSchedulerProvider).sync().catchError((Object _) {}),
+  );
 }

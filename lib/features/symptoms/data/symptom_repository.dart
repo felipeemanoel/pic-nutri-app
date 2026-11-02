@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/error/app_failure.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/utils/formatters.dart';
+import '../../auth/application/session_controller.dart';
 import 'symptom_models.dart';
 
 class SymptomRepository {
@@ -74,9 +75,11 @@ class SymptomRepository {
   }
 }
 
-final symptomRepositoryProvider = Provider<SymptomRepository>(
-  (ref) => SymptomRepository(ref.watch(dioProvider)),
-);
+final symptomRepositoryProvider = Provider<SymptomRepository>((ref) {
+  // Recriado a cada troca de conta: descarta o cache da conta anterior.
+  ref.watch(sessionScopeProvider);
+  return SymptomRepository(ref.watch(dioProvider));
+});
 
 final symptomOptionsProvider = FutureProvider<SymptomOptions>(
   (ref) => ref.watch(symptomRepositoryProvider).options(),

@@ -29,7 +29,7 @@ void main() {
               home: MediaQuery(
                 data: MediaQueryData(
                   disableAnimations: reduced,
-                  textScaler: TextScaler.linear(1.5),
+                  textScaler: const TextScaler.linear(1.5),
                 ),
                 child: const SplashPage(),
               ),

@@ -11,6 +11,7 @@ import 'package:speech_to_text/speech_to_text.dart';
 import '../../../app/routes.dart';
 import '../../../core/design/design_system.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/utils/picked_file.dart';
 import '../../../core/utils/request_id.dart';
 import '../../../shared/state/refresh.dart';
 import '../../../shared/state/selected_date.dart';
@@ -92,6 +93,7 @@ class _MealPhotoPageState extends ConsumerState<MealPhotoPage> {
   @override
   void dispose() {
     _timer?.cancel();
+    unawaited(discardPickedFile(_path));
     super.dispose();
   }
 
@@ -119,6 +121,7 @@ class _MealPhotoPageState extends ConsumerState<MealPhotoPage> {
     }
     if (file == null || !mounted) return;
     // Sem tela de pré-visualização: a análise começa assim que a foto chega.
+    unawaited(discardPickedFile(_path));
     _path = file.path;
     _description = null;
     await _upload();
@@ -226,6 +229,7 @@ class _MealPhotoPageState extends ConsumerState<MealPhotoPage> {
 
   void _chooseAnother() {
     _timer?.cancel();
+    unawaited(discardPickedFile(_path));
     setState(() {
       _analysis = null;
       _startedAt = null;

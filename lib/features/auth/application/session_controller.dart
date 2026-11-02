@@ -218,3 +218,13 @@ final currentAccountProvider = Provider<Account?>((ref) {
   final session = ref.watch(sessionControllerProvider).value;
   return session is SessionSignedIn ? session.account : null;
 });
+
+/// Identifica a conta da sessão (null fora de sessão).
+///
+/// Os repositórios de dados do usuário observam este valor: ao sair, ao
+/// expirar ou ao trocar de conta, eles são recriados e todo o cache em memória
+/// (fotos, peso, refeições, remédios…) é descartado. Assim uma conta nunca vê
+/// dados da anterior no mesmo aparelho.
+final sessionScopeProvider = Provider<String?>(
+  (ref) => ref.watch(currentAccountProvider.select((a) => a?.email)),
+);

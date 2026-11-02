@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/error/app_failure.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/utils/formatters.dart';
+import '../../auth/application/session_controller.dart';
 
 class PlanInfo {
   const PlanInfo({
@@ -151,9 +152,11 @@ class PlanRepository {
   }
 }
 
-final planRepositoryProvider = Provider<PlanRepository>(
-  (ref) => PlanRepository(ref.watch(dioProvider)),
-);
+final planRepositoryProvider = Provider<PlanRepository>((ref) {
+  // Recriado a cada troca de conta: descarta o cache da conta anterior.
+  ref.watch(sessionScopeProvider);
+  return PlanRepository(ref.watch(dioProvider));
+});
 
 final currentPlanProvider = FutureProvider<CurrentPlan>(
   (ref) => ref.watch(planRepositoryProvider).current(),

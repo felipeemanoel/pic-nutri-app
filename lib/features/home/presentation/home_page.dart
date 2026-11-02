@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../../app/routes.dart';
 import '../../../core/design/design_system.dart';
@@ -9,10 +8,13 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/utils/request_id.dart';
 import '../../../shared/state/refresh.dart';
 import '../../../shared/state/selected_date.dart';
+import '../../../shared/widgets/expandable_home_card.dart';
 import '../../../shared/widgets/feedback.dart';
 import '../../../shared/widgets/state_views.dart';
 import '../../activity/presentation/activity_home_card.dart';
 import '../../auth/application/session_controller.dart';
+import '../../engagement/data/daily_missions.dart';
+import '../../engagement/presentation/daily_missions_card.dart';
 import '../../food/data/food_repository.dart';
 import '../../food/data/nutrition_models.dart';
 import '../../food/presentation/food_page.dart';
@@ -40,6 +42,9 @@ class HomePage extends ConsumerWidget {
     final name = ref.watch(currentAccountProvider)?.firstName ?? '';
 
     return Scaffold(
+      backgroundColor: Theme.of(context).brightness == Brightness.light
+          ? const Color(0xFFF0FAF6)
+          : context.colors.surfaceContainerLowest,
       // Um único ponto de registro: refeição, aplicação, sintoma, peso e água.
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'home-register',
@@ -52,6 +57,7 @@ class HomePage extends ConsumerWidget {
         child: RefreshIndicator(
           onRefresh: () {
             ref.invalidate(mealsOnDayProvider(day));
+            ref.invalidate(dailyMissionsProvider);
             return ref.refresh(dashboardProvider(day).future);
           },
           child: Center(
@@ -102,59 +108,101 @@ class _Header extends StatelessWidget {
 
   final String name;
 
-  static final _date = DateFormat("EEEE, d 'de' MMMM", 'pt_BR');
-
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final hour = now.hour;
+    final hour = DateTime.now().hour;
     final greeting = hour < 12
         ? 'Bom dia'
         : hour < 18
         ? 'Boa tarde'
         : 'Boa noite';
-    final raw = _date.format(now).replaceFirst('-feira', '');
-    final date = raw.isEmpty ? raw : raw[0].toUpperCase() + raw.substring(1);
-
-    final colors = Theme.of(context).colorScheme;
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const PicNutriHorizontalLogo(width: 102),
-              const SizedBox(height: Space.md),
-              Semantics(
-                header: true,
-                child: Text(
-                  name.isEmpty ? greeting : '$greeting, $name',
-                  style: context.text.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -.6,
-                  ),
+        const Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [PicNutriHorizontalLogo(width: 150), NotificationBell()],
+        ),
+        const SizedBox(height: Space.xl),
+        Semantics(
+          header: true,
+          child: Text(
+            name.isEmpty ? greeting : '$greeting, $name',
+            style: context.text.headlineMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+              letterSpacing: -1,
+            ),
+          ),
+        ),
+        const SizedBox(height: Space.xs),
+        Text('Cada pequeno cuidado conta.', style: context.text.bodyLarge),
+      ],
+    );
+  }
+}
+
+class _QuickActions extends ConsumerWidget {
+  const _QuickActions({required this.onMeal});
+  final VoidCallback onMeal;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final actions = [
+      (
+        Icons.photo_camera_outlined,
+        'Fotografar prato',
+        () {
+          ref.read(selectedDateProvider.notifier).goToday();
+          context.push('${AppRoutes.mealPhoto}?source=camera');
+        },
+      ),
+      (Icons.restaurant_rounded, 'Refeição', onMeal),
+      (
+        Icons.water_drop_outlined,
+        'Beber água',
+        () => context.push(AppRoutes.water),
+      ),
+    ];
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var i = 0; i < actions.length; i++) ...[
+            if (i > 0) const SizedBox(width: Space.sm),
+            Expanded(
+              child: _HomeCard(
+                color: (i == 2 ? context.pic.water : context.colors.primary)
+                    .withValues(alpha: .07),
+                padding: const EdgeInsets.symmetric(
+                  vertical: Space.lg,
+                  horizontal: Space.xs,
+                ),
+                onTap: actions[i].$3,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      actions[i].$1,
+                      size: 30,
+                      color: i == 2
+                          ? context.pic.water
+                          : context.colors.primary,
+                    ),
+                    const SizedBox(height: Space.sm),
+                    Text(
+                      actions[i].$2,
+                      textAlign: TextAlign.center,
+                      style: context.text.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: Space.xs),
-              Text(date, style: context.text.bodySmall),
-            ],
-          ),
-        ),
-        const SizedBox(width: Space.md),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: colors.surface,
-            shape: BoxShape.circle,
-            border: Border.all(color: context.pic.border),
-          ),
-          child: const SizedBox.square(
-            dimension: 48,
-            child: NotificationBell(),
-          ),
-        ),
-      ],
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -186,19 +234,34 @@ class _DashboardBody extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Quem acompanha a medicação vê primeiro a próxima aplicação.
+        _CaloriesCard(data: data),
+        const SizedBox(height: Space.md),
+        const DailyMissionsCard(),
+        const SizedBox(height: Space.md),
+        _QuickActions(
+          onMeal: () => _registerToday(context, ref, mealOnly: true),
+        ),
+        const SizedBox(height: Space.md),
+        _WaterTile(data: data),
+        const SizedBox(height: Space.md),
         if (data.medicationTrackingEnabled) ...[
           const NextDoseCard(),
           const SizedBox(height: Space.md),
         ],
-        // Registro rápido de água; alimentação e evolução vêm a seguir.
-        _WaterTile(data: data),
-        const SizedBox(height: Space.md),
-        _CaloriesCard(data: data),
-        const SizedBox(height: Space.md),
-        _WeightTile(data: data),
-        const SizedBox(height: Space.sm),
-        const ProgressPhotoHighlight(),
+        ExpandableHomeCard(
+          title: 'Sua evolução',
+          summary: data.weight == null
+              ? 'Acompanhe seu peso e suas fotos'
+              : 'Peso atual: ${Fmt.kg(data.weight!.latestKg)}',
+          icon: Icons.trending_up_rounded,
+          child: Column(
+            children: [
+              _WeightTile(data: data),
+              const SizedBox(height: Space.sm),
+              const ProgressPhotoHighlight(),
+            ],
+          ),
+        ),
         const SizedBox(height: Space.md),
         const ActivityHomeCard(),
         const SizedBox(height: Space.md),
@@ -307,18 +370,22 @@ class _DailyCareCard extends StatelessWidget {
 
 /// Cartão branco das seções da home (cantos de 24, borda e sombra suave).
 class _HomeCard extends StatelessWidget {
-  const _HomeCard({required this.child, this.padding, this.onTap});
+  const _HomeCard({required this.child, this.padding, this.onTap, this.color});
 
   final Widget child;
   final EdgeInsetsGeometry? padding;
   final VoidCallback? onTap;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) => Material(
-    color: context.colors.surface,
+    elevation: 2,
+    shadowColor: context.colors.primary.withValues(alpha: .08),
+    surfaceTintColor: Colors.transparent,
+    color: color ?? context.colors.surface,
     shape: RoundedRectangleBorder(
       borderRadius: Radii.card,
-      side: BorderSide(color: context.pic.border.withValues(alpha: .6)),
+      side: BorderSide(color: context.pic.border.withValues(alpha: .25)),
     ),
     clipBehavior: Clip.antiAlias,
     child: InkWell(
@@ -392,121 +459,146 @@ class _CaloriesCard extends StatelessWidget {
     final hasGoal = goal != null && goal > 0;
     final remaining = n.remainingKcal ?? (hasGoal ? goal - kcal : null);
 
+    final macros = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: Space.sm,
+            vertical: Space.xs,
+          ),
+          decoration: BoxDecoration(
+            color: context.pic.brandContainer,
+            borderRadius: BorderRadius.circular(30),
+          ),
+          child: Text(
+            n.mealsCount == 1 ? '1 refeição' : '${n.mealsCount} refeições',
+            style: context.text.labelMedium?.copyWith(
+              color: context.pic.onBrandContainer,
+            ),
+          ),
+        ),
+        const SizedBox(height: Space.md),
+        _MacroBar(
+          label: 'Carboidratos',
+          semanticsName: 'Carboidratos',
+          grams: n.totals.carbsG,
+          goal: n.goalCarbsG,
+          color: context.colors.primary,
+          share: _share(n.totals.carbsG * 4, n.totals),
+        ),
+        const SizedBox(height: Space.md),
+        _MacroBar(
+          label: 'Proteínas',
+          semanticsName: 'Proteínas',
+          grams: n.totals.proteinG,
+          goal: n.goalProteinG,
+          color: context.pic.water,
+          share: _share(n.totals.proteinG * 4, n.totals),
+        ),
+        const SizedBox(height: Space.md),
+        _MacroBar(
+          label: 'Gorduras',
+          semanticsName: 'Gorduras',
+          grams: n.totals.fatG,
+          goal: n.goalFatG,
+          color: context.pic.success,
+          share: _share(n.totals.fatG * 9, n.totals),
+        ),
+      ],
+    );
     return _HomeCard(
+      padding: const EdgeInsets.all(Space.lg),
       onTap: () => context.go(AppRoutes.food),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Icon(
-                Icons.local_fire_department_rounded,
-                size: 20,
-                color: context.colors.primary,
-              ),
-              const SizedBox(width: Space.sm),
-              Expanded(
-                child: Semantics(
-                  header: true,
-                  child: Text(
-                    'Calorias de hoje',
-                    style: context.text.labelLarge?.copyWith(
-                      color: context.pic.textSecondary,
-                    ),
-                  ),
-                ),
-              ),
-              Flexible(
-                child: Text(
-                  n.mealsCount == 1
-                      ? '1 refeição'
-                      : '${n.mealsCount} refeições',
-                  style: context.text.bodySmall,
-                  textAlign: TextAlign.end,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: Space.md),
           Semantics(
-            label: hasGoal
-                ? '${Fmt.kcal(kcal)} de ${Fmt.kcal(goal)}'
-                : '${Fmt.kcal(kcal)} registradas',
-            excludeSemantics: true,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Flexible(
-                  child: _BigNumber(
-                    value: Fmt.integer(kcal),
-                    unit: hasGoal ? '/ ${Fmt.kcal(goal)}' : 'kcal',
-                  ),
-                ),
-              ],
+            header: true,
+            child: Text(
+              'Seu dia em equilíbrio',
+              style: context.text.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: -.6,
+              ),
             ),
           ),
-          const SizedBox(height: Space.xs),
+          const SizedBox(height: Space.lg),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final stacked =
+                  constraints.maxWidth < 290 ||
+                  MediaQuery.textScalerOf(context).scale(1) > 1.3;
+              final ring = ProgressRing(
+                progress: hasGoal ? kcal / goal : null,
+                size: stacked
+                    ? 180
+                    : constraints.maxWidth < 400
+                    ? 136
+                    : 190,
+                strokeWidth: 11,
+                color: hasGoal && kcal > goal
+                    ? context.pic.warning
+                    : context.colors.primary,
+                semanticLabel: hasGoal
+                    ? '${Fmt.kcal(kcal)} de ${Fmt.kcal(goal)}'
+                    : '${Fmt.kcal(kcal)} registradas',
+                child: Padding(
+                  padding: const EdgeInsets.all(Space.md),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.eco_outlined,
+                        color: context.colors.primary,
+                        size: 26,
+                      ),
+                      const SizedBox(height: Space.xs),
+                      FittedBox(
+                        child: Text(
+                          Fmt.integer(kcal),
+                          style: context.text.headlineLarge?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -1.5,
+                          ),
+                        ),
+                      ),
+                      FittedBox(
+                        child: Text(
+                          hasGoal ? 'de ${Fmt.kcal(goal)}' : 'kcal registradas',
+                          style: context.text.bodySmall,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+              if (stacked) {
+                return Column(
+                  children: [
+                    ring,
+                    const SizedBox(height: Space.lg),
+                    macros,
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  ring,
+                  const SizedBox(width: Space.lg),
+                  Expanded(child: macros),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: Space.md),
           if (n.mealsCount == 0)
             Text(
               'Nenhuma refeição registrada neste dia.',
-              style: context.text.bodyMedium?.copyWith(
-                color: context.pic.textSecondary,
-              ),
+              style: context.text.bodySmall,
             )
           else
             _GoalHint(hasGoal: hasGoal, remaining: remaining),
-          if (hasGoal) ...[
-            const SizedBox(height: Space.md),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(Radii.pill),
-              child: LinearProgressIndicator(
-                value: (kcal / goal).clamp(0.0, 1.0),
-                minHeight: 8,
-                color: kcal > goal
-                    ? context.pic.warning
-                    : context.colors.primary,
-                backgroundColor: context.pic.surfaceMuted,
-              ),
-            ),
-          ],
-          const SizedBox(height: Space.lg),
-          Row(
-            children: [
-              Expanded(
-                child: _MacroBar(
-                  label: 'Carbo',
-                  semanticsName: 'Carboidratos',
-                  grams: n.totals.carbsG,
-                  goal: n.goalCarbsG,
-                  color: _MacroColors.carbs,
-                  share: _share(n.totals.carbsG * 4, n.totals),
-                ),
-              ),
-              const SizedBox(width: Space.md),
-              Expanded(
-                child: _MacroBar(
-                  label: 'Proteína',
-                  semanticsName: 'Proteínas',
-                  grams: n.totals.proteinG,
-                  goal: n.goalProteinG,
-                  color: _MacroColors.protein,
-                  share: _share(n.totals.proteinG * 4, n.totals),
-                ),
-              ),
-              const SizedBox(width: Space.md),
-              Expanded(
-                child: _MacroBar(
-                  label: 'Gordura',
-                  semanticsName: 'Gorduras',
-                  grams: n.totals.fatG,
-                  goal: n.goalFatG,
-                  color: _MacroColors.fat,
-                  share: _share(n.totals.fatG * 9, n.totals),
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );
@@ -517,14 +609,6 @@ class _CaloriesCard extends StatelessWidget {
     final total = totals.proteinG * 4 + totals.carbsG * 4 + totals.fatG * 9;
     return total <= 0 ? 0 : kcal / total;
   }
-}
-
-/// Cores das barras de macronutrientes. São só apoio visual: o nome e o valor
-/// de cada um aparecem em texto.
-abstract final class _MacroColors {
-  static const protein = Color(0xFF1EB375);
-  static const carbs = Color(0xFFFBC33F);
-  static const fat = Color(0xFFFB8763);
 }
 
 class _GoalHint extends StatelessWidget {
@@ -606,43 +690,33 @@ class _MacroBar extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            label,
-            style: context.text.bodySmall?.copyWith(
-              color: context.pic.textSecondary,
-            ),
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            spacing: Space.sm,
+            children: [
+              Text(
+                label,
+                style: context.text.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Text(
+                hasGoal
+                    ? '${Fmt.integer(grams)} / ${Fmt.integer(g)} g'
+                    : '${Fmt.integer(grams)} g',
+                style: context.text.bodySmall,
+              ),
+            ],
           ),
           const SizedBox(height: Space.xs),
           ClipRRect(
             borderRadius: BorderRadius.circular(Radii.pill),
             child: LinearProgressIndicator(
               value: progress,
-              minHeight: 6,
+              minHeight: 7,
               color: color,
-              backgroundColor: context.pic.surfaceMuted,
+              backgroundColor: color.withValues(alpha: .14),
             ),
-          ),
-          const SizedBox(height: Space.xs),
-          Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(
-                  text: Fmt.integer(grams),
-                  style: context.text.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
-                ),
-                TextSpan(
-                  text: hasGoal ? '/${Fmt.integer(g)} g' : ' g',
-                  style: context.text.bodySmall?.copyWith(
-                    color: context.pic.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -720,6 +794,87 @@ class _WaterTileState extends ConsumerState<_WaterTile> {
     final percent = (progress * 100).round();
     final liters = d.waterTotalMl / 1000;
 
+    return _HomeCard(
+      padding: const EdgeInsets.all(Space.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(Space.md),
+                decoration: BoxDecoration(
+                  color: blue.withValues(alpha: .1),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Icon(Icons.local_drink_rounded, color: blue, size: 34),
+              ),
+              const SizedBox(width: Space.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Hidratação',
+                      style: context.text.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      '${Fmt.decimal(liters)} / ${Fmt.decimal(d.waterGoalMl / 1000)} L',
+                      style: context.text.titleSmall,
+                    ),
+                    const SizedBox(height: Space.xs),
+                    ProgressBar(progress: progress, color: blue),
+                  ],
+                ),
+              ),
+              const SizedBox(width: Space.sm),
+              Column(
+                children: [
+                  TextButton(
+                    onPressed: _saving ? null : () => _add(_quickMl),
+                    style: TextButton.styleFrom(
+                      foregroundColor: blue,
+                      backgroundColor: blue.withValues(alpha: .1),
+                    ),
+                    child: const Text('+200 ml'),
+                  ),
+                  TextButton(
+                    onPressed: _saving ? null : () => _add(300),
+                    style: TextButton.styleFrom(
+                      foregroundColor: blue,
+                      backgroundColor: blue.withValues(alpha: .1),
+                    ),
+                    child: const Text('+300 ml'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          ExpansionTile(
+            tilePadding: const EdgeInsets.symmetric(horizontal: Space.sm),
+            visualDensity: VisualDensity.compact,
+            shape: const Border(),
+            collapsedShape: const Border(),
+            title: Text(
+              'Detalhes da hidratação',
+              style: context.text.bodySmall,
+            ),
+            children: [_waterDetails(context, d, blue, percent)],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _waterDetails(
+    BuildContext context,
+    Dashboard d,
+    Color blue,
+    int percent,
+  ) {
+    final liters = d.waterTotalMl / 1000;
     return Semantics(
       container: true,
       label:

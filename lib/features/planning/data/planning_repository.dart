@@ -5,6 +5,7 @@ import '../../../core/error/app_failure.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/request_id.dart';
+import '../../auth/application/session_controller.dart';
 import 'planning_models.dart';
 
 /// Busca e filtros de receitas. Os campos novos são opcionais nos registros
@@ -176,9 +177,11 @@ class PlanningRepository {
   }
 }
 
-final planningRepositoryProvider = Provider<PlanningRepository>(
-  (ref) => PlanningRepository(ref.watch(dioProvider)),
-);
+final planningRepositoryProvider = Provider<PlanningRepository>((ref) {
+  // Recriado a cada troca de conta: descarta o cache da conta anterior.
+  ref.watch(sessionScopeProvider);
+  return PlanningRepository(ref.watch(dioProvider));
+});
 
 final recipesProvider = FutureProvider.family<List<Recipe>, RecipeQuery>(
   (ref, q) => ref.watch(planningRepositoryProvider).recipes(q),

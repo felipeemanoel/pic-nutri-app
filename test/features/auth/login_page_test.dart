@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:picnutri/app/app.dart';
 import 'package:picnutri/app/routes.dart';
+import 'package:picnutri/features/activity/data/activity_models.dart';
+import 'package:picnutri/features/activity/data/activity_repository.dart';
 import 'package:picnutri/features/ai/data/ai_models.dart';
 import 'package:picnutri/features/ai/data/ai_repository.dart';
 import 'package:picnutri/features/auth/application/session_controller.dart';
@@ -17,6 +19,7 @@ import 'package:picnutri/features/home/data/dashboard.dart';
 import 'package:picnutri/features/home/data/dashboard_repository.dart';
 import 'package:picnutri/features/planning/data/planning_models.dart';
 import 'package:picnutri/features/planning/data/planning_repository.dart';
+import 'package:picnutri/features/progress/data/body_repository.dart';
 
 import '../../helpers/fakes.dart';
 
@@ -52,7 +55,7 @@ void main() {
         expect(rect.bottom, lessThanOrEqualTo(size.height));
       }
       expect(tester.takeException(), isNull);
-      tester.view.viewInsets = FakeViewPadding(bottom: 260);
+      tester.view.viewInsets = const FakeViewPadding(bottom: 260);
       await tester.pumpAndSettle();
       expect(
         tester.getRect(find.text('Entrar')).bottom,
@@ -137,6 +140,25 @@ void main() {
               (ref) async => AiStatus.fromJson({
                 'photo_analysis': {'available': false},
                 'assistant': {'available': true, 'limit': 3, 'remaining': 3},
+              }),
+            ),
+            // Destaque de fotos de evolução no Início (sem API nos testes).
+            progressPhotosProvider.overrideWith((ref) async => []),
+            activitySummaryProvider.overrideWith(
+              (ref) async => ActivitySummary.fromJson(const {
+                'week': {
+                  'start': '2026-10-26',
+                  'end': '2026-11-01',
+                  'sessions': 0,
+                  'minutes': 0,
+                  'active_days': 0,
+                  'distance_km': 0,
+                },
+                'weekly_goal': 3,
+                'streak_weeks': 0,
+                'plans': <Object>[],
+                'upcoming_events': <Object>[],
+                'recent_sessions': <Object>[],
               }),
             ),
             // Sem API nos testes: o painel recebe um dia vazio.

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/error/app_failure.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/utils/formatters.dart';
+import '../../auth/application/session_controller.dart';
 import 'dashboard.dart';
 
 class DashboardRepository {
@@ -22,9 +23,11 @@ class DashboardRepository {
   }
 }
 
-final dashboardRepositoryProvider = Provider<DashboardRepository>(
-  (ref) => DashboardRepository(ref.watch(dioProvider)),
-);
+final dashboardRepositoryProvider = Provider<DashboardRepository>((ref) {
+  // Recriado a cada troca de conta: descarta o cache da conta anterior.
+  ref.watch(sessionScopeProvider);
+  return DashboardRepository(ref.watch(dioProvider));
+});
 
 final dashboardProvider = FutureProvider.family<Dashboard, DateTime>(
   (ref, day) => ref.watch(dashboardRepositoryProvider).load(day),

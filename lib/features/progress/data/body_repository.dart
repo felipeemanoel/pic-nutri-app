@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/error/app_failure.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/utils/formatters.dart';
+import '../../auth/application/session_controller.dart';
 import 'body_models.dart';
 
 class BodyRepository {
@@ -169,9 +170,11 @@ class BodyRepository {
   }
 }
 
-final bodyRepositoryProvider = Provider<BodyRepository>(
-  (ref) => BodyRepository(ref.watch(dioProvider)),
-);
+final bodyRepositoryProvider = Provider<BodyRepository>((ref) {
+  // Recriado a cada troca de conta: descarta o cache da conta anterior.
+  ref.watch(sessionScopeProvider);
+  return BodyRepository(ref.watch(dioProvider));
+});
 
 final bodyProgressProvider = FutureProvider.family<BodyProgress, int>(
   (ref, days) => ref.watch(bodyRepositoryProvider).progress(days),

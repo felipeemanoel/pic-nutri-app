@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/error/app_failure.dart';
 import '../../../core/network/api_client.dart';
+import '../../auth/application/session_controller.dart';
 
 class HelpCategory {
   const HelpCategory({required this.key, required this.label, required this.articles});
@@ -95,7 +96,11 @@ class HelpRepository {
   }
 }
 
-final helpRepositoryProvider = Provider<HelpRepository>((ref) => HelpRepository(ref.watch(dioProvider)));
+final helpRepositoryProvider = Provider<HelpRepository>((ref) {
+  // Recriado a cada troca de conta: descarta o cache da conta anterior.
+  ref.watch(sessionScopeProvider);
+  return HelpRepository(ref.watch(dioProvider));
+});
 
 final helpCategoriesProvider = FutureProvider<List<HelpCategory>>((ref) => ref.watch(helpRepositoryProvider).categories());
 

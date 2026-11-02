@@ -6,9 +6,11 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/design/design_system.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/utils/picked_file.dart';
 import '../../../core/utils/request_id.dart';
 import '../../../shared/widgets/feedback.dart';
 import '../../../shared/widgets/state_views.dart';
+import '../../engagement/data/daily_missions.dart';
 import '../data/body_models.dart';
 import '../data/body_repository.dart';
 
@@ -273,13 +275,16 @@ Future<void> addProgressPhoto(BuildContext context) async {
   }
   if (file == null || !context.mounted) return;
 
+  final picked = file;
   await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
     useSafeArea: true,
-    builder: (_) => _PhotoDetailsSheet(file: file!),
+    builder: (_) => _PhotoDetailsSheet(file: picked),
   );
+  // Enviada ou descartada, a cópia local da foto sai do aparelho.
+  await discardPickedFile(picked.path);
 }
 
 class _PhotoDetailsSheet extends ConsumerStatefulWidget {
@@ -320,6 +325,7 @@ class _PhotoDetailsSheetState extends ConsumerState<_PhotoDetailsSheet> {
             notes: _notes.text,
           );
       ref.invalidate(progressPhotosProvider);
+      ref.invalidate(dailyMissionsProvider);
       if (!mounted) return;
       showMessage(context, 'Foto salva.');
       Navigator.of(context).pop();
@@ -411,6 +417,7 @@ class PhotoViewerPage extends ConsumerWidget {
     try {
       await ref.read(bodyRepositoryProvider).deletePhoto(photo.id);
       ref.invalidate(progressPhotosProvider);
+      ref.invalidate(dailyMissionsProvider);
       if (context.mounted) Navigator.of(context).pop();
     } on Object catch (e) {
       if (context.mounted) showFailure(context, e);
@@ -428,6 +435,7 @@ class PhotoViewerPage extends ConsumerWidget {
           .read(bodyRepositoryProvider)
           .updatePhoto(photo.id, pose: result.$1, notes: result.$2);
       ref.invalidate(progressPhotosProvider);
+      ref.invalidate(dailyMissionsProvider);
       if (context.mounted) Navigator.of(context).pop();
     } on Object catch (e) {
       if (context.mounted) showFailure(context, e);

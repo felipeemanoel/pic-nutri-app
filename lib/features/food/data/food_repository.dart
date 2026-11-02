@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/error/app_failure.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/utils/formatters.dart';
+import '../../auth/application/session_controller.dart';
 import 'nutrition_models.dart';
 
 /// Refeições, resumo diário e banco de alimentos.
@@ -201,9 +202,11 @@ class FoodRepository {
   }
 }
 
-final foodRepositoryProvider = Provider<FoodRepository>(
-  (ref) => FoodRepository(ref.watch(dioProvider)),
-);
+final foodRepositoryProvider = Provider<FoodRepository>((ref) {
+  // Recriado a cada troca de conta: descarta o cache da conta anterior.
+  ref.watch(sessionScopeProvider);
+  return FoodRepository(ref.watch(dioProvider));
+});
 
 final mealTemplatesProvider = FutureProvider<List<MealTemplate>>(
   (ref) => ref.watch(foodRepositoryProvider).mealTemplates(),

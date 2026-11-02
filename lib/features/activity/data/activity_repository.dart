@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/error/app_failure.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/utils/formatters.dart';
+import '../../auth/application/session_controller.dart';
 import 'activity_models.dart';
 
 class ActivityRepository {
@@ -178,9 +179,11 @@ class ActivityRepository {
       guard(() => _dio.delete<void>('activity/events/$id'));
 }
 
-final activityRepositoryProvider = Provider<ActivityRepository>(
-  (ref) => ActivityRepository(ref.watch(dioProvider)),
-);
+final activityRepositoryProvider = Provider<ActivityRepository>((ref) {
+  // Recriado a cada troca de conta: descarta o cache da conta anterior.
+  ref.watch(sessionScopeProvider);
+  return ActivityRepository(ref.watch(dioProvider));
+});
 
 final activityOptionsProvider = FutureProvider<ActivityOptions>(
   (ref) => ref.watch(activityRepositoryProvider).options(),

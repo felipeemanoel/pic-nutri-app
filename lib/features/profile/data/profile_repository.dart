@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/error/app_failure.dart';
 import '../../../core/network/api_client.dart';
+import '../../auth/application/session_controller.dart';
 import '../../auth/data/account.dart';
 import '../../onboarding/data/goal_suggestion.dart';
 
@@ -156,6 +157,8 @@ class ProfileRepository {
   );
 }
 
-final profileRepositoryProvider = Provider<ProfileRepository>(
-  (ref) => ProfileRepository(ref.watch(dioProvider)),
-);
+final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
+  // Recriado a cada troca de conta: descarta o cache da conta anterior.
+  ref.watch(sessionScopeProvider);
+  return ProfileRepository(ref.watch(dioProvider));
+});

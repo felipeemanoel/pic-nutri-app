@@ -69,9 +69,11 @@ class ProfessionalRepository {
   Future<void> revokeGrant(String id) => guard(() => _dio.delete<void>('share-grants/$id'));
 }
 
-final professionalRepositoryProvider = Provider<ProfessionalRepository>(
-  (ref) => ProfessionalRepository(ref.watch(dioProvider)),
-);
+final professionalRepositoryProvider = Provider<ProfessionalRepository>((ref) {
+  // Recriado a cada troca de conta: descarta o cache da conta anterior.
+  ref.watch(sessionScopeProvider);
+  return ProfessionalRepository(ref.watch(dioProvider));
+});
 
 final professionalsMetaProvider = FutureProvider<ProfessionalsMeta>(
   (ref) => ref.watch(professionalRepositoryProvider).meta(),

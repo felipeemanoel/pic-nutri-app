@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/routes.dart';
+import '../../../shared/widgets/expandable_home_card.dart';
 import '../../../core/design/design_system.dart';
 import '../../../core/utils/formatters.dart';
 import '../../medication/application/medication_overview.dart';
@@ -94,109 +95,116 @@ class _Content extends StatelessWidget {
     }
     final accent = overdue ? pic.warning : context.colors.primary;
 
-    return Material(
-      color: context.colors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: Radii.card,
-        side: BorderSide(color: pic.border),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => context.go(AppRoutes.progress),
-        child: Padding(
-          padding: const EdgeInsets.all(Space.xl),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.vaccines_outlined, size: 20, color: accent),
-                  const SizedBox(width: Space.sm),
-                  Expanded(
-                    child: Text(
-                      eyebrow,
-                      style: context.text.labelLarge?.copyWith(
-                        color: pic.textSecondary,
-                      ),
-                    ),
-                  ),
-                  _Pill(
-                    label: [
-                      med.name,
-                      if (dose != null)
-                        '${Fmt.decimal(dose)} ${overview.lastDose!.doseUnit}',
-                    ].join(' · '),
-                  ),
-                ],
-              ),
-              const SizedBox(height: Space.md),
-              Semantics(
-                liveRegion: true,
-                child: Text(
-                  headline,
-                  style:
-                      (last != null && next != null && !overdue
-                              ? context.text.displaySmall
-                              : context.text.headlineSmall)
-                          ?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -1,
-                            height: 1.05,
-                            color: overdue ? pic.warning : null,
-                            fontFeatures: const [FontFeature.tabularFigures()],
-                          ),
-                ),
-              ),
-              const SizedBox(height: Space.xs),
-              Text(
-                caption,
-                style: context.text.bodyMedium?.copyWith(
-                  color: pic.textSecondary,
-                ),
-              ),
-              if (progress != null) ...[
-                const SizedBox(height: Space.lg),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(Radii.pill),
-                  child: LinearProgressIndicator(
-                    value: progress.clamp(0.0, 1.0),
-                    minHeight: 8,
-                    color: accent,
-                    backgroundColor: pic.surfaceMuted,
-                    semanticsLabel: 'Ciclo entre aplicações',
-                    semanticsValue:
-                        '${(progress.clamp(0.0, 1.0) * 100).round()}%',
-                  ),
-                ),
-              ],
-              if (last != null) ...[
-                const SizedBox(height: Space.lg),
+    return ExpandableHomeCard(
+      title: eyebrow,
+      summary: headline,
+      icon: Icons.vaccines_outlined,
+      child: Material(
+        color: context.colors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: Radii.card,
+          side: BorderSide(color: pic.border),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => context.go(AppRoutes.progress),
+          child: Padding(
+            padding: const EdgeInsets.all(Space.xl),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Icon(Icons.vaccines_outlined, size: 20, color: accent),
+                    const SizedBox(width: Space.sm),
                     Expanded(
-                      child: _Fact(
-                        label: 'Última',
-                        value: Fmt.relativeDayTime(last),
-                      ),
-                    ),
-                    if (levelMg != null)
-                      Expanded(
-                        child: _Fact(
-                          label: 'Nível estimado',
-                          value: '~${Fmt.decimal(levelMg)} mg',
+                      child: Text(
+                        eyebrow,
+                        style: context.text.labelLarge?.copyWith(
+                          color: pic.textSecondary,
                         ),
                       ),
+                    ),
+                    _Pill(
+                      label: [
+                        med.name,
+                        if (dose != null)
+                          '${Fmt.decimal(dose)} ${overview.lastDose!.doseUnit}',
+                      ].join(' · '),
+                    ),
                   ],
                 ),
+                const SizedBox(height: Space.md),
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    headline,
+                    style:
+                        (last != null && next != null && !overdue
+                                ? context.text.displaySmall
+                                : context.text.headlineSmall)
+                            ?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -1,
+                              height: 1.05,
+                              color: overdue ? pic.warning : null,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
+                            ),
+                  ),
+                ),
+                const SizedBox(height: Space.xs),
+                Text(
+                  caption,
+                  style: context.text.bodyMedium?.copyWith(
+                    color: pic.textSecondary,
+                  ),
+                ),
+                if (progress != null) ...[
+                  const SizedBox(height: Space.lg),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(Radii.pill),
+                    child: LinearProgressIndicator(
+                      value: progress.clamp(0.0, 1.0),
+                      minHeight: 8,
+                      color: accent,
+                      backgroundColor: pic.surfaceMuted,
+                      semanticsLabel: 'Ciclo entre aplicações',
+                      semanticsValue:
+                          '${(progress.clamp(0.0, 1.0) * 100).round()}%',
+                    ),
+                  ),
+                ],
+                if (last != null) ...[
+                  const SizedBox(height: Space.lg),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _Fact(
+                          label: 'Última',
+                          value: Fmt.relativeDayTime(last),
+                        ),
+                      ),
+                      if (levelMg != null)
+                        Expanded(
+                          child: _Fact(
+                            label: 'Nível estimado',
+                            value: '~${Fmt.decimal(levelMg)} mg',
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: Space.lg),
+                FilledButton.tonalIcon(
+                  onPressed: () => openDoseForm(context),
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text('Registrar aplicação'),
+                ),
               ],
-              const SizedBox(height: Space.lg),
-              FilledButton.tonalIcon(
-                onPressed: () => openDoseForm(context),
-                icon: const Icon(Icons.add_rounded),
-                label: const Text('Registrar aplicação'),
-              ),
-            ],
+            ),
           ),
         ),
       ),

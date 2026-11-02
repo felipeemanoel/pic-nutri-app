@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/error/app_failure.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/utils/formatters.dart';
+import '../../auth/application/session_controller.dart';
 
 class WaterEntry {
   const WaterEntry({
@@ -106,9 +107,11 @@ class WaterRepository {
   Future<void> delete(String id) => guard(() => _dio.delete<void>('water/$id'));
 }
 
-final waterRepositoryProvider = Provider<WaterRepository>(
-  (ref) => WaterRepository(ref.watch(dioProvider)),
-);
+final waterRepositoryProvider = Provider<WaterRepository>((ref) {
+  // Recriado a cada troca de conta: descarta o cache da conta anterior.
+  ref.watch(sessionScopeProvider);
+  return WaterRepository(ref.watch(dioProvider));
+});
 
 final waterDayProvider = FutureProvider.family<WaterDay, DateTime>(
   (ref, day) => ref.watch(waterRepositoryProvider).day(day),

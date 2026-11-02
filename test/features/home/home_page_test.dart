@@ -8,6 +8,7 @@ import 'package:picnutri/features/auth/application/session_controller.dart';
 import 'package:picnutri/features/food/data/food_repository.dart';
 import 'package:picnutri/features/food/data/nutrition_models.dart';
 import 'package:picnutri/features/home/data/dashboard.dart';
+import 'package:picnutri/features/engagement/data/daily_missions.dart';
 import 'package:picnutri/features/home/data/dashboard_repository.dart';
 import 'package:picnutri/features/home/presentation/home_page.dart';
 import 'package:picnutri/features/medication/application/medication_overview.dart';
@@ -80,6 +81,20 @@ Widget _app(
   double textScale = 1,
 }) => ProviderScope(
   overrides: [
+    dailyMissionsProvider.overrideWith(
+      (ref) async => const DailyMissions(
+        streak: 1,
+        bestStreak: 1,
+        streakBroken: false,
+        missions: [
+          DailyMission(
+            code: 'visit',
+            title: 'Entrar no aplicativo',
+            completed: true,
+          ),
+        ],
+      ),
+    ),
     progressPhotosProvider.overrideWith((ref) async => []),
     ...sessionOverrides(SessionSignedIn(testAccount())),
     dashboardProvider.overrideWith((ref, day) async => data),
@@ -129,6 +144,8 @@ void main() {
       reason: 'uma ação principal, sem repetição',
     );
     expect(find.text('0,5 / 2 L'), findsOneWidget);
+    await tester.tap(find.text('Detalhes da hidratação'));
+    await tester.pumpAndSettle();
     expect(
       find.byTooltip('Desfazer o último registro de água'),
       findsOneWidget,
@@ -165,9 +182,11 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(_app(Dashboard.fromJson(_dashboardJson())));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Detalhes da hidratação'));
+    await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Outras quantidades de água'));
     await tester.pumpAndSettle();
-    expect(find.text('+300 ml'), findsOneWidget);
+    expect(find.text('+300 ml'), findsNWidgets(2));
     expect(find.text('+500 ml'), findsOneWidget);
     expect(find.text('Outra quantidade'), findsOneWidget);
   });
@@ -187,61 +206,77 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('1.250 / 1.800 kcal'), findsOneWidget);
+    expect(find.text('1.250'), findsOneWidget);
     expect(find.text('550 kcal para sua meta'), findsOneWidget);
     expect(find.text('Almoço'), findsOneWidget);
     expect(find.text('Registrado · 320 kcal'), findsOneWidget);
   });
 
-  testWidgets('com medicação, a próxima aplicação abre o Início', (
-    tester,
-  ) async {
-    tester.view
-      ..physicalSize = const Size(390, 1400)
-      ..devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-    final last = DateTime.now().subtract(const Duration(days: 2, minutes: 55));
-    final medication = Medication(
-      id: 'm1',
-      name: 'Mounjaro',
-      form: 'injection',
-      doseUnit: 'mg',
-      frequency: 'weekly',
-      isActive: true,
-      lastDoseAt: last,
-    );
-    final dose = MedicationDose(
-      id: 'd1',
-      medicationId: 'm1',
-      takenAt: last,
-      localDate: '',
-      doseUnit: 'mg',
-      doseAmount: 2.5,
-      symptoms: const [],
-    );
-    await tester.pumpWidget(
-      _app(
-        Dashboard.fromJson(_dashboardJson(medication: true)),
-        medication: MedicationOverview(
-          medication: medication,
-          doses: [dose],
-          lastDose: dose,
-          level: MedicationLevel(
-            ingredient: ActiveIngredient.tirzepatide,
+  testWidgets(
+    'calorias, água e aplicação nesta ordem; aplicação expande ao tocar',
+    (tester) async {
+      tester.view
+        ..physicalSize = const Size(390, 1400)
+        ..devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final last = DateTime.now().subtract(
+        const Duration(days: 2, minutes: 55),
+      );
+      final medication = Medication(
+        id: 'm1',
+        name: 'Mounjaro',
+        form: 'injection',
+        doseUnit: 'mg',
+        frequency: 'weekly',
+        isActive: true,
+        lastDoseAt: last,
+      );
+      final dose = MedicationDose(
+        id: 'd1',
+        medicationId: 'm1',
+        takenAt: last,
+        localDate: '',
+        doseUnit: 'mg',
+        doseAmount: 2.5,
+        symptoms: const [],
+      );
+      await tester.pumpWidget(
+        _app(
+          Dashboard.fromJson(_dashboardJson(medication: true)),
+          medication: MedicationOverview(
+            medication: medication,
             doses: [dose],
+            lastDose: dose,
+            level: MedicationLevel(
+              ingredient: ActiveIngredient.tirzepatide,
+              doses: [dose],
+            ),
           ),
         ),
-      ),
-    );
-    await tester.pump(const Duration(milliseconds: 500));
-    await tester.pump(const Duration(milliseconds: 100));
-    expect(tester.takeException(), isNull);
-    expect(find.text('Próxima aplicação'), findsOneWidget);
-    expect(find.text('4d 23h'), findsOneWidget);
-    expect(find.text('Mounjaro · 2,5 mg'), findsOneWidget);
-    expect(find.text('Registrar aplicação'), findsOneWidget);
-    expect(find.textContaining('mg'), findsWidgets);
-  });
+      );
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(tester.takeException(), isNull);
+      expect(find.text('Próxima aplicação'), findsOneWidget);
+      expect(find.text('4d 23h'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('Seu dia em equilíbrio')).dy,
+        lessThan(tester.getTopLeft(find.text('Hidratação')).dy),
+      );
+      expect(
+        tester.getTopLeft(find.text('Hidratação')).dy,
+        lessThan(tester.getTopLeft(find.text('Próxima aplicação')).dy),
+      );
+      expect(find.text('Registrar aplicação'), findsNothing);
+      await tester.ensureVisible(find.text('Próxima aplicação'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Próxima aplicação'));
+      await tester.pumpAndSettle();
+      expect(find.text('Mounjaro · 2,5 mg'), findsOneWidget);
+      expect(find.text('Registrar aplicação'), findsOneWidget);
+      expect(find.textContaining('mg'), findsWidgets);
+    },
+  );
 
   testWidgets('atividade física: treinos da semana e metas no Início', (
     tester,
@@ -254,6 +289,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Atividade física'), findsOneWidget);
     expect(find.text('1 / 3 treinos na semana'), findsOneWidget);
+    expect(find.text('Registrar treino'), findsNothing);
+    await tester.tap(find.text('Atividade física'));
+    await tester.pumpAndSettle();
     expect(find.text('Academia 1/3'), findsOneWidget);
     expect(find.text('Registrar treino'), findsOneWidget);
   });

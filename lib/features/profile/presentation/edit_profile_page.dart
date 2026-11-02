@@ -10,6 +10,7 @@ import '../../../shared/widgets/form_fields.dart';
 import '../../../shared/widgets/state_views.dart';
 import '../../auth/application/session_controller.dart';
 import '../../auth/data/account.dart';
+import '../../engagement/data/daily_missions.dart';
 import '../../food/data/nutrition_models.dart';
 import '../data/profile_repository.dart';
 
@@ -128,6 +129,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         await repo.updateProfile(changes);
       }
       await session.reloadAccount();
+      ref.invalidate(dailyMissionsProvider);
       if (!mounted) return;
       showMessage(context, 'Perfil atualizado.');
       context.pop();

@@ -5,6 +5,7 @@ import '../../../app/features.dart';
 import '../../../core/error/app_failure.dart';
 import '../../../core/network/api_client.dart';
 import '../../assistant/domain/assistant_scope.dart';
+import '../../auth/application/session_controller.dart';
 import 'ai_models.dart';
 
 /// Recursos de IA: análise de refeição por foto e assistente. Toda chamada ao
@@ -140,9 +141,11 @@ class AiRepository {
       guard(() => _dio.delete<void>('ai/conversations/$id'));
 }
 
-final aiRepositoryProvider = Provider<AiRepository>(
-  (ref) => AiRepository(ref.watch(dioProvider)),
-);
+final aiRepositoryProvider = Provider<AiRepository>((ref) {
+  // Recriado a cada troca de conta: descarta o cache da conta anterior.
+  ref.watch(sessionScopeProvider);
+  return AiRepository(ref.watch(dioProvider));
+});
 
 final aiStatusProvider = FutureProvider<AiStatus>(
   (ref) => ref.watch(aiRepositoryProvider).status(),

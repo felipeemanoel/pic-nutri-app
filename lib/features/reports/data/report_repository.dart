@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/error/app_failure.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/utils/formatters.dart';
+import '../../auth/application/session_controller.dart';
 import 'report_models.dart';
 
 /// Parâmetros de um relatório: período e um dia de referência.
@@ -37,9 +38,11 @@ class ReportRepository {
   );
 }
 
-final reportRepositoryProvider = Provider<ReportRepository>(
-  (ref) => ReportRepository(ref.watch(dioProvider)),
-);
+final reportRepositoryProvider = Provider<ReportRepository>((ref) {
+  // Recriado a cada troca de conta: descarta o cache da conta anterior.
+  ref.watch(sessionScopeProvider);
+  return ReportRepository(ref.watch(dioProvider));
+});
 
 final periodReportProvider = FutureProvider.family<PeriodReport, ReportQuery>(
   (ref, q) => ref.watch(reportRepositoryProvider).summary(q),

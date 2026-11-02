@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/error/app_failure.dart';
 import '../../../core/network/api_client.dart';
+import '../../auth/application/session_controller.dart';
 import 'engagement_models.dart';
 
 class EngagementRepository {
@@ -40,9 +41,11 @@ class EngagementRepository {
       guard(() => _dio.post<void>('engagement/celebrations/seen', data: {'keys': keys}));
 }
 
-final engagementRepositoryProvider = Provider<EngagementRepository>(
-  (ref) => EngagementRepository(ref.watch(dioProvider)),
-);
+final engagementRepositoryProvider = Provider<EngagementRepository>((ref) {
+  // Recriado a cada troca de conta: descarta o cache da conta anterior.
+  ref.watch(sessionScopeProvider);
+  return EngagementRepository(ref.watch(dioProvider));
+});
 
 final engagementProvider = FutureProvider<Engagement>(
   (ref) => ref.watch(engagementRepositoryProvider).load(),

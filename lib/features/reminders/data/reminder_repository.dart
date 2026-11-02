@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/error/app_failure.dart';
 import '../../../core/network/api_client.dart';
+import '../../auth/application/session_controller.dart';
 import 'reminder_models.dart';
 
 class ReminderRepository {
@@ -66,9 +67,11 @@ class ReminderRepository {
       guard(() => _dio.delete<void>('reminders/$id'));
 }
 
-final reminderRepositoryProvider = Provider<ReminderRepository>(
-  (ref) => ReminderRepository(ref.watch(dioProvider)),
-);
+final reminderRepositoryProvider = Provider<ReminderRepository>((ref) {
+  // Recriado a cada troca de conta: descarta o cache da conta anterior.
+  ref.watch(sessionScopeProvider);
+  return ReminderRepository(ref.watch(dioProvider));
+});
 
 final remindersProvider = FutureProvider<List<Reminder>>(
   (ref) => ref.watch(reminderRepositoryProvider).list(),

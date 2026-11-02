@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/error/app_failure.dart';
 import '../../../core/network/api_client.dart';
+import '../../auth/application/session_controller.dart';
 import 'article_models.dart';
 
 typedef ArticleQuery = ({String? category, String? search});
@@ -45,9 +46,11 @@ class ArticleRepository {
   }
 }
 
-final articleRepositoryProvider = Provider<ArticleRepository>(
-  (ref) => ArticleRepository(ref.watch(dioProvider)),
-);
+final articleRepositoryProvider = Provider<ArticleRepository>((ref) {
+  // Recriado a cada troca de conta: descarta o cache da conta anterior.
+  ref.watch(sessionScopeProvider);
+  return ArticleRepository(ref.watch(dioProvider));
+});
 
 final articlesProvider = FutureProvider.autoDispose
     .family<List<Article>, ArticleQuery>(
