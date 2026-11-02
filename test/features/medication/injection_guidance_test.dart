@@ -56,6 +56,19 @@ void main() {
                 width: 360,
                 child: InjectionSiteMap(
                   sites: _sites,
+                  history: [
+                    for (var day = 1; day <= 2; day++)
+                      MedicationDose(
+                        id: '$day',
+                        medicationId: 'med',
+                        takenAt: DateTime(2026, 10, day),
+                        localDate: '2026-10-0$day',
+                        doseUnit: 'mg',
+                        symptoms: const [],
+                        injectionSite: 'abdomen_left',
+                        notes: 'Local no mapa: abdomen_left_p00.',
+                      ),
+                  ],
                   selected: null,
                   onSelected: (value) => selected = value,
                 ),
@@ -69,13 +82,32 @@ void main() {
       final right = tester.getCenter(find.byTooltip('Abdome direito'));
       expect(left.dx, greaterThan(right.dx));
       await tester.tap(find.byTooltip('Abdome esquerdo'));
-      expect(selected, 'abdomen_left');
+      await tester.pumpAndSettle();
+      expect(find.text('Parte superior'), findsOneWidget);
+      await tester.tap(find.text('1').first);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('1ª aplicação'), findsOneWidget);
+      expect(find.textContaining('2ª aplicação'), findsOneWidget);
+      await tester.tap(find.text('Selecionar posição'));
+      await tester.pumpAndSettle();
+      expect(selected, 'abdomen_left_p00');
+      expect(find.byTooltip('Braço esquerdo'), findsNothing);
+      await tester.tap(find.text('Costas'));
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('Braço esquerdo'), findsOneWidget);
+      await tester.tap(find.byTooltip('Braço esquerdo'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('1').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Selecionar posição'));
+      await tester.pumpAndSettle();
+      expect(selected, 'arm_left_p00');
       expect(tester.takeException(), isNull);
     },
   );
 
   testWidgets(
-    'mapa aparece só após confirmar apresentação; outra apresentação remove instruções',
+    'mapa fica disponível sem confirmação; instruções dependem da apresentação',
     (tester) async {
       tester.view
         ..physicalSize = const Size(390, 1400)
@@ -83,7 +115,21 @@ void main() {
       addTearDown(tester.view.reset);
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [recentDosesProvider.overrideWith((ref) async => [])],
+          overrides: [
+            recentDosesProvider.overrideWith(
+              (ref) async => [
+                MedicationDose(
+                  id: 'previous',
+                  medicationId: 'med',
+                  takenAt: DateTime(2026, 10, 18),
+                  localDate: '2026-10-18',
+                  doseUnit: 'mg',
+                  symptoms: const [],
+                  injectionSite: 'abdomen_left',
+                ),
+              ],
+            ),
+          ],
           child: MaterialApp(
             theme: AppTheme.light(),
             home: Scaffold(
@@ -102,12 +148,19 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.byType(InjectionSiteMap), findsNothing);
+      expect(find.byType(InjectionSiteMap), findsOneWidget);
+      expect(find.text('1'), findsOneWidget);
+      expect(find.textContaining('registros antigos'), findsOneWidget);
+      await tester.ensureVisible(find.text('Referência do fabricante'));
+      await tester.tap(find.text('Referência do fabricante'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byType(DropdownButtonFormField<String>));
       await tester.tap(find.byType(DropdownButtonFormField<String>));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Mounjaro · Eli Lilly').last);
       await tester.pumpAndSettle();
-      expect(find.byType(InjectionSiteMap), findsNothing);
+      expect(find.byType(InjectionSiteMap), findsOneWidget);
+      await tester.ensureVisible(find.byType(CheckboxListTile));
       await tester.tap(find.byType(CheckboxListTile));
       await tester.pumpAndSettle();
       expect(find.byType(InjectionSiteMap), findsOneWidget);
@@ -115,11 +168,12 @@ void main() {
         find.textContaining('deve ser feita por outra pessoa'),
         findsOneWidget,
       );
+      await tester.ensureVisible(find.byType(DropdownButtonFormField<String>));
       await tester.tap(find.byType(DropdownButtonFormField<String>));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Outro / não sei informar').last);
       await tester.pumpAndSettle();
-      expect(find.byType(InjectionSiteMap), findsNothing);
+      expect(find.byType(InjectionSiteMap), findsOneWidget);
       expect(
         find.textContaining('deve ser feita por outra pessoa'),
         findsNothing,

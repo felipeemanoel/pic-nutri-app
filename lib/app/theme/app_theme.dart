@@ -117,11 +117,11 @@ abstract final class AppTheme {
       titleMedium: style(18, FontWeight.w600, 1.35),
       titleSmall: style(16, FontWeight.w600, 1.4),
       bodyLarge: style(16, FontWeight.w400, 1.5),
-      bodyMedium: style(16, FontWeight.w400, 1.5),
-      bodySmall: style(14, FontWeight.w400, 1.45, color: p.textSecondary),
-      labelLarge: style(16, FontWeight.w600, 1.3),
+      bodyMedium: style(15, FontWeight.w400, 1.45),
+      bodySmall: style(13, FontWeight.w400, 1.45, color: p.textSecondary),
+      labelLarge: style(14, FontWeight.w600, 1.3),
       labelMedium: style(14, FontWeight.w500, 1.3),
-      labelSmall: style(13, FontWeight.w500, 1.3, color: p.textSecondary),
+      labelSmall: style(12, FontWeight.w500, 1.3, color: p.textSecondary),
     );
   }
 
@@ -277,7 +277,7 @@ abstract final class AppTheme {
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        height: 80,
+        height: 72,
         elevation: 0,
         backgroundColor: s.surface,
         surfaceTintColor: Colors.transparent,
@@ -312,7 +312,7 @@ abstract final class AppTheme {
         ),
         indicatorColor: s.primary,
         indicatorSize: TabBarIndicatorSize.label,
-        dividerColor: p.border,
+        dividerColor: Colors.transparent,
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: s.surface,

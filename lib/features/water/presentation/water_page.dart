@@ -15,6 +15,7 @@ import '../../../shared/widgets/state_views.dart';
 import '../../auth/application/session_controller.dart';
 import '../../profile/data/profile_repository.dart';
 import '../data/water_repository.dart';
+import 'water_cups.dart';
 
 /// Consumo de água do dia, registros, meta e histórico da semana.
 class WaterPage extends ConsumerStatefulWidget {
@@ -119,7 +120,12 @@ class _WaterPageState extends ConsumerState<WaterPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Água')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(Space.page, 0, Space.page, Space.xxl),
+        padding: const EdgeInsets.fromLTRB(
+          Space.page,
+          0,
+          Space.page,
+          Space.xxl,
+        ),
         children: [
           const DayNavigator(),
           AsyncValueView<WaterDay>(
@@ -130,7 +136,8 @@ class _WaterPageState extends ConsumerState<WaterPage> {
               children: [
                 // Consumido, meta e botões rápidos em destaque.
                 AppCard(
-                  semanticLabel: 'Água: ${Fmt.ml(w.totalMl)} de ${Fmt.ml(w.goalMl)}.',
+                  semanticLabel:
+                      'Água: ${Fmt.ml(w.totalMl)} de ${Fmt.ml(w.goalMl)}.',
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -138,23 +145,23 @@ class _WaterPageState extends ConsumerState<WaterPage> {
                         child: Text.rich(
                           TextSpan(
                             children: [
-                              TextSpan(text: Fmt.ml(w.totalMl), style: context.text.headlineMedium),
-                              TextSpan(text: '  de ${Fmt.ml(w.goalMl)}', style: context.text.bodyLarge),
+                              TextSpan(
+                                text: Fmt.ml(w.totalMl),
+                                style: context.text.headlineMedium,
+                              ),
+                              TextSpan(
+                                text: '  de ${Fmt.ml(w.goalMl)}',
+                                style: context.text.bodyLarge,
+                              ),
                             ],
                           ),
                         ),
                       ),
                       const SizedBox(height: Space.md),
-                      ExcludeSemantics(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(Radii.pill),
-                          child: LinearProgressIndicator(
-                            value: w.goalMl > 0 ? (w.totalMl / w.goalMl).clamp(0.0, 1.0) : 0,
-                            minHeight: 10,
-                            color: context.pic.water,
-                            backgroundColor: context.pic.surfaceMuted,
-                          ),
-                        ),
+                      WaterCups(
+                        totalMl: w.totalMl,
+                        goalMl: w.goalMl,
+                        onAdd: _busy ? null : (ml) => _add(day, ml),
                       ),
                       const SizedBox(height: Space.lg),
                       Wrap(

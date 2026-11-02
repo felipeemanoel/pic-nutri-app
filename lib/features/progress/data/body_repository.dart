@@ -100,7 +100,9 @@ class BodyRepository {
       guard(() => _dio.delete<void>('body/measurements/$id'));
 
   Future<List<ProgressPhoto>> photos() async {
-    final response = await guard(() => _dio.get<Map<String, dynamic>>('body/photos'));
+    final response = await guard(
+      () => _dio.get<Map<String, dynamic>>('body/photos'),
+    );
     return (response.data!['data'] as List<dynamic>)
         .cast<Map<String, dynamic>>()
         .map(ProgressPhoto.fromJson)
@@ -129,22 +131,32 @@ class BodyRepository {
         options: Options(sendTimeout: const Duration(minutes: 2)),
       ),
     );
-    return ProgressPhoto.fromJson(response.data!['data'] as Map<String, dynamic>);
+    return ProgressPhoto.fromJson(
+      response.data!['data'] as Map<String, dynamic>,
+    );
   }
 
-  Future<void> updatePhoto(String id, {required String pose, String? notes}) => guard(
-    () => _dio.patch<void>(
-      'body/photos/$id',
-      data: {'pose': pose, 'notes': (notes?.trim().isEmpty ?? true) ? null : notes!.trim()},
-    ),
-  );
+  Future<void> updatePhoto(String id, {required String pose, String? notes}) =>
+      guard(
+        () => _dio.patch<void>(
+          'body/photos/$id',
+          data: {
+            'pose': pose,
+            'notes': (notes?.trim().isEmpty ?? true) ? null : notes!.trim(),
+          },
+        ),
+      );
 
-  Future<void> deletePhoto(String id) => guard(() => _dio.delete<void>('body/photos/$id'));
+  Future<void> deletePhoto(String id) =>
+      guard(() => _dio.delete<void>('body/photos/$id'));
 
   /// Bytes JPEG da foto (requisição autenticada; não fica em cache em disco).
   Future<Uint8List> photoBytes(String id) async {
     final response = await guard(
-      () => _dio.get<List<int>>('body/photos/$id/image', options: Options(responseType: ResponseType.bytes)),
+      () => _dio.get<List<int>>(
+        'body/photos/$id/image',
+        options: Options(responseType: ResponseType.bytes),
+      ),
     );
     return Uint8List.fromList(response.data!);
   }
@@ -174,10 +186,14 @@ final measurementsProvider = FutureProvider<List<Measurement>>(
 );
 
 final progressPhotosProvider = FutureProvider<List<ProgressPhoto>>(
-  (ref) => ref.watch(bodyRepositoryProvider).photos(),
+  (ref) => ref
+      .watch(bodyRepositoryProvider)
+      .photos()
+      .timeout(const Duration(seconds: 25)),
 );
 
 /// Imagem de uma foto; liberada da memória quando sai da tela.
-final progressPhotoBytesProvider = FutureProvider.autoDispose.family<Uint8List, String>(
-  (ref, id) => ref.watch(bodyRepositoryProvider).photoBytes(id),
-);
+final progressPhotoBytesProvider = FutureProvider.autoDispose
+    .family<Uint8List, String>(
+      (ref, id) => ref.watch(bodyRepositoryProvider).photoBytes(id),
+    );

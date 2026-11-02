@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/design/design_system.dart';
+import '../../../core/utils/formatters.dart';
 import '../data/injection_guides.dart';
+import '../data/injection_location.dart';
 import '../data/medication_models.dart';
 
 /// Esquema de regiões, não um guia anatômico de pontos ou distâncias.
 /// Na vista frontal, a esquerda da pessoa aparece à direita de quem olha.
-class InjectionSiteMap extends StatelessWidget {
+class InjectionSiteMap extends StatefulWidget {
   const InjectionSiteMap({
     super.key,
     required this.sites,
@@ -25,34 +27,58 @@ class InjectionSiteMap extends StatelessWidget {
   final bool historyAvailable;
 
   @override
+  State<InjectionSiteMap> createState() => _InjectionSiteMapState();
+}
+
+class _InjectionSiteMapState extends State<InjectionSiteMap> {
+  bool _back = false;
+  List<Option> get sites => widget.sites;
+  String? get selected => widget.selected;
+  ValueChanged<String> get onSelected => widget.onSelected;
+  List<MedicationDose> get history => widget.history;
+  bool get historyAvailable => widget.historyAvailable;
+  bool get armRequiresHelper => widget.armRequiresHelper;
+
+  @override
   Widget build(BuildContext context) {
     final known = sites.where((s) => regionForSite(s.value) != null).toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Onde foi a aplicação?', style: context.text.titleMedium),
+        Text('Mapa de aplicações', style: context.text.titleMedium),
         const SizedBox(height: Space.xs),
         Text(
-          'Toque para registrar a região. Direita e esquerda são as do seu corpo. O desenho não indica um ponto exato nem confirma que a pele está adequada.',
+          'Toque em uma região para escolher a posição e consultar seu histórico. Direita e esquerda são as do seu corpo.',
           style: context.text.bodySmall,
         ),
         const SizedBox(height: Space.md),
         LayoutBuilder(
           builder: (context, constraints) {
-            final width = constraints.maxWidth.clamp(0.0, 360.0);
+            final width = constraints.maxWidth.clamp(0.0, 300.0);
             return Center(
               child: SizedBox(
                 width: width,
-                height: 350,
+                height: 390,
                 child: Row(
                   children: [
-                    for (final back in [false, true])
+                    for (final back in [_back])
                       Expanded(
                         child: Column(
                           children: [
-                            Text(
-                              back ? 'Costas' : 'Frente',
-                              style: context.text.labelMedium,
+                            SegmentedButton<bool>(
+                              segments: const [
+                                ButtonSegment(
+                                  value: false,
+                                  label: Text('Frente'),
+                                ),
+                                ButtonSegment(
+                                  value: true,
+                                  label: Text('Costas'),
+                                ),
+                              ],
+                              selected: {_back},
+                              onSelectionChanged: (value) =>
+                                  setState(() => _back = value.single),
                             ),
                             const SizedBox(height: Space.sm),
                             Expanded(
@@ -62,6 +88,7 @@ class InjectionSiteMap extends StatelessWidget {
                                     Positioned.fill(
                                       child: ExcludeSemantics(
                                         child: CustomPaint(
+                                          key: const ValueKey('injection-body'),
                                           painter: _BodyPainter(
                                             context.pic.surfaceMuted,
                                             context.pic.border,
@@ -70,7 +97,11 @@ class InjectionSiteMap extends StatelessWidget {
                                       ),
                                     ),
                                     for (final site in known)
-                                      if ((regionForSite(site.value) ==
+                                      if ((regionForSite(
+                                                InjectionLocation.region(
+                                                  site.value,
+                                                ),
+                                              ) ==
                                               BodyRegion.upperArm) ==
                                           back)
                                         _target(
@@ -93,10 +124,24 @@ class InjectionSiteMap extends StatelessWidget {
             );
           },
         ),
+        if (history.any(
+          (d) =>
+              d.injectionSite?.startsWith('abdomen_') == true &&
+              InjectionLocation.point(d.notes) == null,
+        ))
+          Text(
+            'Há registros antigos de abdome sem subárea definida. Eles não são atribuídos a nenhuma das quatro áreas.',
+            style: context.text.bodySmall,
+          ),
+        if (!historyAvailable)
+          Text(
+            'Histórico indisponível. As regiões sem marcação não indicam ausência de aplicações.',
+            style: context.text.bodySmall,
+          ),
         if (selected != null) ...[
           const SizedBox(height: Space.sm),
           Text(
-            'Região selecionada: ${sites.where((s) => s.value == selected).firstOrNull?.label ?? selected}',
+            'Região selecionada: ${InjectionLocation.labels[selected] ?? sites.where((s) => s.value == selected).firstOrNull?.label ?? selected}',
             style: context.text.titleSmall,
           ),
         ],
@@ -115,7 +160,7 @@ class InjectionSiteMap extends StatelessWidget {
           children: [
             const Chip(
               avatar: Icon(Icons.history, size: 18),
-              label: Text('Histórico registrado'),
+              label: Text('Aplicações na região'),
             ),
             Chip(
               avatar: Icon(
@@ -123,11 +168,194 @@ class InjectionSiteMap extends StatelessWidget {
                 size: 18,
                 color: context.pic.ai,
               ),
-              label: const Text('Seleção atual'),
+              label: const Text('Selecionado'),
             ),
           ],
         ),
       ],
+    );
+  }
+
+  Future<void> _choosePoint(BuildContext context, Option site) async {
+    final result = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (sheetContext) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: .85,
+        maxChildSize: .95,
+        builder: (context, controller) => ListView(
+          controller: controller,
+          padding: const EdgeInsets.all(Space.lg),
+          children: [
+            Text(site.label, style: context.text.titleLarge),
+            const SizedBox(height: Space.sm),
+            Text(
+              'Toque em uma posição para consultar as datas ou registrar uma aplicação.',
+              style: context.text.bodySmall,
+            ),
+            const SizedBox(height: Space.md),
+            if (!historyAvailable)
+              const Text(
+                'Histórico indisponível. As posições sem registros não significam que nunca foram usadas.',
+              ),
+            const Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(child: Text('Mais à esquerda')),
+                Expanded(
+                  child: Text('Mais à direita', textAlign: TextAlign.end),
+                ),
+              ],
+            ),
+            const SizedBox(height: Space.sm),
+            CustomPaint(
+              painter: _RegionDetailPainter(
+                regionForSite(site.value)!,
+                context.pic.surfaceMuted,
+                context.pic.border,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 22,
+                ),
+                child: Column(
+                  children: [
+                    for (var row = 0; row < 3; row++) ...[
+                      Text(
+                        const [
+                          'Parte superior',
+                          'Parte do meio',
+                          'Parte inferior',
+                        ][row],
+                        style: context.text.labelLarge,
+                      ),
+                      Row(
+                        children: [
+                          for (var col = 0; col < 3; col++)
+                            Expanded(
+                              child: _pointTile(sheetContext, site, row, col),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: Space.md),
+            ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              title: Text('Como ler este mapa', style: context.text.labelLarge),
+              children: [
+                Text(
+                  'O número identifica a posição, e a contagem mostra o histórico carregado. O desenho é uma referência sem escala anatômica. Siga os locais e distâncias indicados pelo seu profissional e pela bula.',
+                  style: context.text.bodySmall,
+                ),
+              ],
+            ),
+            if (history.any(
+              (d) =>
+                  d.injectionSite == site.value &&
+                  InjectionLocation.point(d.notes) == null,
+            ))
+              const Text(
+                'Existem registros desta região sem posição definida; eles não são atribuídos a uma posição da grade.',
+              ),
+            TextButton(
+              onPressed: () => Navigator.pop(sheetContext),
+              child: const Text('Cancelar'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (result != null) onSelected(result);
+  }
+
+  Widget _pointTile(BuildContext sheetContext, Option site, int row, int col) {
+    final point = '${site.value}_p$row$col';
+    final records =
+        history.where((d) => InjectionLocation.point(d.notes) == point).toList()
+          ..sort((a, b) => a.takenAt.compareTo(b.takenAt));
+    final active = selected == point;
+    return Padding(
+      padding: const EdgeInsets.all(4),
+      child: OutlinedButton(
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
+          backgroundColor: active
+              ? context.pic.aiContainer
+              : records.isNotEmpty
+              ? context.pic.warningContainer
+              : context.colors.surface,
+          shape: const CircleBorder(),
+        ),
+        onPressed: () async {
+          final confirmed = await showDialog<bool>(
+            context: sheetContext,
+            builder: (dialogContext) => AlertDialog(
+              title: Text('${site.label} · Posição ${row * 3 + col + 1}'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(InjectionLocation.labels[point]!),
+                    const SizedBox(height: Space.md),
+                    if (!historyAvailable)
+                      const Text('Histórico indisponível.')
+                    else if (records.isEmpty)
+                      const Text(
+                        'Sem aplicações nesta posição no histórico carregado.',
+                      ),
+                    for (var i = 0; i < records.length; i++)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          '${i + 1}ª aplicação · ${Fmt.shortDate(records[i].takenAt)} às ${Fmt.time(records[i].takenAt)} · ${records[i].medicationName ?? 'Medicamento registrado'}',
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: const Text('Voltar'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(dialogContext, true),
+                  child: const Text('Selecionar posição'),
+                ),
+              ],
+            ),
+          );
+          if (confirmed == true && sheetContext.mounted) {
+            Navigator.pop(sheetContext, point);
+          }
+        },
+        child: Column(
+          children: [
+            Text('${row * 3 + col + 1}', style: context.text.titleMedium),
+            Text(
+              historyAvailable
+                  ? '${records.length} registros'
+                  : 'Sem histórico',
+              textAlign: TextAlign.center,
+              style: context.text.labelSmall,
+            ),
+            if (records.isNotEmpty)
+              Text(
+                Fmt.shortDate(records.last.takenAt),
+                style: context.text.labelSmall,
+              ),
+            if (active) const Icon(Icons.check_circle, size: 18),
+          ],
+        ),
+      ),
     );
   }
 
@@ -138,20 +366,23 @@ class InjectionSiteMap extends StatelessWidget {
     double height,
     bool back,
   ) {
-    final region = regionForSite(site.value)!;
-    final left = isLeftSite(site.value)!;
+    final region = regionForSite(InjectionLocation.region(site.value))!;
+    final left = isLeftSite(InjectionLocation.region(site.value))!;
     final rightOfViewer = back ? !left : left;
     final x = switch (region) {
-      BodyRegion.upperArm => rightOfViewer ? 0.80 : 0.20,
-      _ => rightOfViewer ? 0.70 : 0.30,
+      BodyRegion.upperArm => rightOfViewer ? 0.75 : 0.25,
+      _ => rightOfViewer ? 0.59 : 0.41,
     };
     final y = switch (region) {
-      BodyRegion.abdomen => 0.43,
-      BodyRegion.thigh => 0.68,
+      BodyRegion.abdomen => 0.45,
+      BodyRegion.thigh => 0.70,
       BodyRegion.upperArm => 0.29,
     };
-    final count = history.where((d) => d.injectionSite == site.value).length;
-    final active = selected == site.value;
+    bool matches(MedicationDose d) => d.injectionSite == site.value;
+    final count = history.where(matches).length;
+    final used = historyAvailable && count > 0;
+    final active =
+        selected != null && InjectionLocation.region(selected!) == site.value;
     return Positioned(
       left: (width * x - 24).clamp(0.0, width - 48),
       top: height * y - 24,
@@ -165,28 +396,39 @@ class InjectionSiteMap extends StatelessWidget {
         selected: active,
         child: Tooltip(
           message: site.label,
-          child: Material(
-            color: active ? context.pic.aiContainer : context.colors.surface,
-            shape: CircleBorder(
-              side: BorderSide(
-                color: active ? context.pic.ai : context.pic.textSecondary,
-                width: active ? 2 : 1,
+          child: Padding(
+            padding: const EdgeInsets.all(5),
+            child: Material(
+              color: active
+                  ? context.pic.aiContainer
+                  : used
+                  ? context.pic.warningContainer
+                  : context.colors.surface,
+              shape: CircleBorder(
+                side: BorderSide(
+                  color: active
+                      ? context.pic.ai
+                      : used
+                      ? context.pic.warning
+                      : context.pic.textSecondary,
+                  width: active ? 2 : 1,
+                ),
               ),
-            ),
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: () => onSelected(site.value),
-              child: ExcludeSemantics(
-                child: Center(
-                  child: active
-                      ? Icon(Icons.check, color: context.pic.ai)
-                      : historyAvailable && count > 0
-                      ? Text('$count', style: context.text.labelLarge)
-                      : Icon(
-                          Icons.add,
-                          size: 20,
-                          color: context.pic.textSecondary,
-                        ),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: () => _choosePoint(context, site),
+                child: ExcludeSemantics(
+                  child: Center(
+                    child: active
+                        ? Icon(Icons.check, color: context.pic.ai)
+                        : historyAvailable && count > 0
+                        ? Text('$count', style: context.text.labelLarge)
+                        : Icon(
+                            Icons.add,
+                            size: 20,
+                            color: context.pic.textSecondary,
+                          ),
+                  ),
                 ),
               ),
             ),
@@ -249,4 +491,54 @@ class _BodyPainter extends CustomPainter {
   @override
   bool shouldRepaint(_BodyPainter old) =>
       fill != old.fill || outline != old.outline;
+}
+
+class _RegionDetailPainter extends CustomPainter {
+  const _RegionDetailPainter(this.region, this.fill, this.outline);
+  final BodyRegion region;
+  final Color fill;
+  final Color outline;
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    final path = Path();
+    switch (region) {
+      case BodyRegion.abdomen:
+        path.moveTo(w * .14, 2);
+        path.quadraticBezierTo(w * .5, h * .08, w * .86, 2);
+        path.cubicTo(w * .98, h * .32, w * .80, h * .58, w * .94, h * .94);
+        path.quadraticBezierTo(w * .5, h * 1.03, w * .06, h * .94);
+        path.cubicTo(w * .20, h * .58, w * .02, h * .32, w * .14, 2);
+        path.close();
+      case BodyRegion.upperArm:
+        path.addRRect(
+          RRect.fromRectAndCorners(
+            Rect.fromLTWH(w * .09, 0, w * .82, h),
+            topLeft: Radius.circular(w * .4),
+            topRight: Radius.circular(w * .4),
+            bottomLeft: Radius.circular(w * .22),
+            bottomRight: Radius.circular(w * .22),
+          ),
+        );
+      case BodyRegion.thigh:
+        path.moveTo(w * .06, h * .04);
+        path.quadraticBezierTo(w * .5, -h * .04, w * .94, h * .04);
+        path.lineTo(w * .78, h * .95);
+        path.quadraticBezierTo(w * .5, h * 1.02, w * .22, h * .95);
+        path.close();
+    }
+    canvas.drawPath(path, Paint()..color = fill);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = outline
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_RegionDetailPainter old) =>
+      old.region != region || old.fill != fill || old.outline != outline;
 }

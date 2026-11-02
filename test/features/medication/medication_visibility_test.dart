@@ -9,6 +9,7 @@ import '../../helpers/fakes.dart';
 
 Widget _app({required bool medication}) => ProviderScope(
   overrides: [
+    progressPhotosProvider.overrideWith((ref) async => []),
     ...sessionOverrides(
       SessionSignedIn(testAccount(medicationTracking: medication)),
     ),
@@ -42,6 +43,17 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(_app(medication: false));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Relatórios'),
+      250,
+      scrollable: find
+          .descendant(
+            of: find.byType(ListView).first,
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
     await tester.pumpAndSettle();
     expect(find.text('Relatórios'), findsOneWidget);
     expect(find.text('Hábitos e conquistas'), findsOneWidget);

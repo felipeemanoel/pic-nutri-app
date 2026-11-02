@@ -21,6 +21,7 @@ import '../../reports/presentation/weekly_summary_card.dart';
 import '../data/body_models.dart';
 import '../data/body_repository.dart';
 import 'body_forms.dart';
+import 'progress_photo_highlight.dart';
 import 'progress_photos.dart';
 
 /// Evolução: um resumo (sequência, semana, relatórios, hábitos e bem-estar),
@@ -56,6 +57,7 @@ class ProgressPage extends ConsumerWidget {
           bottom: TabBar(
             tabs: tabs,
             isScrollable: true,
+            padding: const EdgeInsets.symmetric(horizontal: Space.sm),
             tabAlignment: TabAlignment.start,
           ),
         ),
@@ -90,6 +92,8 @@ class _SummaryTab extends ConsumerWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(Space.page),
       children: [
+        const ProgressPhotoHighlight(),
+        const SizedBox(height: Space.md),
         const StreakCard(),
         const SizedBox(height: Space.md),
         const WeeklySummaryCard(),

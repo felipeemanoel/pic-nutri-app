@@ -9,6 +9,7 @@ import '../../../shared/validators.dart';
 import '../../../shared/widgets/feedback.dart';
 import '../../../shared/widgets/form_fields.dart';
 import '../../../shared/widgets/state_views.dart';
+import '../data/injection_location.dart';
 import '../data/medication_catalog.dart';
 import '../data/medication_models.dart';
 import '../data/medication_repository.dart';
@@ -285,11 +286,14 @@ class _DoseFormPageState extends ConsumerState<_DoseFormPage> {
   );
   late String? _unit = widget.dose?.doseUnit;
   late String? _site = widget.dose?.injectionSite;
+  late String? _point = InjectionLocation.point(widget.dose?.notes);
   late final Map<String, int> _symptoms = {
     for (final s in widget.dose?.symptoms ?? const <SymptomEntry>[])
       s.code: s.intensity,
   };
-  late final _notes = TextEditingController(text: widget.dose?.notes);
+  late final _notes = TextEditingController(
+    text: InjectionLocation.cleanNotes(widget.dose?.notes),
+  );
   bool _saving = false;
   bool _adding = false;
   int _catalogNonce = 0;
@@ -338,6 +342,7 @@ class _DoseFormPageState extends ConsumerState<_DoseFormPage> {
   void _select(Medication m) => setState(() {
     _medicationId = m.id;
     _site = null;
+    _point = null;
     _presentation = null;
     _amount.clear();
     _unit = m.doseUnit;
@@ -391,7 +396,10 @@ class _DoseFormPageState extends ConsumerState<_DoseFormPage> {
               for (final e in _symptoms.entries)
                 SymptomEntry(code: e.key, intensity: e.value),
             ],
-            notes: _notes.text,
+            notes: InjectionLocation.encode(
+              _notes.text,
+              medication.isInjection ? _point : null,
+            ),
             requestId: _isEdit ? null : _requestId,
           );
       Refresh.medication(ref);
@@ -425,6 +433,110 @@ class _DoseFormPageState extends ConsumerState<_DoseFormPage> {
     }
   }
 
+  Future<void> _pickInjectionSite(
+    Medication medication,
+    MedicationOptions options,
+  ) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (sheetContext) => FractionallySizedBox(
+        heightFactor: .94,
+        child: StatefulBuilder(
+          builder: (context, updateSheet) {
+            void change(String? value) {
+              setState(() {
+                _site = value == null ? null : InjectionLocation.region(value);
+                _point = value == _site ? null : value;
+              });
+              updateSheet(() {});
+            }
+
+            final label =
+                InjectionLocation.labels[_point] ??
+                (_site == null
+                    ? 'não informada'
+                    : options.label(options.injectionSites, _site));
+            return Column(
+              children: [
+                _DoseSummary(
+                  medication: medication.name,
+                  presentation: _presentation,
+                  takenAt: _takenAt,
+                  region: label,
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(Space.lg),
+                    child: Column(
+                      children: [
+                        InjectionGuidance(
+                          key: ValueKey(medication.id),
+                          medicationName: medication.name,
+                          sites: options.injectionSites,
+                          site: _site,
+                          point: _point,
+                          onSiteChanged: change,
+                          takenAt: _takenAt,
+                          editingDoseId: widget.dose?.id,
+                          onPresentationChanged: (p) {
+                            setState(() => _presentation = p);
+                            updateSheet(() {});
+                          },
+                        ),
+                        const SizedBox(height: Space.sm),
+                        ExpansionTile(
+                          title: const Text('Escolher pela lista'),
+                          children: [
+                            DropdownButtonFormField<String?>(
+                              key: ValueKey('manual:$_site:$_point'),
+                              initialValue:
+                                  options.injectionSites.any(
+                                    (s) => s.value == _site,
+                                  )
+                                  ? _site
+                                  : null,
+                              decoration: const InputDecoration(
+                                labelText: 'Região (sem posição detalhada)',
+                              ),
+                              items: [
+                                const DropdownMenuItem<String?>(
+                                  child: Text('Não informar'),
+                                ),
+                                for (final o in options.injectionSites)
+                                  DropdownMenuItem<String?>(
+                                    value: o.value,
+                                    child: Text(o.label),
+                                  ),
+                              ],
+                              onChanged: change,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(Space.lg),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: () => Navigator.pop(sheetContext),
+                      icon: const Icon(Icons.check),
+                      label: const Text('Concluir escolha'),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
   Future<void> _delete() async {
     final ok = await confirmAction(
       context,
@@ -448,8 +560,10 @@ class _DoseFormPageState extends ConsumerState<_DoseFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    final options = ref.watch(medicationOptionsProvider).value;
-    final medications = ref.watch(medicationsProvider).value;
+    final optionsState = ref.watch(medicationOptionsProvider);
+    final medicationsState = ref.watch(medicationsProvider);
+    final options = optionsState.value;
+    final medications = medicationsState.value;
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -464,7 +578,16 @@ class _DoseFormPageState extends ConsumerState<_DoseFormPage> {
             ),
         ],
       ),
-      body: options == null || medications == null || _adding
+      body: optionsState.hasError || medicationsState.hasError
+          ? ErrorView(
+              message:
+                  'Não foi possível buscar os medicamentos e locais de aplicação. Verifique sua conexão e tente novamente.',
+              onRetry: () {
+                ref.invalidate(medicationOptionsProvider);
+                ref.invalidate(medicationsProvider);
+              },
+            )
+          : options == null || medications == null || _adding
           ? const LoadingView()
           : Builder(
               builder: (context) {
@@ -489,22 +612,12 @@ class _DoseFormPageState extends ConsumerState<_DoseFormPage> {
 
                 final siteLabel = _site == null
                     ? null
-                    : options.label(options.injectionSites, _site);
+                    : InjectionLocation.labels[_point] ??
+                          options.label(options.injectionSites, _site);
                 return Form(
                   key: _formKey,
                   child: Column(
                     children: [
-                      // Identificação sempre visível: medicamento, apresentação, data e região.
-                      _DoseSummary(
-                        medication: medication.name,
-                        presentation: medication.isInjection
-                            ? (_presentation ?? 'não confirmada')
-                            : null,
-                        takenAt: _takenAt,
-                        region: medication.isInjection
-                            ? (siteLabel ?? 'não informada')
-                            : null,
-                      ),
                       Expanded(
                         child: ListView(
                           padding: const EdgeInsets.fromLTRB(
@@ -514,16 +627,25 @@ class _DoseFormPageState extends ConsumerState<_DoseFormPage> {
                             Space.xxl,
                           ),
                           children: [
-                            Text(
-                              options.disclaimer,
-                              style: theme.textTheme.bodySmall,
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: Space.lg),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.info_outline,
+                                    size: 16,
+                                    color: context.pic.textSecondary,
+                                  ),
+                                  const SizedBox(width: Space.sm),
+                                  Expanded(
+                                    child: Text(
+                                      'Registro conforme sua prescrição.',
+                                      style: context.text.bodySmall,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            const SizedBox(height: Space.lg),
-                            Text(
-                              'Aplicação',
-                              style: theme.textTheme.titleMedium,
-                            ),
-                            const SizedBox(height: Space.sm),
                             _Dropdown(
                               key: ValueKey(_catalogNonce),
                               label: 'Medicamento',
@@ -579,9 +701,8 @@ class _DoseFormPageState extends ConsumerState<_DoseFormPage> {
                                 ),
                               ],
                             ),
-                            if (KnownMedication.byName(medication.name)
-                                    ?.doses
-                                    case final doses?
+                            if (KnownMedication.byName(medication.name)?.doses
+                                case final doses?
                                 when doses.isNotEmpty && !_isEdit) ...[
                               const SizedBox(height: Space.sm),
                               Wrap(
@@ -606,51 +727,55 @@ class _DoseFormPageState extends ConsumerState<_DoseFormPage> {
                               ),
                             ],
                             if (medication.isInjection) ...[
-                              const SizedBox(height: Space.section),
-                              Text(
-                                'Região da aplicação',
-                                style: theme.textTheme.titleMedium,
-                              ),
-                              const SizedBox(height: Space.sm),
-                              InjectionGuidance(
-                                onPresentationChanged: (p) =>
-                                    setState(() => _presentation = p),
-                                key: ValueKey(medication.id),
-                                medicationName: medication.name,
-                                sites: options.injectionSites,
-                                site: _site,
-                                onSiteChanged: (value) =>
-                                    setState(() => _site = value),
-                                takenAt: _takenAt,
-                                editingDoseId: widget.dose?.id,
-                              ),
-                              const SizedBox(height: 12),
-                              DropdownButtonFormField<String?>(
-                                key: ValueKey('site:${medication.id}:$_site'),
-                                initialValue:
-                                    options.injectionSites.any(
-                                      (s) => s.value == _site,
-                                    )
-                                    ? _site
-                                    : null,
-                                isExpanded: true,
-                                decoration: const InputDecoration(
-                                  labelText: 'Local da aplicação (opcional)',
-                                ),
-                                items: [
-                                  const DropdownMenuItem<String?>(
-                                    child: Text('Não informar'),
+                              const SizedBox(height: Space.lg),
+                              AppCard(
+                                padding: EdgeInsets.zero,
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: Space.lg,
+                                    vertical: Space.sm,
                                   ),
-                                  for (final o in options.injectionSites)
-                                    DropdownMenuItem<String?>(
-                                      value: o.value,
-                                      child: Text(o.label),
+                                  leading: CircleAvatar(
+                                    backgroundColor: context.pic.brandContainer,
+                                    child: Icon(
+                                      Icons.accessibility_new_outlined,
+                                      color: context.colors.primary,
                                     ),
-                                ],
-                                onChanged: (v) => setState(() => _site = v),
+                                  ),
+                                  title: const Text('Local da aplicação'),
+                                  subtitle: Text(
+                                    siteLabel ??
+                                        'Escolher no boneco e ver histórico',
+                                    style: context.text.bodySmall?.copyWith(
+                                      color: _site == null
+                                          ? context.pic.textSecondary
+                                          : context.colors.primary,
+                                    ),
+                                  ),
+                                  trailing: const Icon(Icons.chevron_right),
+                                  onTap: () =>
+                                      _pickInjectionSite(medication, options),
+                                ),
                               ),
                             ],
-                            const SizedBox(height: Space.section),
+                            const SizedBox(height: Space.md),
+                            ExpansionTile(
+                              tilePadding: EdgeInsets.zero,
+                              leading: const Icon(Icons.info_outline, size: 20),
+                              title: const Text('Sobre este registro'),
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    bottom: Space.lg,
+                                  ),
+                                  child: Text(
+                                    options.disclaimer,
+                                    style: context.text.bodySmall,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: Space.md),
                             ExpansionTile(
                               tilePadding: EdgeInsets.zero,
                               title: Text(
@@ -772,29 +897,58 @@ class _DoseSummary extends StatelessWidget {
       excludeSemantics: true,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(
-          horizontal: Space.page,
-          vertical: Space.md,
+        padding: const EdgeInsets.fromLTRB(
+          Space.page,
+          Space.sm,
+          Space.page,
+          Space.md,
         ),
-        color: context.pic.surfaceMuted,
-        child: Wrap(
-          spacing: Space.lg,
-          runSpacing: Space.xs,
+        decoration: BoxDecoration(
+          color: context.colors.surface,
+          border: Border(bottom: BorderSide(color: context.pic.border)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            for (final (label, value) in lines)
-              Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(text: '$label: ', style: context.text.bodySmall),
-                    TextSpan(
-                      text: value,
-                      style: context.text.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: context.pic.brandContainer,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.medication_outlined,
+                color: context.colors.primary,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: Space.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(medication, style: context.text.titleMedium),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${Fmt.shortDate(takenAt)} às ${Fmt.time(takenAt)}',
+                    style: context.text.bodySmall,
+                  ),
+                  if (region != null && region != 'não informada')
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        region!,
+                        style: context.text.labelMedium?.copyWith(
+                          color: context.colors.primary,
+                        ),
                       ),
                     ),
-                  ],
-                ),
+                  if (presentation != null && presentation != 'não confirmada')
+                    Text(presentation!, style: context.text.labelSmall),
+                ],
               ),
+            ),
           ],
         ),
       ),

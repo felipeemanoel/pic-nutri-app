@@ -58,15 +58,26 @@ class _ProgressPhotosTabState extends ConsumerState<ProgressPhotosTab> {
               onAction: () => addProgressPhoto(context),
             );
           }
-          final list = _pose == null ? all : all.where((p) => p.pose == _pose).toList();
+          final list = _pose == null
+              ? all
+              : all.where((p) => p.pose == _pose).toList();
           return RefreshIndicator(
             onRefresh: () => ref.refresh(progressPhotosProvider.future),
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(Space.page, Space.sm, Space.page, Space.fabClearance),
+              padding: const EdgeInsets.fromLTRB(
+                Space.page,
+                Space.sm,
+                Space.page,
+                Space.fabClearance,
+              ),
               children: [
                 Row(
                   children: [
-                    Icon(Icons.lock_outline, size: 16, color: context.pic.textSecondary),
+                    Icon(
+                      Icons.lock_outline,
+                      size: 16,
+                      color: context.pic.textSecondary,
+                    ),
                     const SizedBox(width: Space.xs),
                     Expanded(
                       child: Text(
@@ -98,6 +109,16 @@ class _ProgressPhotosTabState extends ConsumerState<ProgressPhotosTab> {
                   ),
                 ),
                 const SizedBox(height: Space.sm),
+                if (list.isNotEmpty)
+                  FilledButton.tonalIcon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => PhotoTimelinePage(photos: list),
+                      ),
+                    ),
+                    icon: const Icon(Icons.timeline),
+                    label: const Text('Ver evolução pelas datas'),
+                  ),
                 if (list.length >= 2)
                   OutlinedButton.icon(
                     onPressed: () => _compare(list),
@@ -108,20 +129,25 @@ class _ProgressPhotosTabState extends ConsumerState<ProgressPhotosTab> {
                 if (list.isEmpty)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: Space.xl),
-                    child: Text('Nenhuma foto com esse ângulo.', textAlign: TextAlign.center),
+                    child: Text(
+                      'Nenhuma foto com esse ângulo.',
+                      textAlign: TextAlign.center,
+                    ),
                   )
                 else
                   GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      mainAxisSpacing: Space.sm,
-                      crossAxisSpacing: Space.sm,
-                      childAspectRatio: 0.62,
-                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          mainAxisSpacing: Space.sm,
+                          crossAxisSpacing: Space.sm,
+                          childAspectRatio: 0.62,
+                        ),
                     itemCount: list.length,
-                    itemBuilder: (_, i) => _Thumb(photo: list[i], onTap: () => _open(list[i])),
+                    itemBuilder: (_, i) =>
+                        _Thumb(photo: list[i], onTap: () => _open(list[i])),
                   ),
               ],
             ),
@@ -141,7 +167,8 @@ class _Thumb extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
     button: true,
-    label: 'Foto de ${photo.poseLabel.toLowerCase()} em ${Fmt.shortDate(photo.localDate)}',
+    label:
+        'Foto de ${photo.poseLabel.toLowerCase()} em ${Fmt.shortDate(photo.localDate)}',
     child: InkWell(
       onTap: onTap,
       borderRadius: Radii.card,
@@ -149,11 +176,22 @@ class _Thumb extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
-            child: ClipRRect(borderRadius: Radii.card, child: PhotoImage(id: photo.id)),
+            child: ClipRRect(
+              borderRadius: Radii.card,
+              child: PhotoImage(id: photo.id),
+            ),
           ),
           const SizedBox(height: Space.xs),
-          Text(Fmt.shortDate(photo.localDate), style: context.text.labelMedium, textAlign: TextAlign.center),
-          Text(photo.poseLabel, style: context.text.bodySmall, textAlign: TextAlign.center),
+          Text(
+            Fmt.shortDate(photo.localDate),
+            style: context.text.labelMedium,
+            textAlign: TextAlign.center,
+          ),
+          Text(
+            photo.poseLabel,
+            style: context.text.bodySmall,
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     ),
@@ -174,7 +212,12 @@ class PhotoImage extends ConsumerWidget {
       color: context.pic.surfaceMuted,
       child: bytes.when(
         data: (b) => Image.memory(b, fit: fit, gaplessPlayback: true),
-        loading: () => const Center(child: SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2))),
+        loading: () => const Center(
+          child: SizedBox.square(
+            dimension: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
         error: (_, _) => Center(
           child: IconButton(
             tooltip: 'Tentar de novo',
@@ -214,9 +257,18 @@ Future<void> addProgressPhoto(BuildContext context) async {
 
   XFile? file;
   try {
-    file = await ImagePicker().pickImage(source: source, maxWidth: 1600, imageQuality: 85);
+    file = await ImagePicker().pickImage(
+      source: source,
+      maxWidth: 1600,
+      imageQuality: 85,
+    );
   } on Object {
-    if (context.mounted) showMessage(context, 'Não foi possível abrir a câmera ou a galeria. Verifique as permissões do app.');
+    if (context.mounted) {
+      showMessage(
+        context,
+        'Não foi possível abrir a câmera ou a galeria. Verifique as permissões do app.',
+      );
+    }
     return;
   }
   if (file == null || !context.mounted) return;
@@ -258,13 +310,15 @@ class _PhotoDetailsSheetState extends ConsumerState<_PhotoDetailsSheet> {
       _error = null;
     });
     try {
-      await ref.read(bodyRepositoryProvider).uploadPhoto(
-        path: widget.file.path,
-        pose: _pose,
-        takenAt: DateTime.now(),
-        requestId: _requestId,
-        notes: _notes.text,
-      );
+      await ref
+          .read(bodyRepositoryProvider)
+          .uploadPhoto(
+            path: widget.file.path,
+            pose: _pose,
+            takenAt: DateTime.now(),
+            requestId: _requestId,
+            notes: _notes.text,
+          );
       ref.invalidate(progressPhotosProvider);
       if (!mounted) return;
       showMessage(context, 'Foto salva.');
@@ -288,7 +342,10 @@ class _PhotoDetailsSheetState extends ConsumerState<_PhotoDetailsSheet> {
         Center(
           child: ClipRRect(
             borderRadius: Radii.card,
-            child: SizedBox(height: 220, child: _LocalImage(path: widget.file.path)),
+            child: SizedBox(
+              height: 220,
+              child: _LocalImage(path: widget.file.path),
+            ),
           ),
         ),
         const SizedBox(height: Space.md),
@@ -298,7 +355,11 @@ class _PhotoDetailsSheetState extends ConsumerState<_PhotoDetailsSheet> {
           spacing: Space.xs,
           children: [
             for (final e in PhotoPoses.labels.entries)
-              ChoiceChip(label: Text(e.value), selected: _pose == e.key, onSelected: (_) => setState(() => _pose = e.key)),
+              ChoiceChip(
+                label: Text(e.value),
+                selected: _pose == e.key,
+                onSelected: (_) => setState(() => _pose = e.key),
+              ),
           ],
         ),
         TextField(
@@ -328,7 +389,8 @@ class _LocalImage extends StatelessWidget {
   final String path;
 
   @override
-  Widget build(BuildContext context) => Image.file(File(path), fit: BoxFit.contain);
+  Widget build(BuildContext context) =>
+      Image.file(File(path), fit: BoxFit.contain);
 }
 
 /// Foto em tela cheia, com data, peso do dia, edição e exclusão.
@@ -362,7 +424,9 @@ class PhotoViewerPage extends ConsumerWidget {
     );
     if (result == null || !context.mounted) return;
     try {
-      await ref.read(bodyRepositoryProvider).updatePhoto(photo.id, pose: result.$1, notes: result.$2);
+      await ref
+          .read(bodyRepositoryProvider)
+          .updatePhoto(photo.id, pose: result.$1, notes: result.$2);
       ref.invalidate(progressPhotosProvider);
       if (context.mounted) Navigator.of(context).pop();
     } on Object catch (e) {
@@ -375,15 +439,26 @@ class PhotoViewerPage extends ConsumerWidget {
     appBar: AppBar(
       title: Text('${photo.poseLabel} · ${Fmt.shortDate(photo.localDate)}'),
       actions: [
-        IconButton(tooltip: 'Editar', icon: const Icon(Icons.edit_outlined), onPressed: () => _edit(context, ref)),
-        IconButton(tooltip: 'Apagar', icon: const Icon(Icons.delete_outline), onPressed: () => _delete(context, ref)),
+        IconButton(
+          tooltip: 'Editar',
+          icon: const Icon(Icons.edit_outlined),
+          onPressed: () => _edit(context, ref),
+        ),
+        IconButton(
+          tooltip: 'Apagar',
+          icon: const Icon(Icons.delete_outline),
+          onPressed: () => _delete(context, ref),
+        ),
       ],
     ),
     body: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Expanded(
-          child: InteractiveViewer(maxScale: 4, child: PhotoImage(id: photo.id, fit: BoxFit.contain)),
+          child: InteractiveViewer(
+            maxScale: 4,
+            child: PhotoImage(id: photo.id, fit: BoxFit.contain),
+          ),
         ),
         Padding(
           padding: const EdgeInsets.all(Space.page),
@@ -391,7 +466,9 @@ class PhotoViewerPage extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                photo.nearestWeightKg == null ? 'Sem peso registrado perto dessa data' : 'Peso perto dessa data: ${Fmt.kg(photo.nearestWeightKg!)}',
+                photo.nearestWeightKg == null
+                    ? 'Sem peso registrado perto dessa data'
+                    : 'Peso perto dessa data: ${Fmt.kg(photo.nearestWeightKg!)}',
                 style: context.text.bodyMedium,
               ),
               if (photo.notes != null && photo.notes!.isNotEmpty) ...[
@@ -436,15 +513,29 @@ class _EditPhotoDialogState extends State<_EditPhotoDialog> {
           spacing: Space.xs,
           children: [
             for (final e in PhotoPoses.labels.entries)
-              ChoiceChip(label: Text(e.value), selected: _pose == e.key, onSelected: (_) => setState(() => _pose = e.key)),
+              ChoiceChip(
+                label: Text(e.value),
+                selected: _pose == e.key,
+                onSelected: (_) => setState(() => _pose = e.key),
+              ),
           ],
         ),
-        TextField(controller: _notes, maxLength: 500, decoration: const InputDecoration(labelText: 'Observação')),
+        TextField(
+          controller: _notes,
+          maxLength: 500,
+          decoration: const InputDecoration(labelText: 'Observação'),
+        ),
       ],
     ),
     actions: [
-      TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
-      FilledButton(onPressed: () => Navigator.of(context).pop((_pose, _notes.text)), child: const Text('Salvar')),
+      TextButton(
+        onPressed: () => Navigator.of(context).pop(),
+        child: const Text('Cancelar'),
+      ),
+      FilledButton(
+        onPressed: () => Navigator.of(context).pop((_pose, _notes.text)),
+        child: const Text('Salvar'),
+      ),
     ],
   );
 }
@@ -480,7 +571,10 @@ class _PhotoComparePageState extends State<PhotoComparePage> {
             childAspectRatio: 0.62,
           ),
           itemCount: widget.photos.length,
-          itemBuilder: (_, i) => _Thumb(photo: widget.photos[i], onTap: () => Navigator.of(sheet).pop(widget.photos[i])),
+          itemBuilder: (_, i) => _Thumb(
+            photo: widget.photos[i],
+            onTap: () => Navigator.of(sheet).pop(widget.photos[i]),
+          ),
         ),
       ),
     );
@@ -507,9 +601,21 @@ class _PhotoComparePageState extends State<PhotoComparePage> {
           Expanded(
             child: Row(
               children: [
-                Expanded(child: _Side(photo: _before, label: 'Antes', onChange: () => _choose(true))),
+                Expanded(
+                  child: _Side(
+                    photo: _before,
+                    label: 'Antes',
+                    onChange: () => _choose(true),
+                  ),
+                ),
                 const SizedBox(width: 2),
-                Expanded(child: _Side(photo: _after, label: 'Depois', onChange: () => _choose(false))),
+                Expanded(
+                  child: _Side(
+                    photo: _after,
+                    label: 'Depois',
+                    onChange: () => _choose(false),
+                  ),
+                ),
               ],
             ),
           ),
@@ -518,7 +624,8 @@ class _PhotoComparePageState extends State<PhotoComparePage> {
             child: Text(
               [
                 '$days ${days == 1 ? 'dia' : 'dias'} entre as fotos',
-                if (diff != null) 'peso ${diff > 0 ? '+' : ''}${Fmt.decimal(diff)} kg',
+                if (diff != null)
+                  'peso ${diff > 0 ? '+' : ''}${Fmt.decimal(diff)} kg',
               ].join(' · '),
               style: context.text.titleSmall,
               textAlign: TextAlign.center,
@@ -531,7 +638,11 @@ class _PhotoComparePageState extends State<PhotoComparePage> {
 }
 
 class _Side extends StatelessWidget {
-  const _Side({required this.photo, required this.label, required this.onChange});
+  const _Side({
+    required this.photo,
+    required this.label,
+    required this.onChange,
+  });
 
   final ProgressPhoto photo;
   final String label;
@@ -541,7 +652,9 @@ class _Side extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      Expanded(child: PhotoImage(id: photo.id, fit: BoxFit.contain)),
+      Expanded(
+        child: PhotoImage(id: photo.id, fit: BoxFit.contain),
+      ),
       const SizedBox(height: Space.xs),
       Text(label, style: context.text.labelLarge, textAlign: TextAlign.center),
       Text(
@@ -555,4 +668,114 @@ class _Side extends StatelessWidget {
       TextButton(onPressed: onChange, child: const Text('Trocar')),
     ],
   );
+}
+
+/// Percorre fotos de um mesmo ângulo, em ordem cronológica.
+class PhotoTimelinePage extends StatefulWidget {
+  const PhotoTimelinePage({super.key, required this.photos});
+  final List<ProgressPhoto> photos;
+  @override
+  State<PhotoTimelinePage> createState() => _PhotoTimelinePageState();
+}
+
+class _PhotoTimelinePageState extends State<PhotoTimelinePage> {
+  late String _pose = widget.photos.first.pose;
+  int _index = 0;
+  @override
+  Widget build(BuildContext context) {
+    final photos = widget.photos.where((p) => p.pose == _pose).toList()
+      ..sort((a, b) => a.localDate.compareTo(b.localDate));
+    final photo = photos[_index.clamp(0, photos.length - 1)];
+    return Scaffold(
+      appBar: AppBar(title: const Text('Minha evolução em fotos')),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: Space.page),
+              child: DropdownButtonFormField<String>(
+                initialValue: _pose,
+                decoration: const InputDecoration(labelText: 'Ângulo da foto'),
+                items: [
+                  for (final pose in widget.photos.map((p) => p.pose).toSet())
+                    DropdownMenuItem(
+                      value: pose,
+                      child: Text(PhotoPoses.labels[pose] ?? pose),
+                    ),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      _pose = value;
+                      _index = 0;
+                    });
+                  }
+                },
+              ),
+            ),
+            const SizedBox(height: Space.sm),
+            Expanded(
+              child: GestureDetector(
+                onHorizontalDragEnd: (details) {
+                  final velocity = details.primaryVelocity ?? 0;
+                  if (velocity.abs() > 100) {
+                    setState(
+                      () => _index = (_index + (velocity < 0 ? 1 : -1)).clamp(
+                        0,
+                        photos.length - 1,
+                      ),
+                    );
+                  }
+                },
+                child: InteractiveViewer(
+                  key: ValueKey(photo.id),
+                  maxScale: 4,
+                  child: PhotoImage(id: photo.id, fit: BoxFit.contain),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(Space.page),
+              child: Column(
+                children: [
+                  Text(
+                    Fmt.shortDate(photo.localDate),
+                    style: context.text.titleLarge,
+                  ),
+                  if (photo.nearestWeightKg != null)
+                    Text(
+                      'Peso próximo da data: ${Fmt.kg(photo.nearestWeightKg!)}',
+                    ),
+                  Text(
+                    'Foto ${_index + 1} de ${photos.length} · ${photo.poseLabel}',
+                  ),
+                  if (photos.length > 1) ...[
+                    Slider(
+                      label: Fmt.shortDate(photo.localDate),
+                      min: 0,
+                      max: (photos.length - 1).toDouble(),
+                      divisions: photos.length - 1,
+                      value: _index.toDouble(),
+                      onChanged: (v) => setState(() => _index = v.round()),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(Fmt.shortDate(photos.first.localDate)),
+                        Text(Fmt.shortDate(photos.last.localDate)),
+                      ],
+                    ),
+                    const Text('Deslize para acompanhar suas mudanças.'),
+                  ] else
+                    const Text(
+                      'Adicione outra foto deste ângulo para percorrer sua evolução.',
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

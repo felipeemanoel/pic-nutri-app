@@ -8,6 +8,7 @@ import 'package:picnutri/features/medication/presentation/medication_forms.dart'
 
 class _Repository implements MedicationRepository {
   String? savedSite;
+  String? savedNotes;
   String? savedMedication;
   int saves = 0;
   @override
@@ -49,6 +50,7 @@ class _Repository implements MedicationRepository {
     String? requestId,
   }) async {
     savedSite = injectionSite;
+    savedNotes = notes;
     savedMedication = medicationId;
     saves++;
     return SavedDose(
@@ -96,22 +98,19 @@ void main() {
     );
     await tester.tap(find.text('Abrir aplicação'));
     await tester.pumpAndSettle();
-    final selector = find.widgetWithText(
-      DropdownButtonFormField<String>,
-      'Produto e apresentação',
-    );
-    await tester.ensureVisible(selector);
-    await tester.tap(selector);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Mounjaro · Eli Lilly').last);
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.byType(CheckboxListTile));
-    await tester.tap(find.byType(CheckboxListTile));
+    await tester.tap(find.text('Local da aplicação'));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.byTooltip('Abdome esquerdo'));
+    await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Abdome esquerdo'));
-    await tester.pump();
-    // Resumo fixo identifica medicamento, apresentação e região.
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('1').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Selecionar posição'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Concluir escolha'));
+    await tester.pumpAndSettle();
+    // O formulário mostra a posição escolhida.
     expect(find.textContaining('Abdome esquerdo'), findsWidgets);
     await tester.pumpAndSettle();
     expect(repo.saves, 0);
@@ -128,7 +127,38 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Registrar aplicação'));
     await tester.pumpAndSettle();
     expect(repo.savedSite, 'abdomen_left');
+    expect(repo.savedNotes, contains('abdomen_left_p00'));
     expect(repo.savedMedication, 'med');
     expect(repo.saves, 1);
   });
+  testWidgets(
+    'falha na busca mostra nova tentativa em vez de spinner permanente',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            medicationOptionsProvider.overrideWith(
+              (ref) async => throw Exception('offline'),
+            ),
+            medicationsProvider.overrideWith((ref) async => []),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.light(),
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => TextButton(
+                  onPressed: () => openDoseForm(context),
+                  child: const Text('Abrir'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Abrir'));
+      await tester.pumpAndSettle();
+      expect(find.text('Tentar novamente'), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    },
+  );
 }

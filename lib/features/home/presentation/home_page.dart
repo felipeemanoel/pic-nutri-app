@@ -19,7 +19,9 @@ import '../../food/presentation/food_page.dart';
 import '../../notifications/presentation/notification_bell.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../progress/presentation/body_forms.dart';
+import '../../progress/presentation/progress_photo_highlight.dart';
 import '../../water/data/water_repository.dart';
+import '../../water/presentation/water_cups.dart';
 import '../data/dashboard.dart';
 import '../data/dashboard_repository.dart';
 import 'next_dose_card.dart';
@@ -106,86 +108,51 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final hour = now.hour;
-    final (greeting, icon, iconColor) = hour < 12
-        ? ('Bom dia', Icons.wb_twilight_rounded, const Color(0xFFF4A62A))
+    final greeting = hour < 12
+        ? 'Bom dia'
         : hour < 18
-        ? ('Boa tarde', Icons.wb_sunny_rounded, const Color(0xFFF6B92B))
-        : ('Boa noite', Icons.nightlight_round, const Color(0xFF7C8CD8));
+        ? 'Boa tarde'
+        : 'Boa noite';
     final raw = _date.format(now).replaceFirst('-feira', '');
     final date = raw.isEmpty ? raw : raw[0].toUpperCase() + raw.substring(1);
 
     final colors = Theme.of(context).colorScheme;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Row(
-          children: [
-            const Expanded(
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: PicNutriHorizontalLogo(width: 132),
-              ),
-            ),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: colors.surface,
-                borderRadius: BorderRadius.circular(Radii.lg),
-                border: Border.all(color: context.pic.border),
-              ),
-              child: const SizedBox.square(
-                dimension: 48,
-                child: NotificationBell(),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: Space.lg),
-        Divider(height: 1, thickness: 1, color: context.pic.border),
-        const SizedBox(height: Space.xl),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Semantics(
-                    header: true,
-                    child: Text(
-                      name.isEmpty ? greeting : '$greeting, $name',
-                      style: context.text.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.6,
-                        height: 1.2,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const PicNutriHorizontalLogo(width: 102),
+              const SizedBox(height: Space.md),
+              Semantics(
+                header: true,
+                child: Text(
+                  name.isEmpty ? greeting : '$greeting, $name',
+                  style: context.text.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -.6,
                   ),
-                  const SizedBox(height: Space.sm),
-                  Text(
-                    date,
-                    style: context.text.bodySmall?.copyWith(
-                      color: context.pic.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: Space.md),
-            ExcludeSemantics(
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha: 0.10),
-                  shape: BoxShape.circle,
                 ),
-                child: Icon(icon, size: 24, color: iconColor),
               ),
-            ),
-          ],
+              const SizedBox(height: Space.xs),
+              Text(date, style: context.text.bodySmall),
+            ],
+          ),
+        ),
+        const SizedBox(width: Space.md),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: colors.surface,
+            shape: BoxShape.circle,
+            border: Border.all(color: context.pic.border),
+          ),
+          child: const SizedBox.square(
+            dimension: 48,
+            child: NotificationBell(),
+          ),
         ),
       ],
     );
@@ -224,19 +191,14 @@ class _DashboardBody extends ConsumerWidget {
           const NextDoseCard(),
           const SizedBox(height: Space.md),
         ],
-        // Um número por cartão: calorias; depois água e peso lado a lado.
+        // Registro rápido de água; alimentação e evolução vêm a seguir.
+        _WaterTile(data: data),
+        const SizedBox(height: Space.md),
         _CaloriesCard(data: data),
         const SizedBox(height: Space.md),
-        IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(child: _WaterTile(data: data)),
-              const SizedBox(width: Space.md),
-              Expanded(child: _WeightTile(data: data)),
-            ],
-          ),
-        ),
+        _WeightTile(data: data),
+        const SizedBox(height: Space.sm),
+        const ProgressPhotoHighlight(),
         const SizedBox(height: Space.md),
         const ActivityHomeCard(),
         const SizedBox(height: Space.md),
@@ -356,7 +318,7 @@ class _HomeCard extends StatelessWidget {
     color: context.colors.surface,
     shape: RoundedRectangleBorder(
       borderRadius: Radii.card,
-      side: BorderSide(color: context.pic.border),
+      side: BorderSide(color: context.pic.border.withValues(alpha: .6)),
     ),
     clipBehavior: Clip.antiAlias,
     child: InkWell(
@@ -454,9 +416,14 @@ class _CaloriesCard extends StatelessWidget {
                   ),
                 ),
               ),
-              Text(
-                n.mealsCount == 1 ? '1 refeição' : '${n.mealsCount} refeições',
-                style: context.text.bodySmall,
+              Flexible(
+                child: Text(
+                  n.mealsCount == 1
+                      ? '1 refeição'
+                      : '${n.mealsCount} refeições',
+                  style: context.text.bodySmall,
+                  textAlign: TextAlign.end,
+                ),
               ),
             ],
           ),
@@ -519,7 +486,7 @@ class _CaloriesCard extends StatelessWidget {
               const SizedBox(width: Space.md),
               Expanded(
                 child: _MacroBar(
-                  label: 'Prot',
+                  label: 'Proteína',
                   semanticsName: 'Proteínas',
                   grams: n.totals.proteinG,
                   goal: n.goalProteinG,
@@ -530,7 +497,7 @@ class _CaloriesCard extends StatelessWidget {
               const SizedBox(width: Space.md),
               Expanded(
                 child: _MacroBar(
-                  label: 'Gord',
+                  label: 'Gordura',
                   semanticsName: 'Gorduras',
                   grams: n.totals.fatG,
                   goal: n.goalFatG,
@@ -769,10 +736,17 @@ class _WaterTileState extends ConsumerState<_WaterTile> {
                 const SizedBox(width: Space.xs),
                 Expanded(
                   child: Text(
-                    'Água',
+                    'Hidratação',
                     style: context.text.labelLarge?.copyWith(
                       color: context.pic.textSecondary,
                     ),
+                  ),
+                ),
+                Flexible(
+                  child: Text(
+                    '${Fmt.decimal(liters)} / ${Fmt.decimal(d.waterGoalMl / 1000)} L',
+                    style: context.text.titleSmall,
+                    textAlign: TextAlign.end,
                   ),
                 ),
                 // Outros volumes sem sair do Início.
@@ -796,28 +770,11 @@ class _WaterTileState extends ConsumerState<_WaterTile> {
               ],
             ),
             const SizedBox(height: Space.sm),
-            ExcludeSemantics(
-              child: _BigNumber(
-                value: Fmt.decimal(liters),
-                unit: d.waterGoalMl > 0
-                    ? '/ ${Fmt.decimal(d.waterGoalMl / 1000)} L'
-                    : 'L',
-                size: _BigNumberSize.medium,
-              ),
+            WaterCups(
+              totalMl: d.waterTotalMl,
+              goalMl: d.waterGoalMl,
+              onAdd: _saving ? null : _add,
             ),
-            const SizedBox(height: Space.sm),
-            ExcludeSemantics(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(Radii.pill),
-                child: LinearProgressIndicator(
-                  value: progress.clamp(0.0, 1.0),
-                  minHeight: 6,
-                  color: blue,
-                  backgroundColor: context.pic.surfaceMuted,
-                ),
-              ),
-            ),
-            const Spacer(),
             const SizedBox(height: Space.md),
             Row(
               children: [
@@ -944,7 +901,6 @@ class _WeightTile extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            const Spacer(),
             const SizedBox(height: Space.md),
             OutlinedButton(
               onPressed: () => showWeightForm(context),

@@ -118,11 +118,17 @@ final medicationRepositoryProvider = Provider<MedicationRepository>(
 );
 
 final medicationOptionsProvider = FutureProvider<MedicationOptions>(
-  (ref) => ref.watch(medicationRepositoryProvider).options(),
+  (ref) => ref
+      .watch(medicationRepositoryProvider)
+      .options()
+      .timeout(const Duration(seconds: 25)),
 );
 
 final medicationsProvider = FutureProvider<List<Medication>>(
-  (ref) => ref.watch(medicationRepositoryProvider).medications(),
+  (ref) => ref
+      .watch(medicationRepositoryProvider)
+      .medications()
+      .timeout(const Duration(seconds: 25)),
 );
 
 final recentDosesProvider = FutureProvider<List<MedicationDose>>(

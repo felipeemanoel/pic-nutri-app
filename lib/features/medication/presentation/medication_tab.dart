@@ -6,6 +6,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../shared/widgets/state_views.dart';
 import '../../symptoms/data/symptom_repository.dart';
 import '../application/medication_overview.dart';
+import '../data/injection_location.dart';
 import '../data/medication_models.dart';
 import '../data/medication_repository.dart';
 import 'medication_forms.dart';
@@ -44,11 +45,16 @@ class MedicationTab extends ConsumerWidget {
           value: options,
           onRetry: () => ref.invalidate(medicationOptionsProvider),
           data: (opts) => ListView(
-            padding: const EdgeInsets.fromLTRB(Space.page, Space.md, Space.page, Space.fabClearance),
+            padding: const EdgeInsets.fromLTRB(
+              Space.page,
+              Space.md,
+              Space.page,
+              Space.fabClearance,
+            ),
             children: [
               // Nível estimado no topo, quando o princípio ativo é reconhecido.
-              if (ref.watch(medicationOverviewProvider).value case final overview?
-                  when overview.level != null) ...[
+              if (ref.watch(medicationOverviewProvider).value
+                  case final overview? when overview.level != null) ...[
                 MedicationLevelCard(overview: overview),
                 const SizedBox(height: Space.md),
               ],
@@ -60,7 +66,10 @@ class MedicationTab extends ConsumerWidget {
                   Expanded(
                     child: Semantics(
                       header: true,
-                      child: Text('Seus medicamentos', style: context.text.titleMedium),
+                      child: Text(
+                        'Seus medicamentos',
+                        style: context.text.titleMedium,
+                      ),
                     ),
                   ),
                   TextButton.icon(
@@ -114,7 +123,13 @@ class MedicationTab extends ConsumerWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Semantics(header: true, child: Text('Aplicações', style: context.text.titleMedium)),
+                    child: Semantics(
+                      header: true,
+                      child: Text(
+                        'Aplicações',
+                        style: context.text.titleMedium,
+                      ),
+                    ),
                   ),
                   if (medications.value?.any((m) => m.isActive) ?? false)
                     TextButton.icon(
@@ -142,18 +157,30 @@ class MedicationTab extends ConsumerWidget {
                       ),
               ),
               // 3. Consulta às instruções (separada do registro)
-              if (medications.value?.any((m) => m.isInjection && m.isActive) ?? false) ...[
+              if (medications.value?.any((m) => m.isInjection && m.isActive) ??
+                  false) ...[
                 const SizedBox(height: Space.section),
-                Semantics(header: true, child: Text('Instruções do fabricante', style: context.text.titleMedium)),
+                Semantics(
+                  header: true,
+                  child: Text(
+                    'Instruções do fabricante',
+                    style: context.text.titleMedium,
+                  ),
+                ),
                 const SizedBox(height: Space.xs),
-                for (final m in medications.value!.where((m) => m.isInjection && m.isActive))
+                for (final m in medications.value!.where(
+                  (m) => m.isInjection && m.isActive,
+                ))
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.menu_book_outlined),
                     title: Text(m.name),
-                    subtitle: const Text('Bula, dispositivo e rodízio de regiões'),
+                    subtitle: const Text(
+                      'Bula, dispositivo e rodízio de regiões',
+                    ),
                     trailing: const Icon(Icons.chevron_right),
-                    onTap: () => MedicationInstructionsPage.open(context, m.name),
+                    onTap: () =>
+                        MedicationInstructionsPage.open(context, m.name),
                   ),
               ],
             ],
@@ -189,7 +216,8 @@ class _DoseTile extends StatelessWidget {
     final details = [
       ?amount,
       if (dose.injectionSite != null)
-        options.label(options.injectionSites, dose.injectionSite),
+        InjectionLocation.labels[InjectionLocation.point(dose.notes)] ??
+            options.label(options.injectionSites, dose.injectionSite),
     ].join(' · ');
 
     return Card(

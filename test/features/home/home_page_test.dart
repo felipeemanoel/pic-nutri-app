@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:picnutri/app/theme/app_theme.dart';
 import 'package:picnutri/features/activity/data/activity_models.dart';
 import 'package:picnutri/features/activity/data/activity_repository.dart';
 import 'package:picnutri/features/auth/application/session_controller.dart';
@@ -12,6 +13,8 @@ import 'package:picnutri/features/home/presentation/home_page.dart';
 import 'package:picnutri/features/medication/application/medication_overview.dart';
 import 'package:picnutri/features/medication/data/medication_models.dart';
 import 'package:picnutri/features/medication/domain/medication_schedule.dart';
+
+import 'package:picnutri/features/progress/data/body_repository.dart';
 
 import '../../helpers/fakes.dart';
 
@@ -74,8 +77,10 @@ Widget _app(
   Dashboard data, {
   List<Meal> meals = const [],
   MedicationOverview? medication,
+  double textScale = 1,
 }) => ProviderScope(
   overrides: [
+    progressPhotosProvider.overrideWith((ref) async => []),
     ...sessionOverrides(SessionSignedIn(testAccount())),
     dashboardProvider.overrideWith((ref, day) async => data),
     mealsOnDayProvider.overrideWith((ref, day) async => meals),
@@ -84,7 +89,16 @@ Widget _app(
       (ref) async => ActivitySummary.fromJson(_activityJson),
     ),
   ],
-  child: const MaterialApp(home: HomePage()),
+  child: MaterialApp(
+    theme: AppTheme.light(),
+    builder: (context, child) => MediaQuery(
+      data: MediaQuery.of(
+        context,
+      ).copyWith(textScaler: TextScaler.linear(textScale)),
+      child: child!,
+    ),
+    home: const HomePage(),
+  ),
 );
 
 Meal _meal(String type, double kcal) => Meal.fromJson({
@@ -220,6 +234,7 @@ void main() {
       ),
     );
     await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 100));
     expect(tester.takeException(), isNull);
     expect(find.text('Próxima aplicação'), findsOneWidget);
     expect(find.text('4d 23h'), findsOneWidget);
@@ -241,5 +256,16 @@ void main() {
     expect(find.text('1 / 3 treinos na semana'), findsOneWidget);
     expect(find.text('Academia 1/3'), findsOneWidget);
     expect(find.text('Registrar treino'), findsOneWidget);
+  });
+  testWidgets('layout em tela estreita com texto ampliado', (tester) async {
+    tester.view
+      ..physicalSize = const Size(320, 760)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      _app(Dashboard.fromJson(_dashboardJson()), textScale: 1.6),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
   });
 }

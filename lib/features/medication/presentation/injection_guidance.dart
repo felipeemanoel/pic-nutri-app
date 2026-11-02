@@ -6,6 +6,7 @@ import '../../../core/design/design_system.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/widgets/feedback.dart';
 import '../data/injection_guides.dart';
+import '../data/injection_location.dart';
 import '../data/medication_models.dart';
 import '../data/medication_repository.dart';
 import 'injection_site_map.dart';
@@ -18,6 +19,7 @@ class InjectionGuidance extends ConsumerStatefulWidget {
     required this.medicationName,
     required this.sites,
     required this.site,
+    this.point,
     required this.onSiteChanged,
     required this.takenAt,
     this.editingDoseId,
@@ -30,6 +32,7 @@ class InjectionGuidance extends ConsumerStatefulWidget {
   final String medicationName;
   final List<Option> sites;
   final String? site;
+  final String? point;
   final ValueChanged<String> onSiteChanged;
   final DateTime takenAt;
   final String? editingDoseId;
@@ -79,150 +82,175 @@ class _InjectionGuidanceState extends ConsumerState<InjectionGuidance> {
             .toList()
           ..sort((a, b) => b.takenAt.compareTo(a.takenAt));
     final selectedRecords = records
-        .where((d) => d.injectionSite == widget.site)
-        .take(3)
+        .where(
+          (d) => widget.point != null
+              ? InjectionLocation.point(d.notes) == widget.point
+              : d.injectionSite == widget.site,
+        )
         .toList();
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Referência do fabricante', style: context.text.titleMedium),
-          const SizedBox(height: Space.xs),
-          Text(
-            'Escolha o produto e confira a apresentação na embalagem. Esta consulta não altera sua prescrição.',
-            style: context.text.bodySmall,
+          InjectionSiteMap(
+            sites: widget.sites
+                .where(
+                  (s) => (_confirmed
+                      ? guide?.allowedRegions.contains(
+                              regionForSite(s.value),
+                            ) ??
+                            true
+                      : true),
+                )
+                .toList(),
+            selected: widget.point ?? widget.site,
+            onSelected: widget.onSiteChanged,
+            history: records,
+            historyAvailable: history.hasValue && !history.hasError,
+            armRequiresHelper:
+                _confirmed && (guide?.armRequiresHelper ?? false),
           ),
-          const SizedBox(height: Space.md),
-          DropdownButtonFormField<String>(
-            initialValue: null,
-            isExpanded: true,
-            decoration: const InputDecoration(
-              labelText: 'Produto e apresentação',
+          if (!widget.sites.any((s) => regionForSite(s.value) != null))
+            Text(
+              'O mapa aguarda locais compatíveis da API. A lista textual abaixo continua disponível.',
+              style: context.text.bodySmall,
             ),
-            selectedItemBuilder: (context) => [
-              const Text(
-                'Outro / não sei informar',
-                overflow: TextOverflow.ellipsis,
+          if (history.isLoading)
+            const Padding(
+              padding: EdgeInsets.only(top: Space.sm),
+              child: Text('Carregando histórico de regiões…'),
+            )
+          else if (history.hasError)
+            TextButton.icon(
+              onPressed: () => ref.invalidate(recentDosesProvider),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Tentar carregar o histórico'),
+            )
+          else if (widget.site != null) ...[
+            const SizedBox(height: Space.sm),
+            Text(
+              selectedRecords.isEmpty
+                  ? 'Sem registros anteriores neste local no histórico carregado.'
+                  : 'Histórico deste local (${selectedRecords.length} aplicações):',
+              style: context.text.bodySmall,
+            ),
+            for (final dose in selectedRecords)
+              Text(
+                '${Fmt.shortDate(dose.takenAt)} às ${Fmt.time(dose.takenAt)} · ${dose.medicationName ?? 'Medicamento registrado'}',
+                style: context.text.bodySmall,
               ),
-              for (final g in catalog)
-                Text(
-                  '${g.brand} · ${g.manufacturer}',
-                  overflow: TextOverflow.ellipsis,
+          ],
+          const SizedBox(height: Space.lg),
+          ExpansionTile(
+            tilePadding: EdgeInsets.zero,
+            childrenPadding: const EdgeInsets.only(bottom: Space.md),
+            leading: const Icon(Icons.menu_book_outlined, size: 20),
+            title: Text(
+              'Referência do fabricante',
+              style: context.text.titleSmall,
+            ),
+            subtitle: const Text('Apresentação, bula e cuidados'),
+            expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: Space.xs),
+              Text(
+                'Escolha o produto e confira a apresentação na embalagem. Esta consulta não altera sua prescrição.',
+                style: context.text.bodySmall,
+              ),
+              const SizedBox(height: Space.md),
+              DropdownButtonFormField<String>(
+                initialValue: null,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  labelText: 'Produto e apresentação',
                 ),
-            ],
-            items: [
-              const DropdownMenuItem(
-                value: '',
-                child: Text('Outro / não sei informar'),
-              ),
-              for (final g in catalog)
-                DropdownMenuItem(
-                  value: g.id,
-                  child: Text(
-                    '${g.brand} · ${g.manufacturer}',
+                selectedItemBuilder: (context) => [
+                  const Text(
+                    'Outro / não sei informar',
                     overflow: TextOverflow.ellipsis,
                   ),
-                ),
-            ],
-            onChanged: (id) {
-              setState(() {
-                _guide = catalog.where((g) => g.id == id).firstOrNull;
-                _confirmed = false;
-              });
-              widget.onPresentationChanged?.call(null);
-            },
-          ),
-          if (catalog.isEmpty) ...[
-            const SizedBox(height: Space.sm),
-            Text(
-              'O nome cadastrado não identifica um produto desta curadoria. Confira a marca no cadastro do medicamento; o registro manual continua disponível.',
-              style: context.text.bodySmall,
-            ),
-          ],
-          if (guide == null) ...[
-            const SizedBox(height: Space.sm),
-            Text(
-              'Sem uma apresentação confirmada, use a lista de locais abaixo para registrar o que foi feito. Não adaptamos instruções de outros produtos.',
-              style: context.text.bodySmall,
-            ),
-          ] else ...[
-            const SizedBox(height: Space.md),
-            Text(guide.presentation, style: context.text.titleSmall),
-            CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              controlAffinity: ListTileControlAffinity.leading,
-              title: const Text(
-                'Minha embalagem corresponde a este produto e apresentação',
+                  for (final g in catalog)
+                    Text(
+                      '${g.brand} · ${g.manufacturer}',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+                items: [
+                  const DropdownMenuItem(
+                    value: '',
+                    child: Text('Outro / não sei informar'),
+                  ),
+                  for (final g in catalog)
+                    DropdownMenuItem(
+                      value: g.id,
+                      child: Text(
+                        '${g.brand} · ${g.manufacturer}',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                ],
+                onChanged: (id) {
+                  setState(() {
+                    _guide = catalog.where((g) => g.id == id).firstOrNull;
+                    _confirmed = false;
+                  });
+                  widget.onPresentationChanged?.call(null);
+                },
               ),
-              value: _confirmed,
-              onChanged: (v) {
-                setState(() => _confirmed = v ?? false);
-                widget.onPresentationChanged?.call(_confirmed ? '${guide.brand} · ${guide.presentation}' : null);
-              },
-            ),
-            if (_confirmed) ...[
-              Text(guide.deviceNote, style: context.text.bodySmall),
-              const SizedBox(height: Space.sm),
-              Text(guide.rotationNote, style: context.text.bodySmall),
-              const SizedBox(height: Space.md),
-              InjectionSiteMap(
-                sites: widget.sites
-                    .where(
-                      (s) =>
-                          guide.allowedRegions.contains(regionForSite(s.value)),
-                    )
-                    .toList(),
-                selected: widget.site,
-                onSelected: widget.onSiteChanged,
-                history: records,
-                historyAvailable: history.hasValue && !history.hasError,
-                armRequiresHelper: guide.armRequiresHelper,
-              ),
-              if (!widget.sites.any((s) => regionForSite(s.value) != null))
-                Text(
-                  'O mapa aguarda locais compatíveis da API. A lista textual abaixo continua disponível.',
-                  style: context.text.bodySmall,
-                ),
-              if (history.isLoading)
-                const Padding(
-                  padding: EdgeInsets.only(top: Space.sm),
-                  child: Text('Carregando histórico de regiões…'),
-                )
-              else if (history.hasError)
-                TextButton.icon(
-                  onPressed: () => ref.invalidate(recentDosesProvider),
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Tentar carregar o histórico'),
-                )
-              else if (widget.site != null) ...[
+              if (catalog.isEmpty) ...[
                 const SizedBox(height: Space.sm),
                 Text(
-                  selectedRecords.isEmpty
-                      ? 'Sem registros anteriores nesta região no histórico carregado.'
-                      : 'Últimos registros nesta região:',
+                  'O nome cadastrado não identifica um produto desta curadoria. Confira a marca no cadastro do medicamento; o registro manual continua disponível.',
                   style: context.text.bodySmall,
                 ),
-                for (final dose in selectedRecords)
-                  Text(
-                    '${Fmt.shortDate(dose.takenAt)} às ${Fmt.time(dose.takenAt)} · ${dose.medicationName ?? 'Medicamento registrado'}',
-                    style: context.text.bodySmall,
-                  ),
               ],
+              if (guide == null) ...[
+                const SizedBox(height: Space.sm),
+                Text(
+                  'O mapa registra a região informada. Confirme a apresentação para consultar as orientações específicas do fabricante.',
+                  style: context.text.bodySmall,
+                ),
+              ] else ...[
+                const SizedBox(height: Space.md),
+                Text(guide.presentation, style: context.text.titleSmall),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  title: const Text(
+                    'Minha embalagem corresponde a este produto e apresentação',
+                  ),
+                  value: _confirmed,
+                  onChanged: (v) {
+                    setState(() => _confirmed = v ?? false);
+                    widget.onPresentationChanged?.call(
+                      _confirmed
+                          ? '${guide.brand} · ${guide.presentation}'
+                          : null,
+                    );
+                  },
+                ),
+                if (_confirmed) ...[
+                  Text(guide.deviceNote, style: context.text.bodySmall),
+                  const SizedBox(height: Space.sm),
+                  Text(guide.rotationNote, style: context.text.bodySmall),
+                  const SizedBox(height: Space.md),
+                ],
+                const SizedBox(height: Space.sm),
+                OutlinedButton.icon(
+                  onPressed: _openSource,
+                  icon: const Icon(Icons.open_in_new, size: 18),
+                  label: const Text('Bula e imagens oficiais'),
+                ),
+                Text(
+                  'Fonte: ${guide.manufacturer} · Brasil. Consulta em ${InjectionGuide.reviewedOn}. ${guide.sourceVersion}.',
+                  style: context.text.labelSmall,
+                ),
+              ],
+              const SizedBox(height: Space.md),
+              const Text(
+                'Seringa ou frasco? As referências acima são de canetas preenchidas. Não use estas instruções para aspirar medicamento para uma seringa. Seringas e agulhas descartáveis são de uso único; não esterilize para reutilizar. Confira o dispositivo com seu médico ou farmacêutico.',
+              ),
             ],
-            const SizedBox(height: Space.sm),
-            OutlinedButton.icon(
-              onPressed: _openSource,
-              icon: const Icon(Icons.open_in_new, size: 18),
-              label: const Text('Bula e imagens oficiais'),
-            ),
-            Text(
-              'Fonte: ${guide.manufacturer} · Brasil. Consulta em ${InjectionGuide.reviewedOn}. ${guide.sourceVersion}.',
-              style: context.text.labelSmall,
-            ),
-          ],
-          const SizedBox(height: Space.md),
-          const Text(
-            'Seringa ou frasco? As referências acima são de canetas preenchidas. Não use estas instruções para aspirar medicamento para uma seringa. Seringas e agulhas descartáveis são de uso único; não esterilize para reutilizar. Confira o dispositivo com seu médico ou farmacêutico.',
           ),
         ],
       ),

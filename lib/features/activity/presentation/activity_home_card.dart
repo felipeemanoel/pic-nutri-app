@@ -206,10 +206,12 @@ class _PlanChip extends StatelessWidget {
             color: color,
           ),
           const SizedBox(width: Space.xs),
-          Text(
-            '${plan.displayName} ${plan.doneThisWeek}/${plan.timesPerWeek}',
-            style: context.text.labelMedium?.copyWith(
-              fontWeight: FontWeight.w600,
+          Flexible(
+            child: Text(
+              '${plan.displayName} ${plan.doneThisWeek}/${plan.timesPerWeek}',
+              style: context.text.labelMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
