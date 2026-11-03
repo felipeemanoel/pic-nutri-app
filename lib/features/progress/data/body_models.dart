@@ -256,7 +256,12 @@ class ProgressPhoto {
 }
 
 abstract final class PhotoPoses {
-  static const labels = {'front': 'Frente', 'side': 'Lado', 'back': 'Costas', 'other': 'Outra'};
+  static const labels = {
+    'front': 'Frente',
+    'side': 'Lado',
+    'back': 'Costas',
+    'other': 'Outra',
+  };
 }
 
 class BodyProgress {

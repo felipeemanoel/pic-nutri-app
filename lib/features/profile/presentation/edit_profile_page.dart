@@ -106,11 +106,14 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
           'dietary_preferences': prefs,
         if (restrictions != _p.dietaryRestrictions)
           'dietary_restrictions': restrictions,
-        if ((_allergies.toList()..sort()).join(',') != ([..._p.allergies]..sort()).join(','))
+        if ((_allergies.toList()..sort()).join(',') !=
+            ([..._p.allergies]..sort()).join(','))
           'allergies': _allergies.toList()..sort(),
-        if ((_avoid.text.trim().isEmpty ? null : _avoid.text.trim()) != _p.avoidFoods)
+        if ((_avoid.text.trim().isEmpty ? null : _avoid.text.trim()) !=
+            _p.avoidFoods)
           'avoid_foods': _avoid.text.trim().isEmpty ? null : _avoid.text.trim(),
-        if ((_plannedMeals.toList()..sort()).join(',') != ([..._p.plannedMeals]..sort()).join(','))
+        if ((_plannedMeals.toList()..sort()).join(',') !=
+            ([..._p.plannedMeals]..sort()).join(','))
           'planned_meals': [
             for (final t in MealTypes.labels.keys)
               if (_plannedMeals.contains(t)) t,
@@ -235,7 +238,9 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     label: Text(entry.value),
                     selected: _allergies.contains(entry.key),
                     onSelected: (s) => setState(
-                      () => s ? _allergies.add(entry.key) : _allergies.remove(entry.key),
+                      () => s
+                          ? _allergies.add(entry.key)
+                          : _allergies.remove(entry.key),
                     ),
                   ),
               ],
@@ -254,12 +259,16 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
               controller: _avoid,
               decoration: const InputDecoration(
                 labelText: 'Alimentos que prefere evitar (opcional)',
-                helperText: 'Separe por vírgulas. Usado nas sugestões do assistente.',
+                helperText:
+                    'Separe por vírgulas. Usado nas sugestões do assistente.',
               ),
               maxLength: 500,
             ),
             const SizedBox(height: 12),
-            Text('Refeições que você costuma fazer', style: theme.textTheme.titleSmall),
+            Text(
+              'Refeições que você costuma fazer',
+              style: theme.textTheme.titleSmall,
+            ),
             const SizedBox(height: 4),
             Text(
               'O início mostra as que ainda faltam registrar no dia.',
@@ -276,7 +285,9 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                       label: Text(entry.value),
                       selected: _plannedMeals.contains(entry.key),
                       onSelected: (s) => setState(
-                        () => s ? _plannedMeals.add(entry.key) : _plannedMeals.remove(entry.key),
+                        () => s
+                            ? _plannedMeals.add(entry.key)
+                            : _plannedMeals.remove(entry.key),
                       ),
                     ),
               ],
@@ -350,12 +361,13 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
               max: 6000,
               decimal: false,
             ),
-            if (AppFeatures.medical) SwitchListTile(
-              value: _medication,
-              onChanged: (v) => setState(() => _medication = v),
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Registrar uso de medicamento prescrito'),
-            ),
+            if (AppFeatures.medical)
+              SwitchListTile(
+                value: _medication,
+                onChanged: (v) => setState(() => _medication = v),
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Registrar uso de medicamento prescrito'),
+              ),
             const SizedBox(height: 16),
             LoadingButton(label: 'Salvar', loading: _saving, onPressed: _save),
           ],

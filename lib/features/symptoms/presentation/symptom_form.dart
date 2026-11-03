@@ -19,33 +19,42 @@ Future<void> showSymptomForm(BuildContext context) async {
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (_) => const FractionallySizedBox(heightFactor: 0.92, child: _SymptomForm()),
+    builder: (_) =>
+        const FractionallySizedBox(heightFactor: 0.92, child: _SymptomForm()),
   );
   if (alert != null && context.mounted) await showSafetyAlert(context, alert);
 }
 
-Future<void> showSafetyAlert(BuildContext context, SafetyAlert alert) => showDialog<void>(
-  context: context,
-  builder: (dialogContext) => AlertDialog(
-    icon: Icon(
-      alert.urgent ? Icons.emergency_outlined : Icons.health_and_safety_outlined,
-      color: alert.urgent ? dialogContext.pic.error : dialogContext.pic.warning,
-      size: 36,
-    ),
-    title: Text(alert.title),
-    content: Text(alert.message),
-    actions: [
-      TextButton(
-        onPressed: () {
-          Navigator.of(dialogContext).pop();
-          context.push(AppRoutes.helpArticle(alert.article));
-        },
-        child: const Text('Ver orientações'),
+Future<void> showSafetyAlert(BuildContext context, SafetyAlert alert) =>
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: Icon(
+          alert.urgent
+              ? Icons.emergency_outlined
+              : Icons.health_and_safety_outlined,
+          color: alert.urgent
+              ? dialogContext.pic.error
+              : dialogContext.pic.warning,
+          size: 36,
+        ),
+        title: Text(alert.title),
+        content: Text(alert.message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              context.push(AppRoutes.helpArticle(alert.article));
+            },
+            child: const Text('Ver orientações'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Entendi'),
+          ),
+        ],
       ),
-      FilledButton(onPressed: () => Navigator.of(dialogContext).pop(), child: const Text('Entendi')),
-    ],
-  ),
-);
+    );
 
 class _SymptomForm extends ConsumerStatefulWidget {
   const _SymptomForm();
@@ -80,10 +89,21 @@ class _SymptomFormState extends ConsumerState<_SymptomForm> {
       lastDate: DateTime.now(),
     );
     if (date == null || !mounted) return;
-    final time = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_at));
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_at),
+    );
     if (time == null) return;
-    final picked = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-    setState(() => _at = picked.isAfter(DateTime.now()) ? DateTime.now() : picked);
+    final picked = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
+    setState(
+      () => _at = picked.isAfter(DateTime.now()) ? DateTime.now() : picked,
+    );
   }
 
   Future<void> _save() async {
@@ -97,16 +117,18 @@ class _SymptomFormState extends ConsumerState<_SymptomForm> {
     }
     setState(() => _saving = true);
     try {
-      final alert = await ref.read(symptomRepositoryProvider).create(
-        symptom: _symptom!,
-        otherLabel: _symptom == 'other' ? _other.text.trim() : null,
-        intensity: _intensity,
-        occurredAt: _at,
-        context: _context,
-        notes: _notes.text.trim().isEmpty ? null : _notes.text.trim(),
-        warningSigns: _warnings.toList(),
-        requestId: _requestId,
-      );
+      final alert = await ref
+          .read(symptomRepositoryProvider)
+          .create(
+            symptom: _symptom!,
+            otherLabel: _symptom == 'other' ? _other.text.trim() : null,
+            intensity: _intensity,
+            occurredAt: _at,
+            context: _context,
+            notes: _notes.text.trim().isEmpty ? null : _notes.text.trim(),
+            warningSigns: _warnings.toList(),
+            requestId: _requestId,
+          );
       Refresh.symptoms(ref);
       if (mounted) Navigator.of(context).pop(alert);
     } on Object catch (e) {
@@ -123,13 +145,20 @@ class _SymptomFormState extends ConsumerState<_SymptomForm> {
       value: options,
       onRetry: () => ref.invalidate(symptomOptionsProvider),
       data: (o) => ListView(
-        padding: EdgeInsets.fromLTRB(Space.page, 0, Space.page, MediaQuery.viewInsetsOf(context).bottom + Space.xl),
+        padding: EdgeInsets.fromLTRB(
+          Space.page,
+          0,
+          Space.page,
+          MediaQuery.viewInsetsOf(context).bottom + Space.xl,
+        ),
         children: [
           Semantics(
             header: true,
             child: Text(
               'Como você está se sentindo?',
-              style: context.text.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+              style: context.text.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
           const SizedBox(height: Space.lg),
@@ -148,7 +177,11 @@ class _SymptomFormState extends ConsumerState<_SymptomForm> {
                         icon: symptomIcon(opt.value),
                         label: opt.label,
                         selected: _symptom == opt.value,
-                        onTap: () => setState(() => _symptom = _symptom == opt.value ? null : opt.value),
+                        onTap: () => setState(
+                          () => _symptom = _symptom == opt.value
+                              ? null
+                              : opt.value,
+                        ),
                       ),
                     ),
                 ],
@@ -157,7 +190,11 @@ class _SymptomFormState extends ConsumerState<_SymptomForm> {
           ),
           if (_symptom == 'other') ...[
             const SizedBox(height: Space.md),
-            TextField(controller: _other, maxLength: 80, decoration: const InputDecoration(labelText: 'Qual?')),
+            TextField(
+              controller: _other,
+              maxLength: 80,
+              decoration: const InputDecoration(labelText: 'Qual?'),
+            ),
           ],
           const SizedBox(height: Space.section),
           Text('Intensidade', style: context.text.titleSmall),
@@ -166,7 +203,10 @@ class _SymptomFormState extends ConsumerState<_SymptomForm> {
             showSelectedIcon: false,
             segments: [
               for (final i in o.intensities)
-                ButtonSegment(value: int.parse(i.value), label: Text(_capitalize(i.label))),
+                ButtonSegment(
+                  value: int.parse(i.value),
+                  label: Text(_capitalize(i.label)),
+                ),
             ],
             selected: {_intensity},
             onSelectionChanged: (v) => setState(() => _intensity = v.first),
@@ -177,21 +217,33 @@ class _SymptomFormState extends ConsumerState<_SymptomForm> {
             leading: const Icon(Icons.schedule),
             title: const Text('Quando'),
             subtitle: Text('${Fmt.shortDate(_at)} às ${Fmt.time(_at)}'),
-            trailing: TextButton(onPressed: _pickTime, child: const Text('Alterar')),
+            trailing: TextButton(
+              onPressed: _pickTime,
+              child: const Text('Alterar'),
+            ),
           ),
           // Sinais de alerta continuam à vista: são importantes para a segurança.
           ExpansionTile(
             tilePadding: EdgeInsets.zero,
-            leading: Icon(Icons.warning_amber_rounded, color: context.pic.error),
+            leading: Icon(
+              Icons.warning_amber_rounded,
+              color: context.pic.error,
+            ),
             title: const Text('Algum destes sinais de alerta?'),
-            subtitle: _warnings.isEmpty ? null : Text('${_warnings.length} marcado(s)'),
+            subtitle: _warnings.isEmpty
+                ? null
+                : Text('${_warnings.length} marcado(s)'),
             children: [
               for (final w in o.warningSigns)
                 CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
                   value: _warnings.contains(w.value),
                   title: Text(w.label),
-                  onChanged: (v) => setState(() => (v ?? false) ? _warnings.add(w.value) : _warnings.remove(w.value)),
+                  onChanged: (v) => setState(
+                    () => (v ?? false)
+                        ? _warnings.add(w.value)
+                        : _warnings.remove(w.value),
+                  ),
                 ),
             ],
           ),
@@ -212,7 +264,8 @@ class _SymptomFormState extends ConsumerState<_SymptomForm> {
                       ChoiceChip(
                         label: Text(c.label),
                         selected: _context == c.value,
-                        onSelected: (v) => setState(() => _context = v ? c.value : null),
+                        onSelected: (v) =>
+                            setState(() => _context = v ? c.value : null),
                       ),
                   ],
                 ),
@@ -236,12 +289,15 @@ class _SymptomFormState extends ConsumerState<_SymptomForm> {
   }
 }
 
-String _capitalize(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+String _capitalize(String s) =>
+    s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
 /// Ícone ilustrativo por sintoma (o nome sempre aparece ao lado).
 IconData symptomIcon(String code) => switch (code) {
   'nausea' || 'vomiting' => Icons.sick_outlined,
-  'diarrhea' || 'constipation' || 'bloating' => Icons.airline_seat_recline_normal_outlined,
+  'diarrhea' ||
+  'constipation' ||
+  'bloating' => Icons.airline_seat_recline_normal_outlined,
   'heartburn' => Icons.local_fire_department_outlined,
   'abdominal_pain' => Icons.healing_outlined,
   'low_appetite' => Icons.no_meals_outlined,
@@ -254,7 +310,12 @@ IconData symptomIcon(String code) => switch (code) {
 };
 
 class _SymptomTile extends StatelessWidget {
-  const _SymptomTile({required this.icon, required this.label, required this.selected, required this.onTap});
+  const _SymptomTile({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   final IconData icon;
   final String label;
@@ -274,7 +335,10 @@ class _SymptomTile extends StatelessWidget {
         color: selected ? p.brandContainer : context.colors.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(Radii.lg),
-          side: BorderSide(color: selected ? primary : p.border, width: selected ? 1.6 : 1),
+          side: BorderSide(
+            color: selected ? primary : p.border,
+            width: selected ? 1.6 : 1,
+          ),
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(

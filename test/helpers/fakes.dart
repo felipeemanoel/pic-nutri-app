@@ -158,4 +158,3 @@ PeriodReport emptyWeekReport() {
     'days': <Object>[],
   });
 }
-

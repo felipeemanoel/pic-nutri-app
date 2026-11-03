@@ -74,7 +74,9 @@ class CurrentPlan {
         .map(FeatureUsage.fromJson)
         .toList(),
     paymentsAvailable: json['payments_available'] as bool? ?? false,
-    store: json['store'] == null ? const StoreInfo() : StoreInfo.fromJson(json['store'] as Map<String, dynamic>),
+    store: json['store'] == null
+        ? const StoreInfo()
+        : StoreInfo.fromJson(json['store'] as Map<String, dynamic>),
   );
 
   final PlanInfo plan;
@@ -94,13 +96,21 @@ class CurrentPlan {
 
 /// Compras pelas lojas, conforme o servidor.
 class StoreInfo {
-  const StoreInfo({this.android = false, this.ios = false, this.productIds = const [], this.source, this.autoRenew});
+  const StoreInfo({
+    this.android = false,
+    this.ios = false,
+    this.productIds = const [],
+    this.source,
+    this.autoRenew,
+  });
 
   factory StoreInfo.fromJson(Map<String, dynamic> json) => StoreInfo(
     android: json['android'] as bool? ?? false,
     ios: json['ios'] as bool? ?? false,
     productIds: [
-      for (final p in (json['products'] as List<dynamic>? ?? const []).cast<Map<String, dynamic>>())
+      for (final p
+          in (json['products'] as List<dynamic>? ?? const [])
+              .cast<Map<String, dynamic>>())
         p['product_id'] as String,
     ],
     source: json['source'] as String?,
@@ -128,17 +138,26 @@ class PlanRepository {
 
   /// Identificador opaco da conta enviado à loja na compra.
   Future<String> accountToken() async {
-    final response = await guard(() => _dio.get<Map<String, dynamic>>('billing/account-token'));
-    return (response.data!['data'] as Map<String, dynamic>)['account_token'] as String;
+    final response = await guard(
+      () => _dio.get<Map<String, dynamic>>('billing/account-token'),
+    );
+    return (response.data!['data'] as Map<String, dynamic>)['account_token']
+        as String;
   }
 
   /// Envia o comprovante da loja; o servidor confere e libera o plano.
-  Future<void> submitPurchase({required String platform, required String verificationData}) => guard(
+  Future<void> submitPurchase({
+    required String platform,
+    required String verificationData,
+  }) => guard(
     () => _dio.post<void>(
       'billing/purchases',
       data: {
         'platform': platform,
-        if (platform == 'android') 'purchase_token': verificationData else 'signed_transaction': verificationData,
+        if (platform == 'android')
+          'purchase_token': verificationData
+        else
+          'signed_transaction': verificationData,
       },
     ),
   );

@@ -5,36 +5,59 @@ import 'dart:io';
 /// servidor. Valor vazio = integração desligada no app.
 abstract final class Integrations {
   // Login com Google: ID do cliente "Web" (o servidor confere o "aud").
-  static const googleServerClientId = String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID');
+  static const googleServerClientId = String.fromEnvironment(
+    'GOOGLE_SERVER_CLIENT_ID',
+  );
   // iOS: ID do cliente iOS (também precisa do URL scheme no Info.plist).
-  static const googleIosClientId = String.fromEnvironment('GOOGLE_IOS_CLIENT_ID');
+  static const googleIosClientId = String.fromEnvironment(
+    'GOOGLE_IOS_CLIENT_ID',
+  );
 
   // Login com Facebook (Meta): ID do app e client token (públicos; o segredo fica no servidor).
   static const facebookAppId = String.fromEnvironment('FACEBOOK_APP_ID');
-  static const facebookClientToken = String.fromEnvironment('FACEBOOK_CLIENT_TOKEN');
+  static const facebookClientToken = String.fromEnvironment(
+    'FACEBOOK_CLIENT_TOKEN',
+  );
 
   // Firebase Cloud Messaging (push enviado pelo servidor).
-  static const firebaseProjectId = String.fromEnvironment('FIREBASE_PROJECT_ID');
+  static const firebaseProjectId = String.fromEnvironment(
+    'FIREBASE_PROJECT_ID',
+  );
   static const firebaseSenderId = String.fromEnvironment('FIREBASE_SENDER_ID');
-  static const firebaseAndroidApiKey = String.fromEnvironment('FIREBASE_ANDROID_API_KEY');
-  static const firebaseAndroidAppId = String.fromEnvironment('FIREBASE_ANDROID_APP_ID');
-  static const firebaseIosApiKey = String.fromEnvironment('FIREBASE_IOS_API_KEY');
+  static const firebaseAndroidApiKey = String.fromEnvironment(
+    'FIREBASE_ANDROID_API_KEY',
+  );
+  static const firebaseAndroidAppId = String.fromEnvironment(
+    'FIREBASE_ANDROID_APP_ID',
+  );
+  static const firebaseIosApiKey = String.fromEnvironment(
+    'FIREBASE_IOS_API_KEY',
+  );
   static const firebaseIosAppId = String.fromEnvironment('FIREBASE_IOS_APP_ID');
-  static const iosBundleId = String.fromEnvironment('IOS_BUNDLE_ID', defaultValue: 'br.com.picnutri');
+  static const iosBundleId = String.fromEnvironment(
+    'IOS_BUNDLE_ID',
+    defaultValue: 'br.com.picnutri',
+  );
 
   static bool get googleSignIn =>
-      googleServerClientId.isNotEmpty && (!Platform.isIOS || googleIosClientId.isNotEmpty);
+      googleServerClientId.isNotEmpty &&
+      (!Platform.isIOS || googleIosClientId.isNotEmpty);
 
   /// Sign in with Apple nativo só existe no iOS.
   static bool get appleSignIn => Platform.isIOS;
 
   static bool get facebookSignIn =>
-      (Platform.isAndroid || Platform.isIOS) && facebookAppId.isNotEmpty && facebookClientToken.isNotEmpty;
+      (Platform.isAndroid || Platform.isIOS) &&
+      facebookAppId.isNotEmpty &&
+      facebookClientToken.isNotEmpty;
 
   static bool get push {
     if (firebaseProjectId.isEmpty || firebaseSenderId.isEmpty) return false;
-    if (Platform.isAndroid) return firebaseAndroidApiKey.isNotEmpty && firebaseAndroidAppId.isNotEmpty;
-    if (Platform.isIOS) return firebaseIosApiKey.isNotEmpty && firebaseIosAppId.isNotEmpty;
+    if (Platform.isAndroid)
+      return firebaseAndroidApiKey.isNotEmpty &&
+          firebaseAndroidAppId.isNotEmpty;
+    if (Platform.isIOS)
+      return firebaseIosApiKey.isNotEmpty && firebaseIosAppId.isNotEmpty;
     return false;
   }
 }

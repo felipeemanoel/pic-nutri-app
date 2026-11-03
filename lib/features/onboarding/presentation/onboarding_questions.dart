@@ -64,30 +64,33 @@ extension _Questions on _OnboardingPageState {
 
   // ------------------------------------------------------------ Perguntas
 
-  List<Widget> _welcome() => [
-    const SizedBox(height: Space.xxxl),
-    const Center(child: PicNutriWordmark(iconSize: 72, showTagline: true)),
-    const SizedBox(height: Space.xxxl),
-    _title(
-      'Vamos montar o seu plano',
-      'Responda algumas perguntas rápidas e o PicNutri se ajusta a você. Leva cerca de 2 minutos.',
-    ),
-    const _Highlight(
-      icon: Icons.photo_camera_outlined,
-      title: 'Registre por foto',
-      text: 'Fotografe o prato e veja calorias e macros estimados.',
-    ),
-    const _Highlight(
-      icon: Icons.track_changes_rounded,
-      title: 'Metas feitas para você',
-      text: 'Calorias, proteína e água calculadas com os seus dados.',
-    ),
-    const _Highlight(
-      icon: Icons.insights_rounded,
-      title: 'Veja a sua evolução',
-      text: 'Peso, medidas e hábitos em gráficos simples.',
-    ),
-  ];
+  List<Widget> _welcome() {
+    final l10n = context.l10n;
+    return [
+      const SizedBox(height: Space.xxxl),
+      const Center(child: PicNutriWordmark(iconSize: 72, showTagline: true)),
+      const SizedBox(height: Space.xxl),
+      // Primeiro cadastro: a pessoa confirma (ou troca) o idioma do app.
+      const LanguageCard(),
+      const SizedBox(height: Space.xxl),
+      _title(l10n.onboardingWelcomeTitle, l10n.onboardingWelcomeSubtitle),
+      _Highlight(
+        icon: Icons.photo_camera_outlined,
+        title: l10n.onboardingWelcomePhotoTitle,
+        text: l10n.onboardingWelcomePhotoText,
+      ),
+      _Highlight(
+        icon: Icons.track_changes_rounded,
+        title: l10n.onboardingWelcomeGoalsTitle,
+        text: l10n.onboardingWelcomeGoalsText,
+      ),
+      _Highlight(
+        icon: Icons.insights_rounded,
+        title: l10n.onboardingWelcomeProgressTitle,
+        text: l10n.onboardingWelcomeProgressText,
+      ),
+    ];
+  }
 
   List<Widget> _consentScreen() => [
     const SizedBox(height: Space.lg),
@@ -219,6 +222,7 @@ extension _Questions on _OnboardingPageState {
         subtitle: details.isEmpty ? null : details,
       );
     }
+
     void select(String v) {
       if (v != _medicationId) {
         _doseChoice = null;
@@ -233,9 +237,13 @@ extension _Questions on _OnboardingPageState {
         !(KnownMedication.byId(v)?.genericEntry ?? false);
 
     final query = _medicationQuery;
-    final brands = KnownMedication.brands.where((m) => m.matches(query)).toList();
+    final brands = KnownMedication.brands
+        .where((m) => m.matches(query))
+        .toList();
     final selected = KnownMedication.byId(_medicationId);
-    final askName = _medicationId == KnownMedication.other || (selected?.genericEntry ?? false);
+    final askName =
+        _medicationId == KnownMedication.other ||
+        (selected?.genericEntry ?? false);
 
     return [
       _title(
@@ -257,24 +265,39 @@ extension _Questions on _OnboardingPageState {
       for (final ingredient in MedicationIngredient.values)
         if (brands.any((m) => m.ingredient == ingredient)) ...[
           Padding(
-            padding: const EdgeInsets.only(top: Space.sm, bottom: Space.xs, left: Space.xs),
+            padding: const EdgeInsets.only(
+              top: Space.sm,
+              bottom: Space.xs,
+              left: Space.xs,
+            ),
             child: Text(
               ingredient.groupTitle,
-              style: context.text.labelLarge?.copyWith(color: context.pic.textSecondary),
+              style: context.text.labelLarge?.copyWith(
+                color: context.pic.textSecondary,
+              ),
             ),
           ),
           ..._single(
-            [for (final m in brands.where((m) => m.ingredient == ingredient)) option(m)],
+            [
+              for (final m in brands.where((m) => m.ingredient == ingredient))
+                option(m),
+            ],
             _medicationId,
             select,
             advanceFor: advance,
           ),
         ],
       Padding(
-        padding: const EdgeInsets.only(top: Space.md, bottom: Space.xs, left: Space.xs),
+        padding: const EdgeInsets.only(
+          top: Space.md,
+          bottom: Space.xs,
+          left: Space.xs,
+        ),
         child: Text(
           'Genérico, similar ou outra marca',
-          style: context.text.labelLarge?.copyWith(color: context.pic.textSecondary),
+          style: context.text.labelLarge?.copyWith(
+            color: context.pic.textSecondary,
+          ),
         ),
       ),
       ..._single(

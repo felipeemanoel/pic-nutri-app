@@ -12,17 +12,29 @@ class MedicationInstructionsPage extends StatelessWidget {
 
   final String medicationName;
 
-  static Future<void> open(BuildContext context, String medicationName) => Navigator.of(context).push(
-    MaterialPageRoute<void>(builder: (_) => MedicationInstructionsPage(medicationName: medicationName)),
-  );
+  static Future<void> open(BuildContext context, String medicationName) =>
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) =>
+              MedicationInstructionsPage(medicationName: medicationName),
+        ),
+      );
 
   Future<void> _openSource(BuildContext context, InjectionGuide guide) async {
     try {
-      if (!await launchUrl(Uri.parse(guide.sourceUrl), mode: LaunchMode.externalApplication) && context.mounted) {
-        showMessage(context, 'Não foi possível abrir a bula. Tente novamente quando houver conexão.');
+      if (!await launchUrl(
+            Uri.parse(guide.sourceUrl),
+            mode: LaunchMode.externalApplication,
+          ) &&
+          context.mounted) {
+        showMessage(
+          context,
+          'Não foi possível abrir a bula. Tente novamente quando houver conexão.',
+        );
       }
     } on Object {
-      if (context.mounted) showMessage(context, 'Não foi possível abrir a bula no navegador.');
+      if (context.mounted)
+        showMessage(context, 'Não foi possível abrir a bula no navegador.');
     }
   }
 
@@ -32,13 +44,20 @@ class MedicationInstructionsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Instruções do fabricante')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(Space.page, Space.md, Space.page, Space.xxxl),
+        padding: const EdgeInsets.fromLTRB(
+          Space.page,
+          Space.md,
+          Space.page,
+          Space.xxxl,
+        ),
         children: [
           Text(medicationName, style: context.text.headlineSmall),
           const SizedBox(height: Space.sm),
           Text(
             'Referências da bula oficial de canetas preenchidas. Confira sempre a sua embalagem e siga a orientação do seu médico ou farmacêutico.',
-            style: context.text.bodyMedium?.copyWith(color: context.pic.textSecondary),
+            style: context.text.bodyMedium?.copyWith(
+              color: context.pic.textSecondary,
+            ),
           ),
           const SizedBox(height: Space.section),
           if (guides.isEmpty)
@@ -52,7 +71,10 @@ class MedicationInstructionsPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('${g.brand} · ${g.manufacturer}', style: context.text.titleMedium),
+                    Text(
+                      '${g.brand} · ${g.manufacturer}',
+                      style: context.text.titleMedium,
+                    ),
                     const SizedBox(height: Space.xs),
                     Text(g.presentation, style: context.text.bodyMedium),
                     const SizedBox(height: Space.md),

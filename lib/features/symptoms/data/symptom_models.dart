@@ -3,7 +3,8 @@ import '../../../core/utils/formatters.dart';
 typedef Option = ({String value, String label});
 
 List<Option> _options(Object? raw) => [
-  for (final o in (raw as List<dynamic>? ?? const []).cast<Map<String, dynamic>>())
+  for (final o
+      in (raw as List<dynamic>? ?? const []).cast<Map<String, dynamic>>())
     (value: '${o['value']}', label: o['label'] as String),
 ];
 
@@ -55,8 +56,12 @@ class SymptomItem {
     occurredAt: DateTime.parse(json['occurred_at'] as String).toLocal(),
     contextLabel: json['context_label'] as String?,
     notes: json['notes'] as String?,
-    warningSigns: (json['warning_signs'] as List<dynamic>? ?? const []).whereType<String>().toList(),
-    nearby: (json['nearby'] as List<dynamic>? ?? const []).whereType<String>().toList(),
+    warningSigns: (json['warning_signs'] as List<dynamic>? ?? const [])
+        .whereType<String>()
+        .toList(),
+    nearby: (json['nearby'] as List<dynamic>? ?? const [])
+        .whereType<String>()
+        .toList(),
   );
 
   final String id;
@@ -86,7 +91,12 @@ class SymptomTimeline {
 
 /// Orientação de segurança devolvida ao registrar (sem diagnóstico).
 class SafetyAlert {
-  const SafetyAlert({required this.level, required this.title, required this.message, required this.article});
+  const SafetyAlert({
+    required this.level,
+    required this.title,
+    required this.message,
+    required this.article,
+  });
 
   factory SafetyAlert.fromJson(Map<String, dynamic> json) => SafetyAlert(
     level: json['level'] as String? ?? 'advice',

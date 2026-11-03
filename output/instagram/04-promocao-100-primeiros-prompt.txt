@@ -1,0 +1,3 @@
+Ferramenta: image_gen integrada. Formato: feed vertical 4:5.
+Referência: assets/brand/picnutri_wordmark_green.png.
+Prompt: Criar anúncio premium PicNutri em português brasileiro, verde esmeralda, menta e marfim, tipografia grande e legível. Logo oficial. Destaque: PARA AS 100 PRIMEIRAS PESSOAS / 1 ANO GRÁTIS / do plano mais completo do PicNutri. Passos: 1. Baixe o app no Google Play; 2. Curta este post; 3. Comente aqui. Explicação: As 100 primeiras pessoas a concluir os 3 passos ganham. Pedido de feedback: Já baixou? Conte pra gente! Deixe sua opinião nos comentários: o que achou e o que podemos melhorar? Queremos sua avaliação sincera. Sem exigir avaliação positiva, sem incentivo a avaliação na loja, sem prazo ou nome de plano inventado.

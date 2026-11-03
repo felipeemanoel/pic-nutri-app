@@ -76,7 +76,8 @@ abstract final class ActivityReminders {
           WeeklyNotification(
             id: notificationId('event-eve:${e.id}', 0),
             title: 'Amanhã: ${e.name}',
-            body: 'Às ${Fmt.time(e.startsAt)}$place. Separe o que vai precisar.',
+            body:
+                'Às ${Fmt.time(e.startsAt)}$place. Separe o que vai precisar.',
             weekday: null,
             hour: eve.hour,
             minute: eve.minute,

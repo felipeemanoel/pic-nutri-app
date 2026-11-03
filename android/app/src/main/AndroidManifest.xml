@@ -12,6 +12,7 @@
     <!-- O app não usa o ID de publicidade: remove a permissão que o SDK do Facebook adicionaria. -->
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove"/>
     <application
+        android:localeConfig="@xml/locales_config"
         android:label="PicNutri"
         android:name="${applicationName}"
         android:allowBackup="false"

@@ -250,8 +250,13 @@ final socialSignInProvider = Provider<SocialSignIn>((ref) => SocialSignIn());
 
 /// Provedores por plataforma: Android = Google e Facebook; iOS = Google,
 /// Facebook e Apple (Sign in with Apple só existe no iOS).
-Set<String> platformSocialProviders(TargetPlatform platform, {required bool google, required bool facebook}) {
-  final mobile = platform == TargetPlatform.android || platform == TargetPlatform.iOS;
+Set<String> platformSocialProviders(
+  TargetPlatform platform, {
+  required bool google,
+  required bool facebook,
+}) {
+  final mobile =
+      platform == TargetPlatform.android || platform == TargetPlatform.iOS;
   if (!mobile) return const {};
   return {
     if (google) 'google',

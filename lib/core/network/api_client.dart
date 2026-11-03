@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/env.dart';
+import '../i18n/locale_controller.dart';
 import '../storage/token_storage.dart';
 import 'auth_interceptor.dart';
 import 'unauthorized_interceptor.dart';
@@ -34,6 +35,17 @@ final dioProvider = Provider<Dio>((ref) {
   );
 
   dio.interceptors.addAll([
+    // Idioma do app em cada requisição: a API responde mensagens, conteúdos
+    // e textos da IA nele quando houver tradução (lido na hora, sem recriar
+    // o cliente ao trocar de idioma).
+    InterceptorsWrapper(
+      onRequest: (options, handler) {
+        options.headers['Accept-Language'] = ref
+            .read(currentLanguageProvider)
+            .tag;
+        handler.next(options);
+      },
+    ),
     AuthInterceptor(ref.watch(tokenStorageProvider)),
     // Lido no momento do erro, para não criar dependência circular com a sessão.
     UnauthorizedInterceptor(

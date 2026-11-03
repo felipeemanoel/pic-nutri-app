@@ -6,9 +6,13 @@ import '../../../core/design/design_system.dart';
 
 /// Abre a câmera para ler o código de barras (EAN/UPC) e devolve os dígitos.
 /// Também permite digitar o código quando a leitura não funciona.
-Future<String?> scanBarcode(BuildContext context) => Navigator.of(context).push<String>(
-  MaterialPageRoute(fullscreenDialog: true, builder: (_) => const BarcodeScannerPage()),
-);
+Future<String?> scanBarcode(BuildContext context) =>
+    Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => const BarcodeScannerPage(),
+      ),
+    );
 
 class BarcodeScannerPage extends StatefulWidget {
   const BarcodeScannerPage({super.key});
@@ -19,7 +23,12 @@ class BarcodeScannerPage extends StatefulWidget {
 
 class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
   final _controller = MobileScannerController(
-    formats: const [BarcodeFormat.ean13, BarcodeFormat.ean8, BarcodeFormat.upcA, BarcodeFormat.upcE],
+    formats: const [
+      BarcodeFormat.ean13,
+      BarcodeFormat.ean8,
+      BarcodeFormat.upcA,
+      BarcodeFormat.upcE,
+    ],
     detectionSpeed: DetectionSpeed.noDuplicates,
   );
   bool _done = false;
@@ -59,12 +68,23 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
           controller: input,
           autofocus: true,
           keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(14)],
-          decoration: const InputDecoration(labelText: 'Números abaixo das barras'),
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(14),
+          ],
+          decoration: const InputDecoration(
+            labelText: 'Números abaixo das barras',
+          ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.of(context).pop(input.text.trim()), child: const Text('Buscar')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(input.text.trim()),
+            child: const Text('Buscar'),
+          ),
         ],
       ),
     );
@@ -136,7 +156,10 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
               ),
               const SizedBox(height: Space.md),
               OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  side: const BorderSide(color: Colors.white),
+                ),
                 onPressed: _typeCode,
                 icon: const Icon(Icons.keyboard_outlined),
                 label: const Text('Digitar código'),

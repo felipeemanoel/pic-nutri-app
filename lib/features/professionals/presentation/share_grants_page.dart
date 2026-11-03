@@ -36,10 +36,14 @@ class ShareGrantsPage extends ConsumerWidget {
                 const EmptyState(
                   icon: Icons.shield_outlined,
                   title: 'Nenhum compartilhamento',
-                  message: 'Você pode autorizar ao pedir contato a um profissional.',
+                  message:
+                      'Você pode autorizar ao pedir contato a um profissional.',
                 )
               else
-                for (final g in grants) ...[_GrantCard(grant: g), const SizedBox(height: Space.sm)],
+                for (final g in grants) ...[
+                  _GrantCard(grant: g),
+                  const SizedBox(height: Space.sm),
+                ],
             ],
           ),
         ),
@@ -57,7 +61,8 @@ class _GrantCard extends ConsumerWidget {
     final ok = await confirmAction(
       context,
       title: 'Revogar compartilhamento?',
-      message: '${grant.professionalName ?? 'O profissional'} deixará de ver seus dados imediatamente.',
+      message:
+          '${grant.professionalName ?? 'O profissional'} deixará de ver seus dados imediatamente.',
       confirmLabel: 'Revogar',
       destructive: true,
     );
@@ -82,10 +87,19 @@ class _GrantCard extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Expanded(child: Text(g.professionalName ?? 'Profissional', style: context.text.titleMedium)),
+              Expanded(
+                child: Text(
+                  g.professionalName ?? 'Profissional',
+                  style: context.text.titleMedium,
+                ),
+              ),
               Text(
                 g.statusLabel,
-                style: context.text.labelMedium?.copyWith(color: g.active ? context.pic.success : context.pic.textSecondary),
+                style: context.text.labelMedium?.copyWith(
+                  color: g.active
+                      ? context.pic.success
+                      : context.pic.textSecondary,
+                ),
               ),
             ],
           ),
@@ -110,7 +124,10 @@ class _GrantCard extends ConsumerWidget {
           if (g.active)
             Align(
               alignment: Alignment.centerRight,
-              child: TextButton(onPressed: () => _revoke(context, ref), child: const Text('Revogar')),
+              child: TextButton(
+                onPressed: () => _revoke(context, ref),
+                child: const Text('Revogar'),
+              ),
             ),
         ],
       ),

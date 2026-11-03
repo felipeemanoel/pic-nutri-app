@@ -39,11 +39,19 @@ class FoodRepository {
         },
       ),
     );
-    final meals = (response.data!['data'] as List<dynamic>).cast<Map<String, dynamic>>().map(Meal.fromJson);
+    final meals = (response.data!['data'] as List<dynamic>)
+        .cast<Map<String, dynamic>>()
+        .map(Meal.fromJson);
     final seen = <String>{};
     return [
       for (final meal in meals)
-        if (meal.items.isNotEmpty && seen.add(meal.items.map((i) => '${i.name}|${i.quantity}|${i.unit}').join(';'))) meal,
+        if (meal.items.isNotEmpty &&
+            seen.add(
+              meal.items
+                  .map((i) => '${i.name}|${i.quantity}|${i.unit}')
+                  .join(';'),
+            ))
+          meal,
     ].take(limit).toList();
   }
 
@@ -143,7 +151,9 @@ class FoodRepository {
         data: {'name': (name?.trim().isEmpty ?? true) ? null : name!.trim()},
       ),
     );
-    return MealTemplate.fromJson(response.data!['data'] as Map<String, dynamic>);
+    return MealTemplate.fromJson(
+      response.data!['data'] as Map<String, dynamic>,
+    );
   }
 
   Future<Meal> logTemplate(
@@ -170,8 +180,12 @@ class FoodRepository {
 
   /// Busca pelo código de barras (cadastro da equipe ou Open Food Facts).
   Future<BarcodeLookup> lookupBarcode(String code) async {
-    final response = await guard(() => _dio.get<Map<String, dynamic>>('foods/barcode/$code'));
-    return BarcodeLookup.fromJson(response.data!['data'] as Map<String, dynamic>);
+    final response = await guard(
+      () => _dio.get<Map<String, dynamic>>('foods/barcode/$code'),
+    );
+    return BarcodeLookup.fromJson(
+      response.data!['data'] as Map<String, dynamic>,
+    );
   }
 
   Future<Food> createFood({

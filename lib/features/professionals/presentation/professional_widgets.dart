@@ -14,7 +14,9 @@ String modalityLabel(String modality) => switch (modality) {
 String? priceLabel(Professional p) {
   if (p.priceMin == null) return null;
   final min = 'R\$ ${Fmt.integer(p.priceMin!)}';
-  return p.priceMax == null || p.priceMax == p.priceMin ? min : '$min a R\$ ${Fmt.integer(p.priceMax!)}';
+  return p.priceMax == null || p.priceMax == p.priceMin
+      ? min
+      : '$min a R\$ ${Fmt.integer(p.priceMax!)}';
 }
 
 /// Selo do registro conferido pela equipe.
@@ -44,7 +46,11 @@ class VerifiedCouncil extends StatelessWidget {
 }
 
 class ProfessionalCard extends StatelessWidget {
-  const ProfessionalCard({super.key, required this.professional, required this.onTap});
+  const ProfessionalCard({
+    super.key,
+    required this.professional,
+    required this.onTap,
+  });
 
   final Professional professional;
   final VoidCallback onTap;
@@ -69,7 +75,11 @@ class ProfessionalCard extends StatelessWidget {
               CircleAvatar(
                 backgroundColor: context.pic.brandContainer,
                 foregroundColor: context.pic.onBrandContainer,
-                child: Icon(p.category == 'nutritionist' ? Icons.restaurant_outlined : Icons.fitness_center_outlined),
+                child: Icon(
+                  p.category == 'nutritionist'
+                      ? Icons.restaurant_outlined
+                      : Icons.fitness_center_outlined,
+                ),
               ),
               const SizedBox(width: Space.md),
               Expanded(
@@ -95,7 +105,10 @@ class ProfessionalCard extends StatelessWidget {
               runSpacing: Space.xs,
               children: [
                 for (final s in p.specialties.take(3))
-                  Chip(label: Text(s.label), visualDensity: VisualDensity.compact),
+                  Chip(
+                    label: Text(s.label),
+                    visualDensity: VisualDensity.compact,
+                  ),
               ],
             ),
           ],
@@ -103,7 +116,9 @@ class ProfessionalCard extends StatelessWidget {
             const SizedBox(height: Space.sm),
             Text(
               'Não está aceitando novos atendimentos no momento.',
-              style: context.text.bodySmall?.copyWith(color: context.pic.warning),
+              style: context.text.bodySmall?.copyWith(
+                color: context.pic.warning,
+              ),
             ),
           ],
         ],

@@ -2,24 +2,33 @@
 class ValueLabel {
   const ValueLabel(this.value, this.label);
 
-  factory ValueLabel.fromJson(Map<String, dynamic> json) =>
-      ValueLabel(json['value'] as String, json['label'] as String? ?? json['value'] as String);
+  factory ValueLabel.fromJson(Map<String, dynamic> json) => ValueLabel(
+    json['value'] as String,
+    json['label'] as String? ?? json['value'] as String,
+  );
 
   final String value;
   final String label;
 }
 
-List<ValueLabel> _options(Object? raw) =>
-    (raw as List<dynamic>? ?? const []).cast<Map<String, dynamic>>().map(ValueLabel.fromJson).toList();
+List<ValueLabel> _options(Object? raw) => (raw as List<dynamic>? ?? const [])
+    .cast<Map<String, dynamic>>()
+    .map(ValueLabel.fromJson)
+    .toList();
 
 class ProfessionalCategoryOption {
-  const ProfessionalCategoryOption({required this.value, required this.label, required this.specialties});
+  const ProfessionalCategoryOption({
+    required this.value,
+    required this.label,
+    required this.specialties,
+  });
 
-  factory ProfessionalCategoryOption.fromJson(Map<String, dynamic> json) => ProfessionalCategoryOption(
-    value: json['value'] as String,
-    label: json['label'] as String,
-    specialties: _options(json['specialties']),
-  );
+  factory ProfessionalCategoryOption.fromJson(Map<String, dynamic> json) =>
+      ProfessionalCategoryOption(
+        value: json['value'] as String,
+        label: json['label'] as String,
+        specialties: _options(json['specialties']),
+      );
 
   final String value;
   final String label;
@@ -28,23 +37,30 @@ class ProfessionalCategoryOption {
 
 /// Opções de busca e de compartilhamento.
 class ProfessionalsMeta {
-  const ProfessionalsMeta({required this.categories, required this.shareCategories, required this.cepLookup});
+  const ProfessionalsMeta({
+    required this.categories,
+    required this.shareCategories,
+    required this.cepLookup,
+  });
 
-  factory ProfessionalsMeta.fromJson(Map<String, dynamic> json) => ProfessionalsMeta(
-    categories: (json['categories'] as List<dynamic>? ?? const [])
-        .cast<Map<String, dynamic>>()
-        .map(ProfessionalCategoryOption.fromJson)
-        .toList(),
-    shareCategories: _options(json['share_categories']),
-    cepLookup: json['cep_lookup'] as bool? ?? false,
-  );
+  factory ProfessionalsMeta.fromJson(Map<String, dynamic> json) =>
+      ProfessionalsMeta(
+        categories: (json['categories'] as List<dynamic>? ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(ProfessionalCategoryOption.fromJson)
+            .toList(),
+        shareCategories: _options(json['share_categories']),
+        cepLookup: json['cep_lookup'] as bool? ?? false,
+      );
 
   final List<ProfessionalCategoryOption> categories;
   final List<ValueLabel> shareCategories;
   final bool cepLookup;
 
-  List<ValueLabel> specialtiesOf(String? category) =>
-      categories.where((c) => c.value == category).expand((c) => c.specialties).toList();
+  List<ValueLabel> specialtiesOf(String? category) => categories
+      .where((c) => c.value == category)
+      .expand((c) => c.specialties)
+      .toList();
 }
 
 /// Profissional aprovado. Só dados cadastrados e conferidos pela equipe:
@@ -83,7 +99,8 @@ class Professional {
       councilLabel: council['label'] as String? ?? '',
       verifiedAt: DateTime.tryParse(council['verified_at'] as String? ?? ''),
       specialties: _options(json['specialties']),
-      modalities: (json['modalities'] as List<dynamic>? ?? const []).cast<String>(),
+      modalities: (json['modalities'] as List<dynamic>? ?? const [])
+          .cast<String>(),
       city: json['city'] as String?,
       state: json['state'] as String?,
       neighborhood: json['neighborhood'] as String?,
@@ -130,7 +147,8 @@ class Professional {
   bool get online => modalities.contains('online');
   bool get inPerson => modalities.contains('in_person');
 
-  String get place => [city, state].whereType<String>().where((s) => s.isNotEmpty).join('/');
+  String get place =>
+      [city, state].whereType<String>().where((s) => s.isNotEmpty).join('/');
 }
 
 class ProfessionalSearchResult {
@@ -151,7 +169,10 @@ class ProfessionalSearchResult {
     final meta = json['meta'] as Map<String, dynamic>? ?? const {};
     final place = meta['place'] as Map<String, dynamic>?;
     return ProfessionalSearchResult(
-      items: (json['data'] as List<dynamic>).cast<Map<String, dynamic>>().map(Professional.fromJson).toList(),
+      items: (json['data'] as List<dynamic>)
+          .cast<Map<String, dynamic>>()
+          .map(Professional.fromJson)
+          .toList(),
       inPersonCount: (meta['in_person_count'] as num?)?.toInt() ?? 0,
       onlineCount: (meta['online_count'] as num?)?.toInt() ?? 0,
       distanceAvailable: meta['distance_available'] as bool? ?? false,
@@ -366,7 +387,11 @@ class ContactRequestItem {
 
 /// Autorização de compartilhamento escolhida pelo usuário no pedido de contato.
 class ShareRequest {
-  const ShareRequest({required this.categories, required this.purpose, required this.days});
+  const ShareRequest({
+    required this.categories,
+    required this.purpose,
+    required this.days,
+  });
 
   final List<String> categories;
   final String purpose;
@@ -374,5 +399,10 @@ class ShareRequest {
   /// 7, 30 ou 90.
   final int days;
 
-  Map<String, dynamic> toJson() => {'categories': categories, 'purpose': purpose, 'days': days, 'consent': true};
+  Map<String, dynamic> toJson() => {
+    'categories': categories,
+    'purpose': purpose,
+    'days': days,
+    'consent': true,
+  };
 }

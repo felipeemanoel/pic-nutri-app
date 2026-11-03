@@ -24,7 +24,11 @@ import '../data/ai_repository.dart';
 
 /// Dados passados para a revisão da análise no editor de refeição.
 class PhotoReview {
-  const PhotoReview({required this.analysisId, required this.items, this.mealType});
+  const PhotoReview({
+    required this.analysisId,
+    required this.items,
+    this.mealType,
+  });
 
   final String analysisId;
   final List<MealItem> items;
@@ -188,7 +192,9 @@ class _MealPhotoPageState extends ConsumerState<MealPhotoPage> {
       return;
     }
     try {
-      _onAnalysis(await ref.read(aiRepositoryProvider).mealAnalysis(current.id));
+      _onAnalysis(
+        await ref.read(aiRepositoryProvider).mealAnalysis(current.id),
+      );
     } on Object {
       // Falha momentânea de rede: tenta de novo no próximo ciclo.
       if (mounted) _timer = Timer(_pollEvery, _poll);
@@ -205,7 +211,11 @@ class _MealPhotoPageState extends ConsumerState<MealPhotoPage> {
     final analysis = _analysis!;
     final saved = await context.push<bool>(
       AppRoutes.photoReview,
-      extra: PhotoReview(analysisId: analysis.id, items: analysis.items, mealType: mealType),
+      extra: PhotoReview(
+        analysisId: analysis.id,
+        items: analysis.items,
+        mealType: mealType,
+      ),
     );
     if (saved == true && mounted) context.pop(true);
   }
@@ -245,7 +255,9 @@ class _MealPhotoPageState extends ConsumerState<MealPhotoPage> {
     final busy = _stage == _Stage.uploading || _stage == _Stage.analyzing;
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.textMode ? 'Refeição por texto ou voz' : 'Registrar refeição'),
+        title: Text(
+          widget.textMode ? 'Refeição por texto ou voz' : 'Registrar refeição',
+        ),
         actions: [
           if (!busy)
             const Padding(
@@ -255,13 +267,20 @@ class _MealPhotoPageState extends ConsumerState<MealPhotoPage> {
         ],
       ),
       body: AnimatedSwitcher(
-        duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : Motion.medium,
+        duration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : Motion.medium,
         child: KeyedSubtree(
           key: ValueKey(_stage),
           child: switch (_stage) {
-            _Stage.choose => widget.textMode
-                ? DescribeMealView(initial: _description, onSubmit: _describe, onManual: _manual)
-                : _ChooseView(onPick: _pick, onManual: _manual),
+            _Stage.choose =>
+              widget.textMode
+                  ? DescribeMealView(
+                      initial: _description,
+                      onSubmit: _describe,
+                      onManual: _manual,
+                    )
+                  : _ChooseView(onPick: _pick, onManual: _manual),
             _Stage.uploading => _ProcessingView(
               path: _path,
               step: 0,
@@ -276,20 +295,26 @@ class _MealPhotoPageState extends ConsumerState<MealPhotoPage> {
             _Stage.slow => _Problem(
               icon: Icons.hourglass_bottom,
               title: 'A análise está demorando',
-              message: 'Você pode verificar novamente ou registrar a refeição manualmente.',
+              message:
+                  'Você pode verificar novamente ou registrar a refeição manualmente.',
               primaryLabel: 'Verificar novamente',
               onPrimary: _checkAgain,
               onManual: _manual,
             ),
             _Stage.uploadFailed => _Problem(
               icon: Icons.cloud_off_outlined,
-              title: widget.textMode ? 'A descrição não foi enviada' : 'A foto não foi enviada',
-              message: _uploadError ?? 'Verifique sua conexão e tente novamente.',
+              title: widget.textMode
+                  ? 'A descrição não foi enviada'
+                  : 'A foto não foi enviada',
+              message:
+                  _uploadError ?? 'Verifique sua conexão e tente novamente.',
               primaryLabel: 'Tentar novamente',
               // Mesma foto e mesmo identificador: não duplica a análise.
               onPrimary: () => _upload(newAttempt: false),
               onSecondary: _chooseAnother,
-              secondaryLabel: widget.textMode ? 'Editar descrição' : 'Escolher outra foto',
+              secondaryLabel: widget.textMode
+                  ? 'Editar descrição'
+                  : 'Escolher outra foto',
               onManual: _manual,
             ),
             _Stage.result => _ResultView(
@@ -325,30 +350,52 @@ class AiSteps extends StatelessWidget {
     label: 'Etapa ${current + 1} de ${labels.length}: ${labels[current]}',
     excludeSemantics: true,
     child: Padding(
-      padding: const EdgeInsets.fromLTRB(Space.page, Space.sm, Space.page, Space.sm),
+      padding: const EdgeInsets.fromLTRB(
+        Space.page,
+        Space.sm,
+        Space.page,
+        Space.sm,
+      ),
       child: Row(
         children: [
           for (var i = 0; i < labels.length; i++) ...[
             if (i > 0)
               Expanded(
-                child: Divider(color: i <= current ? context.colors.primary : context.pic.border, thickness: 2),
+                child: Divider(
+                  color: i <= current
+                      ? context.colors.primary
+                      : context.pic.border,
+                  thickness: 2,
+                ),
               ),
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 CircleAvatar(
                   radius: 12,
-                  backgroundColor: i <= current ? context.colors.primary : context.pic.surfaceMuted,
-                  foregroundColor: i <= current ? context.colors.onPrimary : context.pic.textSecondary,
+                  backgroundColor: i <= current
+                      ? context.colors.primary
+                      : context.pic.surfaceMuted,
+                  foregroundColor: i <= current
+                      ? context.colors.onPrimary
+                      : context.pic.textSecondary,
                   child: i < current
                       ? const Icon(Icons.check, size: 14)
-                      : Text('${i + 1}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                      : Text(
+                          '${i + 1}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
                 const SizedBox(height: Space.xxs),
                 Text(
                   labels[i],
                   style: context.text.labelSmall?.copyWith(
-                    color: i == current ? context.colors.onSurface : context.pic.textSecondary,
+                    color: i == current
+                        ? context.colors.onSurface
+                        : context.pic.textSecondary,
                     fontWeight: i == current ? FontWeight.w600 : null,
                   ),
                 ),
@@ -379,7 +426,8 @@ class _ChooseView extends ConsumerWidget {
           return EmptyState(
             icon: Icons.no_photography_outlined,
             title: 'Análise por foto indisponível',
-            message: 'Este recurso não está disponível no momento. Você pode registrar a refeição manualmente.',
+            message:
+                'Este recurso não está disponível no momento. Você pode registrar a refeição manualmente.',
             actionLabel: 'Registrar manualmente',
             onAction: onManual,
           );
@@ -388,7 +436,8 @@ class _ChooseView extends ConsumerWidget {
           return EmptyState(
             icon: Icons.event_busy_outlined,
             title: 'Limite diário atingido',
-            message: 'Você usou todas as análises por foto do seu plano hoje. O limite renova à meia-noite.',
+            message:
+                'Você usou todas as análises por foto do seu plano hoje. O limite renova à meia-noite.',
             actionLabel: 'Registrar manualmente',
             onAction: onManual,
           );
@@ -399,20 +448,27 @@ class _ChooseView extends ConsumerWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(Space.xl),
-              decoration: BoxDecoration(color: p.aiContainer, borderRadius: Radii.card),
+              decoration: BoxDecoration(
+                color: p.aiContainer,
+                borderRadius: Radii.card,
+              ),
               child: Column(
                 children: [
                   Icon(Icons.photo_camera_outlined, size: 40, color: p.ai),
                   const SizedBox(height: Space.md),
                   Text(
                     'Fotografe o prato de cima',
-                    style: context.text.titleMedium?.copyWith(color: p.onAiContainer),
+                    style: context.text.titleMedium?.copyWith(
+                      color: p.onAiContainer,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: Space.xs),
                   Text(
                     'Com boa luz e todos os alimentos visíveis. Você revisa tudo antes de salvar.',
-                    style: context.text.bodyMedium?.copyWith(color: p.onAiContainer),
+                    style: context.text.bodyMedium?.copyWith(
+                      color: p.onAiContainer,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -432,10 +488,18 @@ class _ChooseView extends ConsumerWidget {
             ),
             if (photo.quotaLabel != null) ...[
               const SizedBox(height: Space.lg),
-              Text(photo.quotaLabel!, style: context.text.bodySmall, textAlign: TextAlign.center),
+              Text(
+                photo.quotaLabel!,
+                style: context.text.bodySmall,
+                textAlign: TextAlign.center,
+              ),
             ],
             const SizedBox(height: Space.xl),
-            Text(photo.disclaimer, style: context.text.bodySmall, textAlign: TextAlign.center),
+            Text(
+              photo.disclaimer,
+              style: context.text.bodySmall,
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: Space.sm),
             Text(
               'A foto é usada apenas para esta análise e apagada após a confirmação ou em até 24 horas.',
@@ -482,7 +546,12 @@ class _Photo extends StatelessWidget {
 /// Análise em andamento: a própria foto em destaque, com uma linha de leitura
 /// animada e as etapas reais do servidor (envio, fila, identificação).
 class _ProcessingView extends StatefulWidget {
-  const _ProcessingView({required this.step, required this.textMode, this.path, this.progress});
+  const _ProcessingView({
+    required this.step,
+    required this.textMode,
+    this.path,
+    this.progress,
+  });
 
   /// 0 = enviando, 1 = recebida (na fila), 2 = identificando, 3 = calculando.
   final int step;
@@ -494,8 +563,12 @@ class _ProcessingView extends StatefulWidget {
   State<_ProcessingView> createState() => _ProcessingViewState();
 }
 
-class _ProcessingViewState extends State<_ProcessingView> with SingleTickerProviderStateMixin {
-  late final _scan = AnimationController(vsync: this, duration: const Duration(milliseconds: 1800));
+class _ProcessingViewState extends State<_ProcessingView>
+    with SingleTickerProviderStateMixin {
+  late final _scan = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1800),
+  );
 
   @override
   void didChangeDependencies() {
@@ -546,15 +619,25 @@ class _ProcessingViewState extends State<_ProcessingView> with SingleTickerProvi
                   AnimatedBuilder(
                     animation: _scan,
                     builder: (context, _) => Align(
-                      alignment: Alignment(0, -0.9 + 1.8 * Curves.easeInOut.transform(_scan.value)),
+                      alignment: Alignment(
+                        0,
+                        -0.9 + 1.8 * Curves.easeInOut.transform(_scan.value),
+                      ),
                       child: Container(
                         height: 3,
                         width: double.infinity,
-                        margin: const EdgeInsets.symmetric(horizontal: Space.lg),
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: Space.lg,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.9),
                           borderRadius: BorderRadius.circular(Radii.pill),
-                          boxShadow: [BoxShadow(color: p.ai.withValues(alpha: 0.6), blurRadius: 12)],
+                          boxShadow: [
+                            BoxShadow(
+                              color: p.ai.withValues(alpha: 0.6),
+                              blurRadius: 12,
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -563,7 +646,10 @@ class _ProcessingViewState extends State<_ProcessingView> with SingleTickerProvi
                     left: Space.md,
                     top: Space.md,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: Space.md, vertical: Space.xs + 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: Space.md,
+                        vertical: Space.xs + 2,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.62),
                         borderRadius: BorderRadius.circular(Radii.pill),
@@ -571,11 +657,17 @@ class _ProcessingViewState extends State<_ProcessingView> with SingleTickerProvi
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.auto_awesome, size: 16, color: Colors.white),
+                          const Icon(
+                            Icons.auto_awesome,
+                            size: 16,
+                            color: Colors.white,
+                          ),
                           const SizedBox(width: Space.xs),
                           Text(
                             step == 0 ? 'Enviando' : 'Analisando prato',
-                            style: context.text.labelLarge?.copyWith(color: Colors.white),
+                            style: context.text.labelLarge?.copyWith(
+                              color: Colors.white,
+                            ),
                           ),
                         ],
                       ),
@@ -590,7 +682,9 @@ class _ProcessingViewState extends State<_ProcessingView> with SingleTickerProvi
           liveRegion: true,
           child: Text(
             title,
-            style: context.text.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+            style: context.text.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
             textAlign: TextAlign.center,
           ),
         ),
@@ -609,14 +703,24 @@ class _ProcessingViewState extends State<_ProcessingView> with SingleTickerProvi
                 SizedBox.square(
                   dimension: 20,
                   child: i < step
-                      ? Icon(Icons.check_circle_rounded, size: 20, color: context.colors.primary)
+                      ? Icon(
+                          Icons.check_circle_rounded,
+                          size: 20,
+                          color: context.colors.primary,
+                        )
                       : i == step
                       ? CircularProgressIndicator(
                           strokeWidth: 2.5,
                           color: p.ai,
-                          value: i == 0 && (widget.progress ?? 0) > 0 ? widget.progress : null,
+                          value: i == 0 && (widget.progress ?? 0) > 0
+                              ? widget.progress
+                              : null,
                         )
-                      : Icon(Icons.radio_button_unchecked, size: 20, color: p.border),
+                      : Icon(
+                          Icons.radio_button_unchecked,
+                          size: 20,
+                          color: p.border,
+                        ),
                 ),
                 const SizedBox(width: Space.md),
                 Expanded(
@@ -680,13 +784,20 @@ class _ResultViewState extends ConsumerState<_ResultView> {
     final now = DateTime.now();
     _eatenAt = selected == SelectedDate.today()
         ? now
-        : DateTime(selected.year, selected.month, selected.day, now.hour, now.minute);
+        : DateTime(
+            selected.year,
+            selected.month,
+            selected.day,
+            now.hour,
+            now.minute,
+          );
     _type = MealTypes.suggestFor(_eatenAt);
   }
 
   /// Confiança baixa em todos os itens: sugerir revisão cuidadosa.
   bool get _lowConfidence =>
-      analysis.items.isNotEmpty && analysis.items.every((i) => (i.aiConfidence ?? 1) < 0.45);
+      analysis.items.isNotEmpty &&
+      analysis.items.every((i) => (i.aiConfidence ?? 1) < 0.45);
 
   /// Nome curto do prato a partir dos itens: "Arroz, feijão e frango".
   String get _title {
@@ -695,13 +806,24 @@ class _ResultViewState extends ConsumerState<_ResultView> {
     final more = analysis.items.length > 3 ? ' e mais' : '';
     if (names.length == 1) return names.first;
     final head = names.sublist(0, names.length - 1).join(', ');
-    return more.isEmpty ? '$head e ${names.last.toLowerCase()}' : '${names.join(', ')}$more';
+    return more.isEmpty
+        ? '$head e ${names.last.toLowerCase()}'
+        : '${names.join(', ')}$more';
   }
 
   Future<void> _pickTime() async {
-    final time = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_eatenAt));
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_eatenAt),
+    );
     if (time == null || !mounted) return;
-    final at = DateTime(_eatenAt.year, _eatenAt.month, _eatenAt.day, time.hour, time.minute);
+    final at = DateTime(
+      _eatenAt.year,
+      _eatenAt.month,
+      _eatenAt.day,
+      time.hour,
+      time.minute,
+    );
     setState(() => _eatenAt = at.isAfter(DateTime.now()) ? DateTime.now() : at);
   }
 
@@ -734,8 +856,12 @@ class _ResultViewState extends ConsumerState<_ResultView> {
     if (analysis.isFailed) {
       return _Problem(
         icon: Icons.error_outline,
-        title: textMode ? 'Não foi possível analisar a descrição' : 'Não foi possível analisar a foto',
-        message: analysis.errorMessage ?? 'Tente novamente ou registre a refeição manualmente.',
+        title: textMode
+            ? 'Não foi possível analisar a descrição'
+            : 'Não foi possível analisar a foto',
+        message:
+            analysis.errorMessage ??
+            'Tente novamente ou registre a refeição manualmente.',
         primaryLabel: 'Tentar novamente',
         onPrimary: widget.onRetrySame,
         secondaryLabel: textMode ? 'Editar descrição' : 'Escolher outra foto',
@@ -761,13 +887,24 @@ class _ResultViewState extends ConsumerState<_ResultView> {
     final totals = analysis.totals ?? const Nutrients();
     final p = context.pic;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(Space.page, Space.sm, Space.page, Space.xxl),
+      padding: const EdgeInsets.fromLTRB(
+        Space.page,
+        Space.sm,
+        Space.page,
+        Space.xxl,
+      ),
       children: [
-        if (widget.path != null) ...[_Photo(path: widget.path!, height: 200), const SizedBox(height: Space.lg)],
+        if (widget.path != null) ...[
+          _Photo(path: widget.path!, height: 200),
+          const SizedBox(height: Space.lg),
+        ],
         if (analysis.description != null) ...[
           AppCard(
             color: p.surfaceMuted,
-            child: Text('“${analysis.description}”', style: context.text.bodyMedium),
+            child: Text(
+              '“${analysis.description}”',
+              style: context.text.bodyMedium,
+            ),
           ),
           const SizedBox(height: Space.lg),
         ],
@@ -779,7 +916,10 @@ class _ResultViewState extends ConsumerState<_ResultView> {
                 header: true,
                 child: Text(
                   _title,
-                  style: context.text.headlineSmall?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.6),
+                  style: context.text.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.6,
+                  ),
                 ),
               ),
             ),
@@ -813,14 +953,29 @@ class _ResultViewState extends ConsumerState<_ResultView> {
             children: [
               Row(
                 children: [
-                  Expanded(child: Text('Calorias', style: context.text.labelLarge?.copyWith(color: p.textSecondary))),
+                  Expanded(
+                    child: Text(
+                      'Calorias',
+                      style: context.text.labelLarge?.copyWith(
+                        color: p.textSecondary,
+                      ),
+                    ),
+                  ),
                   const AiBadge(label: 'Estimativa'),
                 ],
               ),
               const SizedBox(height: Space.xs),
-              MetricValue(value: Fmt.integer(totals.energyKcal), unit: 'kcal', large: true),
+              MetricValue(
+                value: Fmt.integer(totals.energyKcal),
+                unit: 'kcal',
+                large: true,
+              ),
               const SizedBox(height: Space.lg),
-              MacroSummary(proteinG: totals.proteinG, carbsG: totals.carbsG, fatG: totals.fatG),
+              MacroSummary(
+                proteinG: totals.proteinG,
+                carbsG: totals.carbsG,
+                fatG: totals.fatG,
+              ),
             ],
           ),
         ),
@@ -842,11 +997,16 @@ class _ResultViewState extends ConsumerState<_ResultView> {
           child: Column(
             children: [
               for (final (index, item) in analysis.items.indexed) ...[
-                if (index > 0) const Divider(indent: Space.lg, endIndent: Space.lg),
+                if (index > 0)
+                  const Divider(indent: Space.lg, endIndent: Space.lg),
                 ListTile(
                   title: Text(item.name),
-                  subtitle: Text('${item.quantityLabel} · ${Fmt.kcal(item.nutrients.energyKcal)}'),
-                  trailing: item.aiConfidence == null ? null : _ConfidenceLabel(confidence: item.aiConfidence!),
+                  subtitle: Text(
+                    '${item.quantityLabel} · ${Fmt.kcal(item.nutrients.energyKcal)}',
+                  ),
+                  trailing: item.aiConfidence == null
+                      ? null
+                      : _ConfidenceLabel(confidence: item.aiConfidence!),
                   onTap: () => widget.onReview(_type),
                 ),
               ],
@@ -863,7 +1023,11 @@ class _ResultViewState extends ConsumerState<_ResultView> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.only(top: 3),
-                    child: Icon(Icons.info_outline, size: 16, color: p.textSecondary),
+                    child: Icon(
+                      Icons.info_outline,
+                      size: 16,
+                      color: p.textSecondary,
+                    ),
                   ),
                   const SizedBox(width: Space.sm),
                   Expanded(child: Text(note, style: context.text.bodySmall)),
@@ -880,7 +1044,10 @@ class _ResultViewState extends ConsumerState<_ResultView> {
         FilledButton.icon(
           onPressed: _saving ? null : _save,
           icon: _saving
-              ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
               : const Icon(Icons.check_rounded),
           label: const Text('Salvar refeição'),
         ),
@@ -891,7 +1058,10 @@ class _ResultViewState extends ConsumerState<_ResultView> {
           label: const Text('Ajustar itens'),
         ),
         const SizedBox(height: Space.xs),
-        TextButton(onPressed: _saving ? null : widget.onDiscard, child: const Text('Descartar análise')),
+        TextButton(
+          onPressed: _saving ? null : widget.onDiscard,
+          child: const Text('Descartar análise'),
+        ),
       ],
     );
   }
@@ -899,7 +1069,14 @@ class _ResultViewState extends ConsumerState<_ResultView> {
 
 /// Tipos de refeição como chips curtos, com ícone.
 abstract final class _MealChips {
-  static const types = ['breakfast', 'morning_snack', 'lunch', 'afternoon_snack', 'dinner', 'supper'];
+  static const types = [
+    'breakfast',
+    'morning_snack',
+    'lunch',
+    'afternoon_snack',
+    'dinner',
+    'supper',
+  ];
 
   static String label(String type) => switch (type) {
     'breakfast' => 'Café',
@@ -956,7 +1133,10 @@ class _ConfidenceLabel extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 2),
-            Text(label.replaceFirst('Confiança ', ''), style: context.text.labelSmall),
+            Text(
+              label.replaceFirst('Confiança ', ''),
+              style: context.text.labelSmall,
+            ),
           ],
         ),
       ),
@@ -998,7 +1178,10 @@ class _Problem extends StatelessWidget {
         OutlinedButton(onPressed: onSecondary, child: Text(secondaryLabel!)),
       ],
       const SizedBox(height: Space.sm),
-      TextButton(onPressed: onManual, child: const Text('Registrar manualmente')),
+      TextButton(
+        onPressed: onManual,
+        child: const Text('Registrar manualmente'),
+      ),
     ],
   );
 }
@@ -1041,7 +1224,8 @@ class _DescribeMealViewState extends ConsumerState<DescribeMealView> {
       return;
     }
     try {
-      _speechReady = _speechReady ||
+      _speechReady =
+          _speechReady ||
           await _speech.initialize(
             onStatus: (status) {
               if (mounted && (status == 'done' || status == 'notListening')) {
@@ -1103,7 +1287,8 @@ class _DescribeMealViewState extends ConsumerState<DescribeMealView> {
           return EmptyState(
             icon: Icons.edit_off_outlined,
             title: 'Registro por texto indisponível',
-            message: 'Este recurso não está disponível no momento. Você pode registrar a refeição manualmente.',
+            message:
+                'Este recurso não está disponível no momento. Você pode registrar a refeição manualmente.',
             actionLabel: 'Registrar manualmente',
             onAction: widget.onManual,
           );
@@ -1112,7 +1297,8 @@ class _DescribeMealViewState extends ConsumerState<DescribeMealView> {
           return EmptyState(
             icon: Icons.event_busy_outlined,
             title: 'Limite diário atingido',
-            message: 'Você usou todos os registros por texto do seu plano hoje. O limite renova à meia-noite.',
+            message:
+                'Você usou todos os registros por texto do seu plano hoje. O limite renova à meia-noite.',
             actionLabel: 'Registrar manualmente',
             onAction: widget.onManual,
           );
@@ -1134,16 +1320,25 @@ class _DescribeMealViewState extends ConsumerState<DescribeMealView> {
               maxLines: 8,
               maxLength: 1000,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(hintText: 'Descreva a refeição'),
+              decoration: const InputDecoration(
+                hintText: 'Descreva a refeição',
+              ),
             ),
             const SizedBox(height: Space.sm),
             OutlinedButton.icon(
               onPressed: _toggleVoice,
               style: OutlinedButton.styleFrom(
                 foregroundColor: _listening ? p.ai : null,
-                side: BorderSide(color: _listening ? p.ai : p.border, width: 1.2),
+                side: BorderSide(
+                  color: _listening ? p.ai : p.border,
+                  width: 1.2,
+                ),
               ),
-              icon: Icon(_listening ? Icons.stop_circle_outlined : Icons.mic_none_rounded),
+              icon: Icon(
+                _listening
+                    ? Icons.stop_circle_outlined
+                    : Icons.mic_none_rounded,
+              ),
               label: Text(_listening ? 'Parar de ouvir' : 'Ditar por voz'),
             ),
             if (_listening)
@@ -1166,10 +1361,18 @@ class _DescribeMealViewState extends ConsumerState<DescribeMealView> {
             ),
             if (feature.quotaLabel != null) ...[
               const SizedBox(height: Space.md),
-              Text(feature.quotaLabel!, style: context.text.bodySmall, textAlign: TextAlign.center),
+              Text(
+                feature.quotaLabel!,
+                style: context.text.bodySmall,
+                textAlign: TextAlign.center,
+              ),
             ],
             const SizedBox(height: Space.lg),
-            Text(feature.disclaimer, style: context.text.bodySmall, textAlign: TextAlign.center),
+            Text(
+              feature.disclaimer,
+              style: context.text.bodySmall,
+              textAlign: TextAlign.center,
+            ),
           ],
         );
       },

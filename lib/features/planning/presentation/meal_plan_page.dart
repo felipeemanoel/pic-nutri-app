@@ -98,7 +98,9 @@ class _DayView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final planned = ref.watch(currentAccountProvider)?.profile.plannedMeals ?? const ['breakfast', 'lunch', 'dinner'];
+    final planned =
+        ref.watch(currentAccountProvider)?.profile.plannedMeals ??
+        const ['breakfast', 'lunch', 'dinner'];
     final byMeal = day.byMeal;
     final types = MealTypes.labels.keys
         .where((t) => planned.contains(t) || byMeal.containsKey(t))
@@ -107,7 +109,12 @@ class _DayView extends ConsumerWidget {
     return RefreshIndicator(
       onRefresh: () => ref.refresh(mealPlanProvider(plan.id).future),
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(Space.page, Space.md, Space.page, Space.xxl),
+        padding: const EdgeInsets.fromLTRB(
+          Space.page,
+          Space.md,
+          Space.page,
+          Space.xxl,
+        ),
         children: [
           // Dia e semana explícitos.
           Text(
@@ -130,7 +137,13 @@ class _DayView extends ConsumerWidget {
             Align(
               alignment: Alignment.centerLeft,
               child: TextButton.icon(
-                onPressed: () => showAddPlanItemSheet(context, ref, plan: plan, day: day.day, mealType: type),
+                onPressed: () => showAddPlanItemSheet(
+                  context,
+                  ref,
+                  plan: plan,
+                  day: day.day,
+                  mealType: type,
+                ),
                 icon: const Icon(Icons.add),
                 label: const Text('Adicionar'),
               ),
@@ -141,7 +154,13 @@ class _DayView extends ConsumerWidget {
             onPressed: () async {
               final type = await _pickMealType(context, types);
               if (type != null && context.mounted) {
-                await showAddPlanItemSheet(context, ref, plan: plan, day: day.day, mealType: type);
+                await showAddPlanItemSheet(
+                  context,
+                  ref,
+                  plan: plan,
+                  day: day.day,
+                  mealType: type,
+                );
               }
             },
             icon: const Icon(Icons.playlist_add),
@@ -152,20 +171,24 @@ class _DayView extends ConsumerWidget {
     );
   }
 
-  Future<String?> _pickMealType(BuildContext context, List<String> shown) => showModalBottomSheet<String>(
-    context: context,
-    showDragHandle: true,
-    builder: (context) => SafeArea(
-      child: ListView(
-        shrinkWrap: true,
-        children: [
-          for (final e in MealTypes.labels.entries)
-            if (!shown.contains(e.key))
-              ListTile(title: Text(e.value), onTap: () => Navigator.of(context).pop(e.key)),
-        ],
-      ),
-    ),
-  );
+  Future<String?> _pickMealType(BuildContext context, List<String> shown) =>
+      showModalBottomSheet<String>(
+        context: context,
+        showDragHandle: true,
+        builder: (context) => SafeArea(
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              for (final e in MealTypes.labels.entries)
+                if (!shown.contains(e.key))
+                  ListTile(
+                    title: Text(e.value),
+                    onTap: () => Navigator.of(context).pop(e.key),
+                  ),
+            ],
+          ),
+        ),
+      );
 }
 
 class _DayTotals extends StatelessWidget {
@@ -181,10 +204,15 @@ class _DayTotals extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(_capitalize(Fmt.fullDate(day.date)), style: context.text.bodySmall),
+          Text(
+            _capitalize(Fmt.fullDate(day.date)),
+            style: context.text.bodySmall,
+          ),
           const SizedBox(height: Space.xs),
           Text(
-            goal == null ? '${Fmt.kcal(kcal)} planejadas' : '${Fmt.kcal(kcal)} de ${Fmt.kcal(goal)} planejadas',
+            goal == null
+                ? '${Fmt.kcal(kcal)} planejadas'
+                : '${Fmt.kcal(kcal)} de ${Fmt.kcal(goal)} planejadas',
             style: context.text.titleMedium,
           ),
           if (goal != null && goal > 0) ...[
@@ -202,7 +230,8 @@ class _DayTotals extends StatelessWidget {
   }
 }
 
-String _capitalize(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+String _capitalize(String s) =>
+    s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
 class _PlanItemTile extends ConsumerWidget {
   const _PlanItemTile({required this.plan, required this.item});
@@ -217,8 +246,12 @@ class _PlanItemTile extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: Space.sm),
       child: ListTile(
         leading: Icon(
-          item.kind == 'recipe' ? Icons.menu_book_rounded : Icons.restaurant_rounded,
-          color: item.isAvailable ? context.colors.primary : context.pic.textSecondary,
+          item.kind == 'recipe'
+              ? Icons.menu_book_rounded
+              : Icons.restaurant_rounded,
+          color: item.isAvailable
+              ? context.colors.primary
+              : context.pic.textSecondary,
         ),
         title: Text(item.title),
         subtitle: Text(
@@ -239,9 +272,19 @@ class _PlanItemTile extends ConsumerWidget {
             _ => _remove(context, ref),
           },
           itemBuilder: (_) => [
-            if (item.isAvailable) const PopupMenuItem(value: 'log', child: Text('Registrar no diário (comi)')),
-            const PopupMenuItem(value: 'swap', child: Text('Trocar por outra receita')),
-            const PopupMenuItem(value: 'remove', child: Text('Remover do plano')),
+            if (item.isAvailable)
+              const PopupMenuItem(
+                value: 'log',
+                child: Text('Registrar no diário (comi)'),
+              ),
+            const PopupMenuItem(
+              value: 'swap',
+              child: Text('Trocar por outra receita'),
+            ),
+            const PopupMenuItem(
+              value: 'remove',
+              child: Text('Remover do plano'),
+            ),
           ],
         ),
       ),
@@ -250,9 +293,12 @@ class _PlanItemTile extends ConsumerWidget {
 
   Future<void> _log(BuildContext context, WidgetRef ref) async {
     try {
-      await ref.read(planningRepositoryProvider).logItem(plan.id, item.id, requestId: newRequestId());
+      await ref
+          .read(planningRepositoryProvider)
+          .logItem(plan.id, item.id, requestId: newRequestId());
       Refresh.nutrition(ref);
-      if (context.mounted) showMessage(context, '${item.title} registrado no diário.');
+      if (context.mounted)
+        showMessage(context, '${item.title} registrado no diário.');
     } on Object catch (e) {
       if (context.mounted) showFailure(context, e);
     }
@@ -264,10 +310,17 @@ class _PlanItemTile extends ConsumerWidget {
     if (recipe == null || !context.mounted) return;
     final repo = ref.read(planningRepositoryProvider);
     try {
-      await repo.addRecipe(plan.id, day: item.day, mealType: item.mealType, recipeId: recipe.id, servings: item.servings ?? 1);
+      await repo.addRecipe(
+        plan.id,
+        day: item.day,
+        mealType: item.mealType,
+        recipeId: recipe.id,
+        servings: item.servings ?? 1,
+      );
       await repo.removeItem(plan.id, item.id);
       _refreshPlan(ref, plan.id);
-      if (context.mounted) showMessage(context, '${item.title} trocado por ${recipe.title}.');
+      if (context.mounted)
+        showMessage(context, '${item.title} trocado por ${recipe.title}.');
     } on Object catch (e) {
       _refreshPlan(ref, plan.id);
       if (context.mounted) showFailure(context, e);
@@ -312,7 +365,11 @@ Future<void> showAddPlanItemSheet(
 }
 
 class _AddItemSheet extends ConsumerStatefulWidget {
-  const _AddItemSheet({required this.planId, required this.day, required this.mealType});
+  const _AddItemSheet({
+    required this.planId,
+    required this.day,
+    required this.mealType,
+  });
 
   final String planId;
   final int day;
@@ -333,13 +390,15 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
     if (servings == null) return;
     setState(() => _busy = true);
     try {
-      await ref.read(planningRepositoryProvider).addRecipe(
-        widget.planId,
-        day: widget.day,
-        mealType: widget.mealType,
-        recipeId: recipe.id,
-        servings: servings,
-      );
+      await ref
+          .read(planningRepositoryProvider)
+          .addRecipe(
+            widget.planId,
+            day: widget.day,
+            mealType: widget.mealType,
+            recipeId: recipe.id,
+            servings: servings,
+          );
       if (mounted) Navigator.of(context).pop(true);
     } on Object catch (e) {
       if (mounted) {
@@ -354,16 +413,20 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
     final food = item?.food;
     if (item == null || food == null || !mounted) return;
     // O plano guarda g/ml; porções do cadastro são convertidas.
-    final quantity = item.unit == 'serving' && food.servingSize != null ? item.quantity * food.servingSize! : item.quantity;
+    final quantity = item.unit == 'serving' && food.servingSize != null
+        ? item.quantity * food.servingSize!
+        : item.quantity;
     setState(() => _busy = true);
     try {
-      await ref.read(planningRepositoryProvider).addFood(
-        widget.planId,
-        day: widget.day,
-        mealType: widget.mealType,
-        foodId: food.id,
-        quantity: quantity,
-      );
+      await ref
+          .read(planningRepositoryProvider)
+          .addFood(
+            widget.planId,
+            day: widget.day,
+            mealType: widget.mealType,
+            foodId: food.id,
+            quantity: quantity,
+          );
       if (mounted) Navigator.of(context).pop(true);
     } on Object catch (e) {
       if (mounted) {
@@ -384,7 +447,10 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Adicionar em ${MealTypes.label(widget.mealType)}', style: context.text.titleLarge),
+        Text(
+          'Adicionar em ${MealTypes.label(widget.mealType)}',
+          style: context.text.titleLarge,
+        ),
         const SizedBox(height: Space.md),
         Row(
           children: [
@@ -415,17 +481,20 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
                   compact: true,
                   icon: Icons.cloud_off_outlined,
                   title: 'Sugestões indisponíveis',
-                  message: 'Você ainda pode escolher uma receita ou um alimento.',
+                  message:
+                      'Você ainda pode escolher uma receita ou um alimento.',
                 );
               }
               final data = snapshot.data;
-              if (data == null) return const Center(child: CircularProgressIndicator());
+              if (data == null)
+                return const Center(child: CircularProgressIndicator());
               if (data.recipes.isEmpty) {
                 return const EmptyState(
                   compact: true,
                   icon: Icons.menu_book_outlined,
                   title: 'Sem receitas para esta refeição',
-                  message: 'Escolha um alimento do banco ou veja todas as receitas.',
+                  message:
+                      'Escolha um alimento do banco ou veja todas as receitas.',
                 );
               }
               return ListView(
@@ -439,7 +508,10 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
                       ),
                     ),
                   for (final r in data.recipes)
-                    RecipeTile(recipe: r, onTap: _busy ? null : () => _addRecipe(r)),
+                    RecipeTile(
+                      recipe: r,
+                      onTap: _busy ? null : () => _addRecipe(r),
+                    ),
                   const SizedBox(height: Space.sm),
                   const AllergyNotice(),
                   const SizedBox(height: Space.lg),
@@ -454,7 +526,12 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
 }
 
 /// Pergunta quantas porções da receita entram no plano.
-Future<double?> askServings(BuildContext context, String title, {String question = 'Quantas porções?', String confirmLabel = 'Adicionar'}) {
+Future<double?> askServings(
+  BuildContext context,
+  String title, {
+  String question = 'Quantas porções?',
+  String confirmLabel = 'Adicionar',
+}) {
   var servings = 1.0;
   return showDialog<double>(
     context: context,
@@ -479,8 +556,14 @@ Future<double?> askServings(BuildContext context, String title, {String question
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.of(context).pop(servings), child: Text(confirmLabel)),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(servings),
+            child: Text(confirmLabel),
+          ),
         ],
       ),
     ),
@@ -488,7 +571,11 @@ Future<double?> askServings(BuildContext context, String title, {String question
 }
 
 /// Adiciona uma receita a um plano escolhido (cria o desta semana se preciso).
-Future<void> addRecipeToPlanFlow(BuildContext context, WidgetRef ref, Recipe recipe) async {
+Future<void> addRecipeToPlanFlow(
+  BuildContext context,
+  WidgetRef ref,
+  Recipe recipe,
+) async {
   final repo = ref.read(planningRepositoryProvider);
   try {
     final plans = await ref.read(mealPlansProvider.future);
@@ -503,7 +590,10 @@ Future<void> addRecipeToPlanFlow(BuildContext context, WidgetRef ref, Recipe rec
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: Space.page),
-              child: Text('Adicionar a qual plano?', style: context.text.titleMedium),
+              child: Text(
+                'Adicionar a qual plano?',
+                style: context.text.titleMedium,
+              ),
             ),
             for (final p in plans.take(6))
               ListTile(
@@ -523,14 +613,22 @@ Future<void> addRecipeToPlanFlow(BuildContext context, WidgetRef ref, Recipe rec
       ),
     );
     if (target == null || !context.mounted) return;
-    final plan = target is MealPlanSummary ? target : await repo.createPlan(week: thisWeek);
+    final plan = target is MealPlanSummary
+        ? target
+        : await repo.createPlan(week: thisWeek);
     if (!context.mounted) return;
 
     final slot = await _pickSlot(context, plan, recipe);
     if (slot == null || !context.mounted) return;
     final servings = await askServings(context, recipe.title);
     if (servings == null) return;
-    await repo.addRecipe(plan.id, day: slot.day, mealType: slot.mealType, recipeId: recipe.id, servings: servings);
+    await repo.addRecipe(
+      plan.id,
+      day: slot.day,
+      mealType: slot.mealType,
+      recipeId: recipe.id,
+      servings: servings,
+    );
     _refreshPlan(ref, plan.id);
     if (context.mounted) showMessage(context, 'Receita adicionada ao plano.');
   } on Object catch (e) {
@@ -538,7 +636,11 @@ Future<void> addRecipeToPlanFlow(BuildContext context, WidgetRef ref, Recipe rec
   }
 }
 
-Future<({int day, String mealType})?> _pickSlot(BuildContext context, MealPlanSummary plan, Recipe recipe) {
+Future<({int day, String mealType})?> _pickSlot(
+  BuildContext context,
+  MealPlanSummary plan,
+  Recipe recipe,
+) {
   var day = plan.contains(DateTime.now()) ? DateTime.now().weekday : 1;
   var mealType = recipe.mealTypes.isNotEmpty ? recipe.mealTypes.first : 'lunch';
   return showDialog<({int day, String mealType})>(
@@ -555,7 +657,11 @@ Future<({int day, String mealType})?> _pickSlot(BuildContext context, MealPlanSu
               children: [
                 for (var d = 1; d <= 7; d++)
                   ChoiceChip(
-                    label: Text(_weekday.format(plan.startsOn.add(Duration(days: d - 1))).replaceAll('.', '')),
+                    label: Text(
+                      _weekday
+                          .format(plan.startsOn.add(Duration(days: d - 1)))
+                          .replaceAll('.', ''),
+                    ),
                     selected: day == d,
                     onSelected: (_) => setState(() => day = d),
                   ),
@@ -566,16 +672,21 @@ Future<({int day, String mealType})?> _pickSlot(BuildContext context, MealPlanSu
               initialValue: mealType,
               decoration: const InputDecoration(labelText: 'Refeição'),
               items: [
-                for (final e in MealTypes.labels.entries) DropdownMenuItem(value: e.key, child: Text(e.value)),
+                for (final e in MealTypes.labels.entries)
+                  DropdownMenuItem(value: e.key, child: Text(e.value)),
               ],
               onChanged: (v) => setState(() => mealType = v ?? mealType),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
           FilledButton(
-            onPressed: () => Navigator.of(context).pop((day: day, mealType: mealType)),
+            onPressed: () =>
+                Navigator.of(context).pop((day: day, mealType: mealType)),
             child: const Text('Continuar'),
           ),
         ],
@@ -584,5 +695,6 @@ Future<({int day, String mealType})?> _pickSlot(BuildContext context, MealPlanSu
   );
 }
 
-String _capitalizeWord(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1).replaceFirst('-feira', '');
-
+String _capitalizeWord(String s) => s.isEmpty
+    ? s
+    : s[0].toUpperCase() + s.substring(1).replaceFirst('-feira', '');

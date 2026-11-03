@@ -5,10 +5,12 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/design/design_system.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/widgets/feedback.dart';
+import '../../auth/application/session_controller.dart';
 import '../data/injection_guides.dart';
 import '../data/injection_location.dart';
 import '../data/medication_models.dart';
 import '../data/medication_repository.dart';
+import 'injection_body_shape.dart';
 import 'injection_site_map.dart';
 
 /// Consulta de referência, sem inferir apresentação a partir do nome do cadastro.
@@ -70,6 +72,7 @@ class _InjectionGuidanceState extends ConsumerState<InjectionGuidance> {
   @override
   Widget build(BuildContext context) {
     final guide = _guide;
+    final profile = ref.watch(currentAccountProvider)?.profile;
     final catalog = guidesForMedication(widget.medicationName);
     final history = ref.watch(recentDosesProvider);
     final records =
@@ -93,6 +96,11 @@ class _InjectionGuidanceState extends ConsumerState<InjectionGuidance> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           InjectionSiteMap(
+            bodyShape: InjectionBodyShape.fromProfile(
+              sex: profile?.sex,
+              weightKg: profile?.currentWeightKg,
+              heightCm: profile?.heightCm,
+            ),
             sites: widget.sites
                 .where(
                   (s) => (_confirmed

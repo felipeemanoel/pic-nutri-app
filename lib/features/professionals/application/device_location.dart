@@ -30,7 +30,9 @@ class DeviceLocation {
   Future<LocationResult> current() async {
     try {
       if (!await Geolocator.isLocationServiceEnabled()) {
-        return const LocationUnavailable('A localização do aparelho está desligada. Ative-a ou busque pela cidade.');
+        return const LocationUnavailable(
+          'A localização do aparelho está desligada. Ative-a ou busque pela cidade.',
+        );
       }
       var permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
@@ -39,7 +41,9 @@ class DeviceLocation {
       switch (permission) {
         case LocationPermission.denied:
         case LocationPermission.unableToDetermine:
-          return const LocationUnavailable('Sem permissão de localização. Você pode buscar pela cidade ou pelo CEP.');
+          return const LocationUnavailable(
+            'Sem permissão de localização. Você pode buscar pela cidade ou pelo CEP.',
+          );
         case LocationPermission.deniedForever:
           return const LocationUnavailable(
             'A permissão de localização foi negada. Para usar, libere nos ajustes do aparelho.',
@@ -50,15 +54,22 @@ class DeviceLocation {
           break;
       }
       final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.low, timeLimit: Duration(seconds: 15)),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.low,
+          timeLimit: Duration(seconds: 15),
+        ),
       );
       return LocationFound(position.latitude, position.longitude);
     } on Exception {
-      return const LocationUnavailable('Não foi possível obter a localização agora. Busque pela cidade ou pelo CEP.');
+      return const LocationUnavailable(
+        'Não foi possível obter a localização agora. Busque pela cidade ou pelo CEP.',
+      );
     }
   }
 
   Future<void> openSettings() => Geolocator.openAppSettings();
 }
 
-final deviceLocationProvider = Provider<DeviceLocation>((ref) => const DeviceLocation());
+final deviceLocationProvider = Provider<DeviceLocation>(
+  (ref) => const DeviceLocation(),
+);

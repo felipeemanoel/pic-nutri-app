@@ -25,9 +25,11 @@ class UnauthorizedInterceptor extends Interceptor {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
     final path = err.requestOptions.path;
-    final isPublic = _publicPaths.any(path.endsWith) || path.contains('auth/social/');
+    final isPublic =
+        _publicPaths.any(path.endsWith) || path.contains('auth/social/');
     final status = err.response?.statusCode;
-    if (!isPublic && (status == 401 || (status == 403 && _isBlocked(err.response?.data)))) {
+    if (!isPublic &&
+        (status == 401 || (status == 403 && _isBlocked(err.response?.data)))) {
       _onUnauthorized();
     }
     handler.next(err);

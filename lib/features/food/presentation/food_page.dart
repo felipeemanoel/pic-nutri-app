@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/features.dart';
 import '../../../app/routes.dart';
 import '../../../core/design/design_system.dart';
+import '../../../core/i18n/l10n.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/state/selected_date.dart';
 import '../../../shared/widgets/day_navigator.dart';
@@ -191,151 +192,171 @@ Future<void> chooseHowToAddMeal(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (sheet) => SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(Space.lg, 0, Space.lg, Space.lg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(left: Space.sm, bottom: Space.md),
-              child: Semantics(
-                header: true,
-                child: Text(
-                  'Como você quer registrar?',
-                  style: sheet.text.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
+    builder: (sheet) {
+      final l10n = sheet.l10n;
+      return SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(Space.lg, 0, Space.lg, Space.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: Space.sm,
+                  bottom: Space.md,
+                ),
+                child: Semantics(
+                  header: true,
+                  child: Text(
+                    l10n.registerHowTitle,
+                    style: sheet.text.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
-            ),
-            _AddOption(
-              icon: Icons.photo_camera_outlined,
-              title: 'Tirar foto do prato',
-              subtitle: 'A IA estima alimentos, porções e macros',
-              ai: true,
-              onTap: () => Navigator.of(sheet).pop(_cameraRoute),
-            ),
-            const SizedBox(height: Space.sm),
-            _AddOption(
-              icon: Icons.photo_library_outlined,
-              title: 'Usar foto da galeria',
-              subtitle: 'Escolha uma foto que você já tirou',
-              ai: true,
-              onTap: () => Navigator.of(sheet).pop(_galleryRoute),
-            ),
-            // Mantido OFF: texto/voz serão retomados em uma etapa futura.
-            if (AppFeatures.mealTextVoice) ...[
+              _AddOption(
+                icon: Icons.photo_camera_outlined,
+                title: l10n.registerPhoto,
+                subtitle: l10n.registerPhotoSub,
+                ai: true,
+                onTap: () => Navigator.of(sheet).pop(_cameraRoute),
+              ),
               const SizedBox(height: Space.sm),
               _AddOption(
-                icon: Icons.mic_none_rounded,
-                title: 'Falar ou escrever',
-                subtitle: 'Conte o que comeu; a IA estima e você revisa',
+                icon: Icons.photo_library_outlined,
+                title: l10n.registerGallery,
+                subtitle: l10n.registerGallerySub,
                 ai: true,
-                onTap: () => Navigator.of(sheet).pop(AppRoutes.mealText),
+                onTap: () => Navigator.of(sheet).pop(_galleryRoute),
               ),
-            ],
-            const SizedBox(height: Space.sm),
-            _AddOption(
-              icon: Icons.search_rounded,
-              title: 'Buscar alimentos',
-              subtitle:
-                  'No banco de alimentos, pelo código de barras ou informando os valores',
-              onTap: () => Navigator.of(sheet).pop(_searchRoute),
-            ),
-            const SizedBox(height: Space.lg),
-            Padding(
-              padding: const EdgeInsets.only(left: Space.sm, bottom: Space.sm),
-              child: Text('Comer de novo', style: sheet.text.labelLarge),
-            ),
-            _RecentInline(onPick: (meal) => Navigator.of(sheet).pop(meal)),
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    child: _Shortcut(
-                      icon: Icons.replay_rounded,
-                      label: 'Recentes',
-                      onTap: () => Navigator.of(sheet).pop(_repeatRoute),
-                    ),
-                  ),
-                  const SizedBox(width: Space.sm),
-                  Expanded(
-                    child: _Shortcut(
-                      icon: Icons.star_outline_rounded,
-                      label: 'Favoritas',
-                      onTap: () => Navigator.of(sheet).pop(_favoritesRoute),
-                    ),
-                  ),
-                ],
+              // Mantido OFF: texto/voz serão retomados em uma etapa futura.
+              if (AppFeatures.mealTextVoice) ...[
+                const SizedBox(height: Space.sm),
+                _AddOption(
+                  icon: Icons.mic_none_rounded,
+                  title: l10n.registerDescribe,
+                  subtitle: l10n.registerDescribeSub,
+                  ai: true,
+                  onTap: () => Navigator.of(sheet).pop(AppRoutes.mealText),
+                ),
+              ],
+              const SizedBox(height: Space.sm),
+              _AddOption(
+                icon: Icons.search_rounded,
+                title: l10n.registerSearch,
+                subtitle: l10n.registerSearchSub,
+                onTap: () => Navigator.of(sheet).pop(_searchRoute),
               ),
-            ),
-            if (otherLogs) ...[
               const SizedBox(height: Space.lg),
               Padding(
                 padding: const EdgeInsets.only(
                   left: Space.sm,
                   bottom: Space.sm,
                 ),
-                child: Text('Também registrar', style: sheet.text.labelLarge),
+                child: Text(
+                  l10n.registerEatAgain,
+                  style: sheet.text.labelLarge,
+                ),
               ),
-              Consumer(
-                builder: (context, ref, _) {
-                  final medication =
-                      ref
-                          .watch(currentAccountProvider)
-                          ?.profile
-                          .medicationTrackingEnabled ??
-                      false;
-                  return Wrap(
-                    spacing: Space.sm,
-                    runSpacing: Space.sm,
-                    children: [
-                      if (medication)
+              _RecentInline(onPick: (meal) => Navigator.of(sheet).pop(meal)),
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: _Shortcut(
+                        icon: Icons.replay_rounded,
+                        label: l10n.registerRecent,
+                        onTap: () => Navigator.of(sheet).pop(_repeatRoute),
+                      ),
+                    ),
+                    const SizedBox(width: Space.sm),
+                    Expanded(
+                      child: _Shortcut(
+                        icon: Icons.star_outline_rounded,
+                        label: l10n.registerFavorites,
+                        onTap: () => Navigator.of(sheet).pop(_favoritesRoute),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (otherLogs) ...[
+                const SizedBox(height: Space.lg),
+                Padding(
+                  padding: const EdgeInsets.only(
+                    left: Space.sm,
+                    bottom: Space.sm,
+                  ),
+                  child: Text(l10n.registerAlso, style: sheet.text.labelLarge),
+                ),
+                Consumer(
+                  builder: (context, ref, _) {
+                    final medication =
+                        ref
+                            .watch(currentAccountProvider)
+                            ?.profile
+                            .medicationTrackingEnabled ??
+                        false;
+                    return Wrap(
+                      spacing: Space.sm,
+                      runSpacing: Space.sm,
+                      children: [
+                        if (medication)
+                          ActionChip(
+                            avatar: const Icon(
+                              Icons.vaccines_outlined,
+                              size: 18,
+                            ),
+                            label: Text(l10n.registerDose),
+                            onPressed: () =>
+                                Navigator.of(sheet).pop(_doseRoute),
+                          ),
                         ActionChip(
-                          avatar: const Icon(Icons.vaccines_outlined, size: 18),
-                          label: const Text('Aplicação'),
-                          onPressed: () => Navigator.of(sheet).pop(_doseRoute),
+                          avatar: const Icon(
+                            Icons.directions_run_rounded,
+                            size: 18,
+                          ),
+                          label: Text(l10n.registerWorkout),
+                          onPressed: () =>
+                              Navigator.of(sheet).pop(_activityRoute),
                         ),
-                      ActionChip(
-                        avatar: const Icon(
-                          Icons.directions_run_rounded,
-                          size: 18,
+                        ActionChip(
+                          avatar: const Icon(Icons.spa_outlined, size: 18),
+                          label: Text(l10n.registerSymptom),
+                          onPressed: () =>
+                              Navigator.of(sheet).pop(_symptomRoute),
                         ),
-                        label: const Text('Treino'),
-                        onPressed: () =>
-                            Navigator.of(sheet).pop(_activityRoute),
-                      ),
-                      ActionChip(
-                        avatar: const Icon(Icons.spa_outlined, size: 18),
-                        label: const Text('Sintoma'),
-                        onPressed: () => Navigator.of(sheet).pop(_symptomRoute),
-                      ),
-                      ActionChip(
-                        avatar: const Icon(
-                          Icons.monitor_weight_outlined,
-                          size: 18,
+                        ActionChip(
+                          avatar: const Icon(
+                            Icons.monitor_weight_outlined,
+                            size: 18,
+                          ),
+                          label: Text(l10n.homeWeight),
+                          onPressed: () =>
+                              Navigator.of(sheet).pop(_weightRoute),
                         ),
-                        label: const Text('Peso'),
-                        onPressed: () => Navigator.of(sheet).pop(_weightRoute),
-                      ),
-                      ActionChip(
-                        avatar: const Icon(Icons.water_drop_outlined, size: 18),
-                        label: const Text('Água'),
-                        onPressed: () =>
-                            Navigator.of(sheet).pop(AppRoutes.water),
-                      ),
-                    ],
-                  );
-                },
-              ),
+                        ActionChip(
+                          avatar: const Icon(
+                            Icons.water_drop_outlined,
+                            size: 18,
+                          ),
+                          label: Text(l10n.registerWater),
+                          onPressed: () =>
+                              Navigator.of(sheet).pop(AppRoutes.water),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ],
             ],
-          ],
+          ),
         ),
-      ),
-    ),
+      );
+    },
   );
   if (choice == null || !context.mounted) return;
   switch (choice) {

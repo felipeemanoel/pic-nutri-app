@@ -101,10 +101,17 @@ class PeriodReport {
       to: DateTime.parse(json['to'] as String),
       daysElapsed: toInt(json['days_elapsed']) ?? 0,
       summary: PeriodSummary.fromJson(json['summary'] as Map<String, dynamic>),
-      previous: PeriodSummary.fromJson(json['previous'] as Map<String, dynamic>),
-      days: (json['days'] as List<dynamic>).cast<Map<String, dynamic>>().map(DayLog.fromJson).toList(),
+      previous: PeriodSummary.fromJson(
+        json['previous'] as Map<String, dynamic>,
+      ),
+      days: (json['days'] as List<dynamic>)
+          .cast<Map<String, dynamic>>()
+          .map(DayLog.fromJson)
+          .toList(),
       mealsByType: [
-        for (final m in (json['meals_by_type'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>())
+        for (final m
+            in (json['meals_by_type'] as List<dynamic>? ?? [])
+                .cast<Map<String, dynamic>>())
           (m['label'] as String, toInt(m['count']) ?? 0),
       ],
       goalKcal: toInt(goals['energy_kcal']),

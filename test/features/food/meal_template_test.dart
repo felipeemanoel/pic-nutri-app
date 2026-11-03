@@ -12,7 +12,12 @@ void main() {
         {'food_id': 3, 'name': 'Arroz', 'quantity': 100, 'unit': 'g'},
         {'food_id': null, 'name': 'Salada', 'quantity': 1, 'unit': 'unit'},
       ],
-      'totals': {'energy_kcal': 168, 'protein_g': 3.5, 'carbs_g': 34.1, 'fat_g': 1.2},
+      'totals': {
+        'energy_kcal': 168,
+        'protein_g': 3.5,
+        'carbs_g': 34.1,
+        'fat_g': 1.2,
+      },
       'usage_count': 2,
       'last_used_at': null,
     });
@@ -30,7 +35,12 @@ void main() {
       'is_custom': false,
       'is_favorite': true,
       'base_unit': 'g',
-      'per_100': {'energy_kcal': 128, 'protein_g': 2.5, 'carbs_g': 28.1, 'fat_g': 0.2},
+      'per_100': {
+        'energy_kcal': 128,
+        'protein_g': 2.5,
+        'carbs_g': 28.1,
+        'fat_g': 0.2,
+      },
     });
     expect(food.isFavorite, isTrue);
   });
@@ -44,6 +54,10 @@ void main() {
     expect(p.allergies, ['gluten']);
     expect(p.avoidFoods, 'jiló');
     expect(p.plannedMeals, ['breakfast', 'dinner']);
-    expect(Profile.fromJson(const {}).plannedMeals, ['breakfast', 'lunch', 'dinner']);
+    expect(Profile.fromJson(const {}).plannedMeals, [
+      'breakfast',
+      'lunch',
+      'dinner',
+    ]);
   });
 }

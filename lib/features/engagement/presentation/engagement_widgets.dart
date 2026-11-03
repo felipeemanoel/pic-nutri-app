@@ -111,4 +111,3 @@ class _WeekDots extends StatelessWidget {
     ),
   );
 }
-

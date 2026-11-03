@@ -4,9 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/routes.dart';
 import '../../../core/design/design_system.dart';
+import '../../../core/i18n/l10n.dart';
 import '../../../shared/validators.dart';
 import '../../../shared/widgets/feedback.dart';
 import '../../../shared/widgets/state_views.dart';
+import '../../language/presentation/language_picker.dart';
 import '../application/session_controller.dart';
 import 'social_buttons.dart';
 
@@ -107,6 +109,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 );
               },
             ),
+            // Idioma: discreto no canto, acima da imagem.
+            const Positioned(
+              top: Space.sm,
+              right: Space.md,
+              child: LanguageButton(),
+            ),
           ],
         ),
       ),
@@ -138,7 +146,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           SizedBox(height: Space.sm * gap),
           if (!keyboard)
             Text(
-              'Um espaço para cuidar de você.',
+              context.l10n.authTagline,
               style: context.text.bodyMedium?.copyWith(
                 color: context.pic.textSecondary,
               ),

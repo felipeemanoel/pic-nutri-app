@@ -6,7 +6,11 @@ import '../../../core/network/api_client.dart';
 import '../../auth/application/session_controller.dart';
 
 class HelpCategory {
-  const HelpCategory({required this.key, required this.label, required this.articles});
+  const HelpCategory({
+    required this.key,
+    required this.label,
+    required this.articles,
+  });
 
   factory HelpCategory.fromJson(Map<String, dynamic> json) => HelpCategory(
     key: json['key'] as String,
@@ -73,8 +77,13 @@ class HelpRepository {
   final Dio _dio;
 
   Future<List<HelpCategory>> categories() async {
-    final r = await guard(() => _dio.get<Map<String, dynamic>>('help/categories'));
-    return (r.data!['data'] as List<dynamic>).cast<Map<String, dynamic>>().map(HelpCategory.fromJson).toList();
+    final r = await guard(
+      () => _dio.get<Map<String, dynamic>>('help/categories'),
+    );
+    return (r.data!['data'] as List<dynamic>)
+        .cast<Map<String, dynamic>>()
+        .map(HelpCategory.fromJson)
+        .toList();
   }
 
   Future<List<HelpArticle>> articles(HelpQuery q) async {
@@ -87,11 +96,16 @@ class HelpRepository {
         },
       ),
     );
-    return (r.data!['data'] as List<dynamic>).cast<Map<String, dynamic>>().map(HelpArticle.fromJson).toList();
+    return (r.data!['data'] as List<dynamic>)
+        .cast<Map<String, dynamic>>()
+        .map(HelpArticle.fromJson)
+        .toList();
   }
 
   Future<HelpArticle> article(String slug) async {
-    final r = await guard(() => _dio.get<Map<String, dynamic>>('help/articles/$slug'));
+    final r = await guard(
+      () => _dio.get<Map<String, dynamic>>('help/articles/$slug'),
+    );
     return HelpArticle.fromJson(r.data!['data'] as Map<String, dynamic>);
   }
 }
@@ -102,11 +116,14 @@ final helpRepositoryProvider = Provider<HelpRepository>((ref) {
   return HelpRepository(ref.watch(dioProvider));
 });
 
-final helpCategoriesProvider = FutureProvider<List<HelpCategory>>((ref) => ref.watch(helpRepositoryProvider).categories());
-
-final helpArticlesProvider = FutureProvider.family<List<HelpArticle>, HelpQuery>(
-  (ref, q) => ref.watch(helpRepositoryProvider).articles(q),
+final helpCategoriesProvider = FutureProvider<List<HelpCategory>>(
+  (ref) => ref.watch(helpRepositoryProvider).categories(),
 );
+
+final helpArticlesProvider =
+    FutureProvider.family<List<HelpArticle>, HelpQuery>(
+      (ref, q) => ref.watch(helpRepositoryProvider).articles(q),
+    );
 
 final helpArticleProvider = FutureProvider.family<HelpArticle, String>(
   (ref, slug) => ref.watch(helpRepositoryProvider).article(slug),

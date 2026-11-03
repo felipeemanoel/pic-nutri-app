@@ -64,7 +64,8 @@ abstract final class Labels {
 
   static Map<String, String> get supportOptions => {
     for (final e in supportPreferences.entries)
-      if (AppFeatures.medical || !{'prescribed_medication', 'find_professional'}.contains(e.key))
+      if (AppFeatures.medical ||
+          !{'prescribed_medication', 'find_professional'}.contains(e.key))
         e.key: e.value,
   };
 

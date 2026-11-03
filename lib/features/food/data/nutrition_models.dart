@@ -74,7 +74,11 @@ class Nutrients {
 /// Alimento do banco (valores por 100 g/ml).
 /// Medida caseira de um alimento (ex.: "1 colher de sopa" = 15 g).
 class FoodPortion {
-  const FoodPortion({required this.id, required this.label, required this.grams});
+  const FoodPortion({
+    required this.id,
+    required this.label,
+    required this.grams,
+  });
 
   factory FoodPortion.fromJson(Map<String, dynamic> json) => FoodPortion(
     id: toInt(json['id'])!,
@@ -116,7 +120,8 @@ class Food {
     servingSize: toDouble(json['serving_size']),
     servingLabel: json['serving_label'] as String?,
     isFavorite: json['is_favorite'] as bool? ?? false,
-    categoryName: (json['category'] as Map<String, dynamic>?)?['name'] as String?,
+    categoryName:
+        (json['category'] as Map<String, dynamic>?)?['name'] as String?,
     portions: [
       for (final p in json['portions'] as List<dynamic>? ?? const [])
         FoodPortion.fromJson(p as Map<String, dynamic>),
@@ -299,7 +304,10 @@ class MealTemplate {
         .map((i) => i['name'] as String? ?? '')
         .toList(),
     usageCount: toInt(json['usage_count']) ?? 0,
-    items: (json['items'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>().map(MealItem.fromJson).toList(),
+    items: (json['items'] as List<dynamic>? ?? [])
+        .cast<Map<String, dynamic>>()
+        .map(MealItem.fromJson)
+        .toList(),
   );
 
   final String id;
@@ -315,12 +323,21 @@ class MealTemplate {
 
 /// Resultado da busca por código de barras.
 class BarcodeLookup {
-  const BarcodeLookup({required this.status, this.food, this.draft, this.attribution});
+  const BarcodeLookup({
+    required this.status,
+    this.food,
+    this.draft,
+    this.attribution,
+  });
 
   factory BarcodeLookup.fromJson(Map<String, dynamic> json) => BarcodeLookup(
     status: json['status'] as String? ?? 'not_found',
-    food: json['food'] == null ? null : Food.fromJson(json['food'] as Map<String, dynamic>),
-    draft: json['draft'] == null ? null : BarcodeDraft.fromJson(json['draft'] as Map<String, dynamic>),
+    food: json['food'] == null
+        ? null
+        : Food.fromJson(json['food'] as Map<String, dynamic>),
+    draft: json['draft'] == null
+        ? null
+        : BarcodeDraft.fromJson(json['draft'] as Map<String, dynamic>),
     attribution: json['attribution'] as String?,
   );
 

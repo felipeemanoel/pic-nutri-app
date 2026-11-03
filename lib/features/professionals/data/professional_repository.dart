@@ -12,19 +12,26 @@ class ProfessionalRepository {
   final Dio _dio;
 
   Future<ProfessionalsMeta> meta() async {
-    final r = await guard(() => _dio.get<Map<String, dynamic>>('professionals/meta'));
+    final r = await guard(
+      () => _dio.get<Map<String, dynamic>>('professionals/meta'),
+    );
     return ProfessionalsMeta.fromJson(r.data!['data'] as Map<String, dynamic>);
   }
 
   Future<ProfessionalSearchResult> search(ProfessionalFilter filter) async {
     final r = await guard(
-      () => _dio.get<Map<String, dynamic>>('professionals', queryParameters: filter.toQuery()),
+      () => _dio.get<Map<String, dynamic>>(
+        'professionals',
+        queryParameters: filter.toQuery(),
+      ),
     );
     return ProfessionalSearchResult.fromJson(r.data!);
   }
 
   Future<Professional> show(String id) async {
-    final r = await guard(() => _dio.get<Map<String, dynamic>>('professionals/$id'));
+    final r = await guard(
+      () => _dio.get<Map<String, dynamic>>('professionals/$id'),
+    );
     return Professional.fromJson(r.data!['data'] as Map<String, dynamic>);
   }
 
@@ -55,18 +62,28 @@ class ProfessionalRepository {
   }
 
   Future<List<ContactRequestItem>> myRequests() async {
-    final r = await guard(() => _dio.get<Map<String, dynamic>>('contact-requests'));
-    return (r.data!['data'] as List<dynamic>).cast<Map<String, dynamic>>().map(ContactRequestItem.fromJson).toList();
+    final r = await guard(
+      () => _dio.get<Map<String, dynamic>>('contact-requests'),
+    );
+    return (r.data!['data'] as List<dynamic>)
+        .cast<Map<String, dynamic>>()
+        .map(ContactRequestItem.fromJson)
+        .toList();
   }
 
-  Future<void> cancelRequest(String id) => guard(() => _dio.delete<void>('contact-requests/$id'));
+  Future<void> cancelRequest(String id) =>
+      guard(() => _dio.delete<void>('contact-requests/$id'));
 
   Future<List<ShareGrant>> grants() async {
     final r = await guard(() => _dio.get<Map<String, dynamic>>('share-grants'));
-    return (r.data!['data'] as List<dynamic>).cast<Map<String, dynamic>>().map(ShareGrant.fromJson).toList();
+    return (r.data!['data'] as List<dynamic>)
+        .cast<Map<String, dynamic>>()
+        .map(ShareGrant.fromJson)
+        .toList();
   }
 
-  Future<void> revokeGrant(String id) => guard(() => _dio.delete<void>('share-grants/$id'));
+  Future<void> revokeGrant(String id) =>
+      guard(() => _dio.delete<void>('share-grants/$id'));
 }
 
 final professionalRepositoryProvider = Provider<ProfessionalRepository>((ref) {
@@ -80,9 +97,10 @@ final professionalsMetaProvider = FutureProvider<ProfessionalsMeta>(
 );
 
 /// Filtros da busca; começam pelas preferências informadas no cadastro.
-final professionalFilterProvider = NotifierProvider<ProfessionalFilterController, ProfessionalFilter>(
-  ProfessionalFilterController.new,
-);
+final professionalFilterProvider =
+    NotifierProvider<ProfessionalFilterController, ProfessionalFilter>(
+      ProfessionalFilterController.new,
+    );
 
 class ProfessionalFilterController extends Notifier<ProfessionalFilter> {
   @override
@@ -104,7 +122,9 @@ class ProfessionalFilterController extends Notifier<ProfessionalFilter> {
 }
 
 final professionalSearchProvider = FutureProvider<ProfessionalSearchResult>(
-  (ref) => ref.watch(professionalRepositoryProvider).search(ref.watch(professionalFilterProvider)),
+  (ref) => ref
+      .watch(professionalRepositoryProvider)
+      .search(ref.watch(professionalFilterProvider)),
 );
 
 final professionalProvider = FutureProvider.family<Professional, String>(

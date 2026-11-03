@@ -30,15 +30,20 @@ class Recipe {
     summary: json['summary'] as String?,
     servings: toInt(json['servings']) ?? 1,
     prepMinutes: toInt(json['prep_minutes']),
-    mealTypes: (json['meal_types'] as List<dynamic>? ?? const []).cast<String>(),
+    mealTypes: (json['meal_types'] as List<dynamic>? ?? const [])
+        .cast<String>(),
     tags: (json['tags'] as List<dynamic>? ?? const []).cast<String>(),
     perServing: Nutrients.fromJson(json['per_serving'] as Map<String, dynamic>),
     instructions: json['instructions'] as String?,
-    ingredients: _list(json['ingredients']).map(RecipeIngredient.fromJson).toList(),
+    ingredients: _list(
+      json['ingredients'],
+    ).map(RecipeIngredient.fromJson).toList(),
     imageUrl: json['image_url'] as String?,
     author: json['author'] as String?,
     source: json['source'] as String?,
-    updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? '')?.toLocal(),
+    updatedAt: DateTime.tryParse(
+      json['updated_at'] as String? ?? '',
+    )?.toLocal(),
     isFavorite: json['is_favorite'] as bool? ?? false,
   );
 
@@ -113,15 +118,16 @@ class RecipeIngredient {
     this.nutrients = const Nutrients(),
   });
 
-  factory RecipeIngredient.fromJson(Map<String, dynamic> json) => RecipeIngredient(
-    foodId: toInt(json['food_id'])!,
-    name: json['name'] as String,
-    quantity: toDouble(json['quantity']) ?? 0,
-    unit: json['unit'] as String? ?? 'g',
-    display: json['display'] as String?,
-    source: json['source'] as String?,
-    nutrients: Nutrients.fromJson(json),
-  );
+  factory RecipeIngredient.fromJson(Map<String, dynamic> json) =>
+      RecipeIngredient(
+        foodId: toInt(json['food_id'])!,
+        name: json['name'] as String,
+        quantity: toDouble(json['quantity']) ?? 0,
+        unit: json['unit'] as String? ?? 'g',
+        display: json['display'] as String?,
+        source: json['source'] as String?,
+        nutrients: Nutrients.fromJson(json),
+      );
 
   final int foodId;
   final String name;
@@ -149,13 +155,14 @@ class MealPlanSummary {
     required this.itemsCount,
   });
 
-  factory MealPlanSummary.fromJson(Map<String, dynamic> json) => MealPlanSummary(
-    id: json['id'] as String,
-    title: json['title'] as String,
-    startsOn: DateTime.parse(json['starts_on'] as String),
-    endsOn: DateTime.parse(json['ends_on'] as String),
-    itemsCount: toInt(json['items_count']) ?? 0,
-  );
+  factory MealPlanSummary.fromJson(Map<String, dynamic> json) =>
+      MealPlanSummary(
+        id: json['id'] as String,
+        title: json['title'] as String,
+        startsOn: DateTime.parse(json['starts_on'] as String),
+        endsOn: DateTime.parse(json['ends_on'] as String),
+        itemsCount: toInt(json['items_count']) ?? 0,
+      );
 
   final String id;
   final String title;
@@ -289,7 +296,8 @@ class PlanItem {
   String get title => recipeTitle ?? foodName ?? 'Item indisponível';
 
   String get amountLabel => switch (kind) {
-    'recipe' => servings == 1 ? '1 porção' : '${Fmt.decimal(servings ?? 1)} porções',
+    'recipe' =>
+      servings == 1 ? '1 porção' : '${Fmt.decimal(servings ?? 1)} porções',
     'food' => '${Fmt.decimal(quantity ?? 0)} ${baseUnit ?? 'g'}',
     _ => 'Removido do banco de alimentos',
   };
@@ -297,13 +305,18 @@ class PlanItem {
 
 /// Receita adicionada só à lista de compras (sem planejar a refeição).
 class ShoppingExtraRecipe {
-  const ShoppingExtraRecipe({required this.recipeId, required this.title, required this.servings});
+  const ShoppingExtraRecipe({
+    required this.recipeId,
+    required this.title,
+    required this.servings,
+  });
 
-  factory ShoppingExtraRecipe.fromJson(Map<String, dynamic> json) => ShoppingExtraRecipe(
-    recipeId: toInt(json['recipe_id'])!,
-    title: json['title'] as String? ?? '',
-    servings: toDouble(json['servings']) ?? 1,
-  );
+  factory ShoppingExtraRecipe.fromJson(Map<String, dynamic> json) =>
+      ShoppingExtraRecipe(
+        recipeId: toInt(json['recipe_id'])!,
+        title: json['title'] as String? ?? '',
+        servings: toDouble(json['servings']) ?? 1,
+      );
 
   final int recipeId;
   final String title;
@@ -349,12 +362,19 @@ class ShoppingItem {
 class PlanSuggestions {
   const PlanSuggestions({required this.recipes, this.targetKcal});
 
-  factory PlanSuggestions.fromJson(Map<String, dynamic> json) => PlanSuggestions(
-    targetKcal: toDouble(json['target_kcal']),
-    recipes: _list(json['recipes']).map(
-      (r) => Recipe.fromJson({...r, 'servings': 1, 'meal_types': const <String>[]}),
-    ).toList(),
-  );
+  factory PlanSuggestions.fromJson(Map<String, dynamic> json) =>
+      PlanSuggestions(
+        targetKcal: toDouble(json['target_kcal']),
+        recipes: _list(json['recipes'])
+            .map(
+              (r) => Recipe.fromJson({
+                ...r,
+                'servings': 1,
+                'meal_types': const <String>[],
+              }),
+            )
+            .toList(),
+      );
 
   /// Referência de calorias para a refeição (o que falta para a meta do dia
   /// dividido pelas refeições vazias); nula sem meta definida.

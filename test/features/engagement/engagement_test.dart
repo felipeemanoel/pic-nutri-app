@@ -4,20 +4,25 @@ import 'package:picnutri/features/reminders/data/reminder_models.dart';
 
 import '../../helpers/fakes.dart';
 
-Map<String, dynamic> _achievement({bool achieved = true, bool isNew = false}) => {
-  'code': 'streak_3',
-  'title': '3 dias seguidos',
-  'description': 'Fez registros em 3 dias consecutivos.',
-  'icon': 'local_fire_department',
-  'achieved': achieved,
-  'achieved_at': achieved ? '2026-10-13T12:00:00+00:00' : null,
-  'is_new': isNew,
-};
+Map<String, dynamic> _achievement({bool achieved = true, bool isNew = false}) =>
+    {
+      'code': 'streak_3',
+      'title': '3 dias seguidos',
+      'description': 'Fez registros em 3 dias consecutivos.',
+      'icon': 'local_fire_department',
+      'achieved': achieved,
+      'achieved_at': achieved ? '2026-10-13T12:00:00+00:00' : null,
+      'is_new': isNew,
+    };
 
 void main() {
   test('interpreta o resumo de engajamento da API', () {
     final data = Engagement.fromJson({
-      ...emptyEngagementJson(streak: 4, last7: 5, achievements: [_achievement(isNew: true)]),
+      ...emptyEngagementJson(
+        streak: 4,
+        last7: 5,
+        achievements: [_achievement(isNew: true)],
+      ),
       'challenges': {
         'active': [
           {
@@ -34,7 +39,12 @@ void main() {
         ],
         'recent': <Object>[],
         'available': [
-          {'code': 'breakfast_5', 'title': 'Café', 'description': '', 'target': 5},
+          {
+            'code': 'breakfast_5',
+            'title': 'Café',
+            'description': '',
+            'target': 5,
+          },
         ],
         'completed_count': 1,
       },

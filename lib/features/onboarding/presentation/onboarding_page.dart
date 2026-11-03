@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/features.dart';
 import '../../../core/design/design_system.dart';
+import '../../../core/i18n/l10n.dart';
 import '../../../core/utils/device_timezone.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/request_id.dart';
@@ -16,6 +17,7 @@ import '../../../shared/widgets/legal_summary.dart';
 import '../../../shared/widgets/state_views.dart';
 import '../../auth/application/session_controller.dart';
 import '../../auth/data/account.dart';
+import '../../language/presentation/language_picker.dart';
 import '../../medication/data/medication_repository.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../progress/data/body_repository.dart';
@@ -487,7 +489,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     if (known == null) return typed;
     if (!known.genericEntry || typed.isEmpty) return known.name;
     final ingredient = known.ingredient.label;
-    return KnownMedication.normalize(typed).contains(KnownMedication.normalize(ingredient))
+    return KnownMedication.normalize(
+          typed,
+        ).contains(KnownMedication.normalize(ingredient))
         ? typed
         : '$typed ($ingredient)';
   }
@@ -740,9 +744,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                       height: 56,
                       child: LoadingButton(
                         label: switch (_screen) {
-                          OnboardingScreen.welcome => 'Começar',
-                          OnboardingScreen.summary => 'Começar a usar',
-                          _ => 'Continuar',
+                          OnboardingScreen.welcome => context.l10n.actionStart,
+                          OnboardingScreen.summary =>
+                            context.l10n.actionStartUsing,
+                          _ => context.l10n.actionContinue,
                         },
                         loading: _busy,
                         onPressed: _canContinue ? _continue : null,

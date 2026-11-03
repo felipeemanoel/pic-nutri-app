@@ -3,8 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/routes.dart';
-import '../../../shared/widgets/expandable_home_card.dart';
 import '../../../core/design/design_system.dart';
+import '../../../core/i18n/l10n.dart';
+import '../../../shared/widgets/expandable_home_card.dart';
 import '../data/activity_models.dart';
 import '../data/activity_repository.dart';
 import '../domain/activity_math.dart';
@@ -37,14 +38,15 @@ class _Content extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = summary;
     final pic = context.pic;
+    final l10n = context.l10n;
     final event = s.upcomingEvents
         .where((e) => !e.isPast(DateTime.now()))
         .firstOrNull;
     return ExpandableHomeCard(
-      title: 'Atividade física',
+      title: l10n.activityTitle,
       summary: s.plans.isEmpty && s.sessions == 0
-          ? 'Defina sua meta da semana'
-          : '${s.sessions} / ${s.weeklyGoal} treinos na semana',
+          ? l10n.activitySetWeeklyGoal
+          : l10n.activitySessionsWeek(s.sessions, s.weeklyGoal),
       icon: Icons.directions_run_rounded,
       child: Material(
         color: context.colors.surface,
@@ -72,7 +74,7 @@ class _Content extends StatelessWidget {
                       child: Semantics(
                         header: true,
                         child: Text(
-                          'Atividade física',
+                          l10n.activityTitle,
                           style: context.text.labelLarge?.copyWith(
                             color: pic.textSecondary,
                           ),
@@ -87,7 +89,7 @@ class _Content extends StatelessWidget {
                       ),
                       const SizedBox(width: Space.xxs),
                       Text(
-                        '${s.streakWeeks} semanas',
+                        l10n.activityWeeks(s.streakWeeks),
                         style: context.text.labelMedium,
                       ),
                       const SizedBox(width: Space.xs),
@@ -98,14 +100,14 @@ class _Content extends StatelessWidget {
                 const SizedBox(height: Space.md),
                 if (s.plans.isEmpty && s.sessions == 0) ...[
                   Text(
-                    'Defina sua meta da semana',
+                    l10n.activitySetWeeklyGoal,
                     style: context.text.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: Space.xxs),
                   Text(
-                    'Academia, corrida, caminhada... Escolha quantas vezes por semana e o horário.',
+                    l10n.activitySetGoalHint,
                     style: context.text.bodyMedium?.copyWith(
                       color: pic.textSecondary,
                     ),
@@ -114,7 +116,7 @@ class _Content extends StatelessWidget {
                   FilledButton.tonalIcon(
                     onPressed: () => showActivityPlanForm(context),
                     icon: const Icon(Icons.flag_outlined),
-                    label: const Text('Criar meta'),
+                    label: Text(l10n.activityCreateGoal),
                   ),
                 ] else ...[
                   Text.rich(
@@ -129,7 +131,7 @@ class _Content extends StatelessWidget {
                           ),
                         ),
                         TextSpan(
-                          text: ' / ${s.weeklyGoal} treinos na semana',
+                          text: l10n.activitySessionsWeekSuffix(s.weeklyGoal),
                           style: context.text.titleSmall?.copyWith(
                             color: pic.textSecondary,
                           ),
@@ -160,7 +162,7 @@ class _Content extends StatelessWidget {
                   if (s.minutes > 0) ...[
                     const SizedBox(height: Space.sm),
                     Text(
-                      '${ActivityMath.duration(s.minutes)} em movimento nesta semana',
+                      l10n.activityMovingWeek(ActivityMath.duration(s.minutes)),
                       style: context.text.bodySmall,
                     ),
                   ],
@@ -174,7 +176,7 @@ class _Content extends StatelessWidget {
                   FilledButton.tonalIcon(
                     onPressed: () => showActivitySessionForm(context),
                     icon: const Icon(Icons.add_rounded),
-                    label: const Text('Registrar treino'),
+                    label: Text(l10n.activityLogWorkout),
                   ),
                 ],
               ],
@@ -239,10 +241,10 @@ class _NextEvent extends StatelessWidget {
       event.startsAt,
     ).difference(DateUtils.dateOnly(DateTime.now())).inDays;
     final when = days == 0
-        ? 'hoje'
+        ? context.l10n.whenToday
         : days == 1
-        ? 'amanhã'
-        : 'em $days dias';
+        ? context.l10n.whenTomorrow
+        : context.l10n.whenInDays(days);
     return Container(
       padding: const EdgeInsets.all(Space.md),
       decoration: BoxDecoration(

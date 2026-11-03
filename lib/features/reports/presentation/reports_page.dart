@@ -45,9 +45,12 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
 
   bool get _isCurrent {
     final now = DateTime.now();
-    if (_period == 'month') return _reference.year == now.year && _reference.month == now.month;
+    if (_period == 'month')
+      return _reference.year == now.year && _reference.month == now.month;
     final monday = now.subtract(Duration(days: now.weekday - 1));
-    final refMonday = _reference.subtract(Duration(days: _reference.weekday - 1));
+    final refMonday = _reference.subtract(
+      Duration(days: _reference.weekday - 1),
+    );
     return DateUtils.isSameDay(monday, refMonday);
   }
 
@@ -57,7 +60,8 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
     try {
       plan = await ref.read(currentPlanProvider.future);
     } on Object {
-      plan = null; // Sem o plano, a própria API responde se o recurso está disponível.
+      plan =
+          null; // Sem o plano, a própria API responde se o recurso está disponível.
     }
     final usage = plan?.usageOf('report_export');
     if (!mounted) return false;
@@ -67,9 +71,14 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
         builder: (dialog) => AlertDialog(
           icon: const Icon(Icons.workspace_premium_outlined),
           title: const Text('Relatórios para baixar'),
-          content: const Text('O relatório para consulta (PDF) e a exportação em planilha fazem parte do plano Premium.'),
+          content: const Text(
+            'O relatório para consulta (PDF) e a exportação em planilha fazem parte do plano Premium.',
+          ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(dialog).pop(), child: const Text('Agora não')),
+            TextButton(
+              onPressed: () => Navigator.of(dialog).pop(),
+              child: const Text('Agora não'),
+            ),
             FilledButton(
               onPressed: () {
                 Navigator.of(dialog).pop();
@@ -91,14 +100,18 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
     try {
       final dir = await getTemporaryDirectory();
       // Mesmo período da tela (o período em andamento vai até hoje).
-      final until = report.to.isAfter(DateTime.now()) ? DateTime.now() : report.to;
-      final path = '${dir.path}/picnutri-relatorio-${Fmt.apiDate(report.from)}-a-${Fmt.apiDate(until)}.csv';
+      final until = report.to.isAfter(DateTime.now())
+          ? DateTime.now()
+          : report.to;
+      final path =
+          '${dir.path}/picnutri-relatorio-${Fmt.apiDate(report.from)}-a-${Fmt.apiDate(until)}.csv';
       await ref.read(reportRepositoryProvider).export(_query, path);
       ref.invalidate(currentPlanProvider);
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(path, mimeType: 'text/csv')],
-          subject: 'Relatório PicNutri · ${Fmt.dayMonth(report.from)} a ${Fmt.dayMonth(until)}',
+          subject:
+              'Relatório PicNutri · ${Fmt.dayMonth(report.from)} a ${Fmt.dayMonth(until)}',
         ),
       );
       final file = File(path);
@@ -120,11 +133,26 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(Space.page, 0, Space.page, Space.sm),
-              child: Text('Período do relatório', style: Theme.of(sheet).textTheme.titleMedium),
+              padding: const EdgeInsets.fromLTRB(
+                Space.page,
+                0,
+                Space.page,
+                Space.sm,
+              ),
+              child: Text(
+                'Período do relatório',
+                style: Theme.of(sheet).textTheme.titleMedium,
+              ),
             ),
-            for (final (d, label) in const [(30, 'Últimos 30 dias'), (90, 'Últimos 3 meses'), (180, 'Últimos 6 meses')])
-              ListTile(title: Text(label), onTap: () => Navigator.of(sheet).pop(d)),
+            for (final (d, label) in const [
+              (30, 'Últimos 30 dias'),
+              (90, 'Últimos 3 meses'),
+              (180, 'Últimos 6 meses'),
+            ])
+              ListTile(
+                title: Text(label),
+                onTap: () => Navigator.of(sheet).pop(d),
+              ),
           ],
         ),
       ),
@@ -134,11 +162,15 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
     setState(() => _exporting = true);
     try {
       final dir = await getTemporaryDirectory();
-      final path = '${dir.path}/picnutri-relatorio-consulta-${Fmt.apiDate(DateTime.now())}.pdf';
+      final path =
+          '${dir.path}/picnutri-relatorio-consulta-${Fmt.apiDate(DateTime.now())}.pdf';
       await ref.read(reportRepositoryProvider).consultationPdf(days, path);
       ref.invalidate(currentPlanProvider);
       await SharePlus.instance.share(
-        ShareParams(files: [XFile(path, mimeType: 'application/pdf')], subject: 'Relatório PicNutri para consulta'),
+        ShareParams(
+          files: [XFile(path, mimeType: 'application/pdf')],
+          subject: 'Relatório PicNutri para consulta',
+        ),
       );
       final file = File(path);
       if (file.existsSync()) await file.delete();
@@ -160,16 +192,26 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
           IconButton(
             tooltip: 'Exportar planilha deste período',
             icon: _exporting
-                ? const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
                 : const Icon(Icons.ios_share),
-            onPressed: _exporting || report.value == null ? null : () => _export(report.value!),
+            onPressed: _exporting || report.value == null
+                ? null
+                : () => _export(report.value!),
           ),
         ],
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.refresh(periodReportProvider(_query).future),
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(Space.page, Space.sm, Space.page, Space.xxl),
+          padding: const EdgeInsets.fromLTRB(
+            Space.page,
+            Space.sm,
+            Space.page,
+            Space.xxl,
+          ),
           children: [
             const SizedBox(height: Space.md),
             SizedBox(
@@ -201,7 +243,13 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
             AsyncValueView<PeriodReport>(
               value: report,
               onRetry: () => ref.invalidate(periodReportProvider(_query)),
-              loading: const Column(children: [SkeletonCard(lines: 3), SizedBox(height: Space.md), SkeletonCard()]),
+              loading: const Column(
+                children: [
+                  SkeletonCard(lines: 3),
+                  SizedBox(height: Space.md),
+                  SkeletonCard(),
+                ],
+              ),
               data: (r) => _ReportBody(report: r),
             ),
             const SizedBox(height: Space.section),
@@ -214,9 +262,9 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                   Text(
                     AppFeatures.medical
                         ? 'PDF com peso, medidas, sintomas, alimentação e, se você registra, as aplicações do medicamento. '
-                            'Leve para o médico ou nutricionista. Você escolhe com quem compartilhar.'
+                              'Leve para o médico ou nutricionista. Você escolhe com quem compartilhar.'
                         : 'PDF com peso, medidas, sintomas e alimentação. '
-                            'Leve para o médico ou nutricionista. Você escolhe com quem compartilhar.',
+                              'Leve para o médico ou nutricionista. Você escolhe com quem compartilhar.',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   const SizedBox(height: Space.sm),
@@ -235,10 +283,15 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
   }
 }
 
-String _capitalize(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+String _capitalize(String s) =>
+    s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
 class _PeriodNavigator extends StatelessWidget {
-  const _PeriodNavigator({required this.label, required this.onPrevious, required this.onNext});
+  const _PeriodNavigator({
+    required this.label,
+    required this.onPrevious,
+    required this.onNext,
+  });
 
   final String label;
   final VoidCallback onPrevious;
@@ -247,9 +300,23 @@ class _PeriodNavigator extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
     children: [
-      IconButton(tooltip: 'Período anterior', icon: const Icon(Icons.chevron_left), onPressed: onPrevious),
-      Expanded(child: Text(label, style: context.text.titleMedium, textAlign: TextAlign.center)),
-      IconButton(tooltip: 'Próximo período', icon: const Icon(Icons.chevron_right), onPressed: onNext),
+      IconButton(
+        tooltip: 'Período anterior',
+        icon: const Icon(Icons.chevron_left),
+        onPressed: onPrevious,
+      ),
+      Expanded(
+        child: Text(
+          label,
+          style: context.text.titleMedium,
+          textAlign: TextAlign.center,
+        ),
+      ),
+      IconButton(
+        tooltip: 'Próximo período',
+        icon: const Icon(Icons.chevron_right),
+        onPressed: onNext,
+      ),
     ],
   );
 }
@@ -269,7 +336,8 @@ class _ReportBody extends StatelessWidget {
         child: EmptyState(
           icon: Icons.insert_chart_outlined,
           title: 'Sem registros neste período',
-          message: 'Registre refeições e água para ver médias, metas atingidas e comparações aqui.',
+          message:
+              'Registre refeições e água para ver médias, metas atingidas e comparações aqui.',
         ),
       );
     }
@@ -279,10 +347,12 @@ class _ReportBody extends StatelessWidget {
     final days = report.daysElapsed;
     final plain = [
       '${report.inProgress ? 'Até agora, você' : 'Você'} registrou refeições em ${s.daysLogged} de $days ${days == 1 ? 'dia' : 'dias'}.',
-      if (report.goalWaterMl != null && report.goalWaterMl! > 0) 'Alcançou a meta de água em ${s.daysWaterMet} ${s.daysWaterMet == 1 ? 'dia' : 'dias'}.',
+      if (report.goalWaterMl != null && report.goalWaterMl! > 0)
+        'Alcançou a meta de água em ${s.daysWaterMet} ${s.daysWaterMet == 1 ? 'dia' : 'dias'}.',
       if (report.goalProteinG != null && report.goalProteinG! > 0)
         'Alcançou a meta de proteínas em ${s.daysProteinMet} ${s.daysProteinMet == 1 ? 'dia' : 'dias'}.',
-      if (s.daysLogged >= 3 && p.daysLogged >= 3) 'No $unit anterior, foram ${p.daysLogged} dias com registros.',
+      if (s.daysLogged >= 3 && p.daysLogged >= 3)
+        'No $unit anterior, foram ${p.daysLogged} dias com registros.',
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -294,15 +364,24 @@ class _ReportBody extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Expanded(child: Text('Resumo', style: context.text.titleMedium)),
-                  Text(report.inProgress ? 'Em andamento' : 'Concluído', style: context.text.labelMedium),
+                  Expanded(
+                    child: Text('Resumo', style: context.text.titleMedium),
+                  ),
+                  Text(
+                    report.inProgress ? 'Em andamento' : 'Concluído',
+                    style: context.text.labelMedium,
+                  ),
                 ],
               ),
               const SizedBox(height: Space.sm),
-              for (final line in plain) Text(line, style: context.text.bodyMedium),
+              for (final line in plain)
+                Text(line, style: context.text.bodyMedium),
               if (s.daysLogged < days) ...[
                 const SizedBox(height: Space.sm),
-                Text('Dias sem registro só indicam que nada foi anotado.', style: context.text.bodySmall),
+                Text(
+                  'Dias sem registro só indicam que nada foi anotado.',
+                  style: context.text.bodySmall,
+                ),
               ],
             ],
           ),
@@ -312,9 +391,14 @@ class _ReportBody extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Média de calorias por dia registrado', style: context.text.bodySmall),
+              Text(
+                'Média de calorias por dia registrado',
+                style: context.text.bodySmall,
+              ),
               MetricValue(
-                value: s.avgEnergyKcal == null ? '—' : Fmt.integer(s.avgEnergyKcal!),
+                value: s.avgEnergyKcal == null
+                    ? '—'
+                    : Fmt.integer(s.avgEnergyKcal!),
                 unit: 'kcal',
                 large: true,
               ),
@@ -329,7 +413,9 @@ class _ReportBody extends StatelessWidget {
                   current: s.avgEnergyKcal!,
                   previous: p.avgEnergyKcal!,
                   unit: 'kcal',
-                  label: report.period == 'week' ? 'semana anterior' : 'mês anterior',
+                  label: report.period == 'week'
+                      ? 'semana anterior'
+                      : 'mês anterior',
                 ),
               ],
               const SizedBox(height: Space.lg),
@@ -395,8 +481,12 @@ class _ReportBody extends StatelessWidget {
               ),
               Expanded(
                 child: Stat(
-                  value: report.weightChangeKg == null ? '—' : signedKg(report.weightChangeKg),
-                  label: report.weightChangeKg == null ? 'poucos registros de peso' : 'variação no período',
+                  value: report.weightChangeKg == null
+                      ? '—'
+                      : signedKg(report.weightChangeKg),
+                  label: report.weightChangeKg == null
+                      ? 'poucos registros de peso'
+                      : 'variação no período',
                 ),
               ),
             ],
@@ -428,11 +518,17 @@ class _ReportBody extends StatelessWidget {
     );
   }
 
-  static String _weekday(DateTime d) => const ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'][d.weekday - 1];
+  static String _weekday(DateTime d) =>
+      const ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'][d.weekday - 1];
 }
 
 class _Comparison extends StatelessWidget {
-  const _Comparison({required this.current, required this.previous, required this.unit, required this.label});
+  const _Comparison({
+    required this.current,
+    required this.previous,
+    required this.unit,
+    required this.label,
+  });
 
   final double current;
   final double previous;
@@ -448,7 +544,9 @@ class _Comparison extends StatelessWidget {
     return Row(
       children: [
         Icon(
-          diff.abs() < 1 ? Icons.drag_handle : (diff > 0 ? Icons.north_east : Icons.south_east),
+          diff.abs() < 1
+              ? Icons.drag_handle
+              : (diff > 0 ? Icons.north_east : Icons.south_east),
           size: 16,
           color: context.pic.textSecondary,
         ),
@@ -486,7 +584,9 @@ class _GoalRow extends StatelessWidget {
           children: [
             Expanded(child: Text(label, style: context.text.labelMedium)),
             Text(
-              hasGoal ? '$count ${count == 1 ? 'dia' : 'dias'}' : 'sem meta definida',
+              hasGoal
+                  ? '$count ${count == 1 ? 'dia' : 'dias'}'
+                  : 'sem meta definida',
               style: context.text.bodySmall,
             ),
           ],

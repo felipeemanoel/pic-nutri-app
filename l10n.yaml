@@ -1,0 +1,9 @@
+# Textos do app em vários idiomas (flutter gen-l10n).
+# O português do Brasil é o modelo: toda chave nova entra primeiro em
+# app_pt.arb e depois nas demais línguas. `flutter pub get` gera o código.
+arb-dir: lib/l10n
+template-arb-file: app_pt.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+# Lista o que falta traduzir em cada idioma (não vai para o app).
+untranslated-messages-file: build/l10n_untranslated.json

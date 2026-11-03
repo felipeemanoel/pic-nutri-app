@@ -36,7 +36,12 @@ class _CatalogPickerState extends State<_CatalogPicker> {
         .toList();
 
     Widget header(String text) => Padding(
-      padding: const EdgeInsets.fromLTRB(Space.xs, Space.lg, Space.xs, Space.xs),
+      padding: const EdgeInsets.fromLTRB(
+        Space.xs,
+        Space.lg,
+        Space.xs,
+        Space.xs,
+      ),
       child: Text(
         text,
         style: context.text.labelLarge?.copyWith(
@@ -53,10 +58,7 @@ class _CatalogPickerState extends State<_CatalogPicker> {
       ),
       title: Text(title ?? m.name),
       subtitle: Text(
-        [
-          m.ingredient.label,
-          if (m.maker != null) m.maker!,
-        ].join(' · '),
+        [m.ingredient.label, if (m.maker != null) m.maker!].join(' · '),
       ),
       onTap: () => Navigator.of(context).pop(m),
     );

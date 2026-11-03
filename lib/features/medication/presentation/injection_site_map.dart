@@ -5,6 +5,7 @@ import '../../../core/utils/formatters.dart';
 import '../data/injection_guides.dart';
 import '../data/injection_location.dart';
 import '../data/medication_models.dart';
+import 'injection_body_shape.dart';
 
 /// Esquema de regiões, não um guia anatômico de pontos ou distâncias.
 /// Na vista frontal, a esquerda da pessoa aparece à direita de quem olha.
@@ -17,8 +18,10 @@ class InjectionSiteMap extends StatefulWidget {
     this.history = const [],
     this.historyAvailable = true,
     this.armRequiresHelper = false,
+    this.bodyShape = const InjectionBodyShape(),
   });
 
+  final InjectionBodyShape bodyShape;
   final List<Option> sites;
   final String? selected;
   final ValueChanged<String> onSelected;
@@ -92,6 +95,8 @@ class _InjectionSiteMapState extends State<InjectionSiteMap> {
                                           painter: _BodyPainter(
                                             context.pic.surfaceMuted,
                                             context.pic.border,
+                                            widget.bodyShape,
+                                            back,
                                           ),
                                         ),
                                       ),
@@ -370,8 +375,12 @@ class _InjectionSiteMapState extends State<InjectionSiteMap> {
     final left = isLeftSite(InjectionLocation.region(site.value))!;
     final rightOfViewer = back ? !left : left;
     final x = switch (region) {
-      BodyRegion.upperArm => rightOfViewer ? 0.75 : 0.25,
-      _ => rightOfViewer ? 0.59 : 0.41,
+      BodyRegion.upperArm =>
+        .5 + (rightOfViewer ? 1 : -1) * widget.bodyShape.armX,
+      BodyRegion.abdomen =>
+        .5 + (rightOfViewer ? 1 : -1) * widget.bodyShape.abdomenX,
+      BodyRegion.thigh =>
+        .5 + (rightOfViewer ? 1 : -1) * widget.bodyShape.thighX,
     };
     final y = switch (region) {
       BodyRegion.abdomen => 0.45,
@@ -440,57 +449,117 @@ class _InjectionSiteMapState extends State<InjectionSiteMap> {
 }
 
 class _BodyPainter extends CustomPainter {
-  const _BodyPainter(this.fill, this.outline);
+  const _BodyPainter(this.fill, this.outline, this.shape, this.back);
   final Color fill;
   final Color outline;
+  final InjectionBodyShape shape;
+  final bool back;
 
   @override
   void paint(Canvas canvas, Size size) {
     canvas.save();
     canvas.scale(size.width / 180, size.height / 320);
-    final paint = Paint()..color = fill;
-    final head = Rect.fromCenter(
-      center: const Offset(90, 28),
-      width: 35,
-      height: 40,
-    );
-    canvas.drawOval(head, paint);
-    final body = Path()
-      ..moveTo(76, 49)
-      ..lineTo(104, 49)
-      ..lineTo(131, 64)
-      ..quadraticBezierTo(140, 74, 143, 90)
-      ..lineTo(156, 156)
-      ..quadraticBezierTo(158, 167, 148, 168)
-      ..lineTo(129, 111)
-      ..lineTo(124, 162)
-      ..lineTo(120, 201)
-      ..lineTo(114, 299)
-      ..quadraticBezierTo(105, 309, 96, 300)
-      ..lineTo(90, 216)
-      ..lineTo(84, 300)
-      ..quadraticBezierTo(75, 309, 66, 299)
-      ..lineTo(60, 201)
-      ..lineTo(56, 162)
-      ..lineTo(51, 111)
-      ..lineTo(32, 168)
-      ..quadraticBezierTo(22, 167, 24, 156)
-      ..lineTo(37, 90)
-      ..quadraticBezierTo(40, 74, 49, 64)
-      ..close();
-    canvas.drawPath(body, paint);
-    paint
+    final shoulder = shape.shoulder;
+    final waist = shape.waist;
+    final hip = shape.hip;
+    final skin = Color.lerp(fill, const Color(0xffc7d2ce), .35)!;
+    final stroke = Paint()
       ..color = outline
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    canvas.drawPath(body, paint);
-    canvas.drawOval(head, paint);
+      ..strokeWidth = 1.1;
+    final body = Path()
+      ..moveTo(80, 45)
+      ..lineTo(80, 54)
+      ..quadraticBezierTo(90 - shoulder, 55, 85 - shoulder, 77)
+      ..lineTo(69 - shoulder, 166)
+      ..quadraticBezierTo(68 - shoulder, 180, 78 - shoulder, 178)
+      ..lineTo(98 - shoulder, 105)
+      ..quadraticBezierTo(90 - waist, 127, 90 - waist, 148)
+      ..quadraticBezierTo(87 - hip, 167, 90 - hip, 194)
+      ..lineTo(66, 299)
+      ..quadraticBezierTo(63, 309, 80, 306)
+      ..lineTo(90, 211)
+      ..lineTo(100, 306)
+      ..quadraticBezierTo(117, 309, 114, 299)
+      ..lineTo(90 + hip, 194)
+      ..quadraticBezierTo(93 + hip, 167, 90 + waist, 148)
+      ..quadraticBezierTo(90 + waist, 127, 82 + shoulder, 105)
+      ..lineTo(102 + shoulder, 178)
+      ..quadraticBezierTo(112 + shoulder, 180, 111 + shoulder, 166)
+      ..lineTo(95 + shoulder, 77)
+      ..quadraticBezierTo(90 + shoulder, 55, 100, 54)
+      ..lineTo(100, 45)
+      ..close();
+    canvas.drawPath(
+      body,
+      Paint()
+        ..shader = LinearGradient(
+          colors: [skin, const Color(0xfff3f6f4), skin],
+        ).createShader(const Rect.fromLTWH(25, 0, 130, 320)),
+    );
+    canvas.drawPath(body, stroke);
+
+    // Roupa mantém as regiões do mapa visíveis.
+    final shorts = Path()
+      ..moveTo(90 - hip, 173)
+      ..quadraticBezierTo(90, 181, 90 + hip, 173)
+      ..lineTo(90 + hip - 2, 209)
+      ..lineTo(94, 211)
+      ..lineTo(90, 201)
+      ..lineTo(86, 211)
+      ..lineTo(92 - hip, 209)
+      ..close();
+    canvas.drawPath(shorts, Paint()..color = const Color(0xffe5eee9));
+    canvas.drawPath(shorts, stroke);
+    if (shape.feminine) {
+      final top = Path()
+        ..moveTo(69, 59)
+        ..lineTo(64, 106)
+        ..quadraticBezierTo(90, 116, 116, 106)
+        ..lineTo(111, 59)
+        ..lineTo(105, 59)
+        ..quadraticBezierTo(90, 91, 75, 59)
+        ..close();
+      canvas.drawPath(top, Paint()..color = const Color(0xffe5eee9));
+      canvas.drawPath(top, stroke);
+    }
+    final head = Rect.fromCenter(
+      center: const Offset(90, 28),
+      width: 31,
+      height: 39,
+    );
+    canvas.drawOval(head, Paint()..color = skin);
+    canvas.drawOval(head, stroke);
+    final hair = Path()
+      ..moveTo(74, 29)
+      ..cubicTo(68, 0, 112, 0, 106, 29)
+      ..quadraticBezierTo(99, 13, 82, 19)
+      ..close();
+    canvas.drawPath(hair, Paint()..color = const Color(0xff687a72));
+    if (back) {
+      canvas.drawLine(const Offset(90, 78), const Offset(90, 147), stroke);
+      if (shape.feminine) {
+        canvas.drawOval(
+          const Rect.fromLTWH(99, 25, 13, 37),
+          Paint()..color = const Color(0xff687a72),
+        );
+      }
+    } else {
+      canvas.drawCircle(const Offset(84, 29), .9, Paint()..color = outline);
+      canvas.drawCircle(const Offset(96, 29), .9, Paint()..color = outline);
+      canvas.drawArc(const Rect.fromLTWH(86, 35, 8, 3), 0, 3.14, false, stroke);
+      canvas.drawCircle(const Offset(90, 150), 1.3, Paint()..color = outline);
+    }
     canvas.restore();
   }
 
   @override
   bool shouldRepaint(_BodyPainter old) =>
-      fill != old.fill || outline != old.outline;
+      fill != old.fill ||
+      outline != old.outline ||
+      back != old.back ||
+      shape.sex != old.shape.sex ||
+      shape.fullness != old.shape.fullness;
 }
 
 class _RegionDetailPainter extends CustomPainter {

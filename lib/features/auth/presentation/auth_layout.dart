@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/design/design_system.dart';
+import '../../../core/i18n/l10n.dart';
+import '../../language/presentation/language_picker.dart';
 
 /// Moldura comum das telas de conta (login, cadastro, senha).
 class AuthLayout extends StatelessWidget {
@@ -21,7 +23,14 @@ class AuthLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: showBack ? AppBar() : null,
+      appBar: showBack
+          ? AppBar(
+              actions: const [
+                LanguageButton(),
+                SizedBox(width: Space.md),
+              ],
+            )
+          : null,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -32,6 +41,11 @@ class AuthLayout extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (!showBack) ...[
+                    const Align(
+                      alignment: Alignment.centerRight,
+                      child: LanguageButton(),
+                    ),
+                    const SizedBox(height: Space.md),
                     Container(
                       padding: const EdgeInsets.symmetric(vertical: 28),
                       decoration: BoxDecoration(
@@ -51,7 +65,7 @@ class AuthLayout extends StatelessWidget {
                           const PicNutriWordmark(iconSize: 56),
                           const SizedBox(height: Space.md),
                           Text(
-                            'Um espaço para cuidar de você.',
+                            context.l10n.authTagline,
                             style: context.text.bodyMedium,
                           ),
                         ],
@@ -77,7 +91,7 @@ class AuthLayout extends StatelessWidget {
                   if (!showBack) ...[
                     const SizedBox(height: Space.xxl),
                     Text(
-                      'Sua evolução, no seu ritmo.',
+                      context.l10n.authFooter,
                       style: theme.textTheme.bodySmall,
                       textAlign: TextAlign.center,
                     ),

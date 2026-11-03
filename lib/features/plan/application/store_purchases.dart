@@ -41,9 +41,15 @@ class StorePurchases {
 
   Stream<StoreEvent> get events => _events.stream;
 
-  static const _definitive = {'store_purchase_in_use', 'store_purchase_invalid', 'store_product_unknown', 'plan_already_active'};
+  static const _definitive = {
+    'store_purchase_in_use',
+    'store_purchase_invalid',
+    'store_product_unknown',
+    'plan_already_active',
+  };
 
-  static bool get supported => !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+  static bool get supported =>
+      !kIsWeb && (Platform.isAndroid || Platform.isIOS);
 
   static String get platform => Platform.isIOS ? 'ios' : 'android';
 
@@ -57,9 +63,15 @@ class StorePurchases {
   }
 
   Future<List<ProductDetails>> products(List<String> ids) async {
-    if (!supported || ids.isEmpty || !await InAppPurchase.instance.isAvailable()) return const [];
-    final response = await InAppPurchase.instance.queryProductDetails(ids.toSet());
-    final list = [...response.productDetails]..sort((a, b) => a.rawPrice.compareTo(b.rawPrice));
+    if (!supported ||
+        ids.isEmpty ||
+        !await InAppPurchase.instance.isAvailable())
+      return const [];
+    final response = await InAppPurchase.instance.queryProductDetails(
+      ids.toSet(),
+    );
+    final list = [...response.productDetails]
+      ..sort((a, b) => a.rawPrice.compareTo(b.rawPrice));
     return list;
   }
 
@@ -67,14 +79,19 @@ class StorePurchases {
     listen();
     final accountToken = await _ref.read(planRepositoryProvider).accountToken();
     await InAppPurchase.instance.buyNonConsumable(
-      purchaseParam: PurchaseParam(productDetails: product, applicationUserName: accountToken),
+      purchaseParam: PurchaseParam(
+        productDetails: product,
+        applicationUserName: accountToken,
+      ),
     );
   }
 
   Future<void> restore() async {
     listen();
     final accountToken = await _ref.read(planRepositoryProvider).accountToken();
-    await InAppPurchase.instance.restorePurchases(applicationUserName: accountToken);
+    await InAppPurchase.instance.restorePurchases(
+      applicationUserName: accountToken,
+    );
   }
 
   Future<void> _handle(List<PurchaseDetails> purchases) async {
@@ -86,12 +103,20 @@ class StorePurchases {
         case PurchaseStatus.canceled:
           break;
         case PurchaseStatus.error:
-          _events.add(StoreFailed(purchase.error?.message ?? 'A loja não concluiu a compra.'));
+          _events.add(
+            StoreFailed(
+              purchase.error?.message ?? 'A loja não concluiu a compra.',
+            ),
+          );
         case PurchaseStatus.purchased || PurchaseStatus.restored:
           try {
             await _ref
                 .read(planRepositoryProvider)
-                .submitPurchase(platform: platform, verificationData: purchase.verificationData.serverVerificationData);
+                .submitPurchase(
+                  platform: platform,
+                  verificationData:
+                      purchase.verificationData.serverVerificationData,
+                );
             _ref.invalidate(currentPlanProvider);
             _events.add(const StoreSucceeded());
           } on AppFailure catch (e) {
@@ -127,7 +152,9 @@ final storePurchasesProvider = Provider<StorePurchases>((ref) {
 /// Produtos de assinatura da loja deste aparelho, quando habilitada no servidor.
 final storeProductsProvider = FutureProvider<List<ProductDetails>>((ref) async {
   final plan = await ref.watch(currentPlanProvider.future);
-  final enabled = StorePurchases.supported && (Platform.isIOS ? plan.store.ios : plan.store.android);
+  final enabled =
+      StorePurchases.supported &&
+      (Platform.isIOS ? plan.store.ios : plan.store.android);
   if (!enabled) return const [];
   return ref.watch(storePurchasesProvider).products(plan.store.productIds);
 });

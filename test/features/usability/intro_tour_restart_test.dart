@@ -8,9 +8,11 @@ import 'package:picnutri/core/error/app_failure.dart';
 import 'package:picnutri/features/auth/application/session_controller.dart';
 import 'package:picnutri/features/auth/data/account.dart';
 import 'package:picnutri/features/auth/data/auth_repository.dart';
+import 'package:picnutri/features/engagement/data/daily_missions.dart';
 import 'package:picnutri/features/food/data/food_repository.dart';
 import 'package:picnutri/features/home/data/dashboard.dart';
 import 'package:picnutri/features/home/data/dashboard_repository.dart';
+import 'package:picnutri/features/home/presentation/home_page.dart';
 import 'package:picnutri/features/intro_tour/presentation/intro_tour_page.dart';
 
 import '../../helpers/fakes.dart';
@@ -37,6 +39,14 @@ void main() {
           ...sessionOverrides(SessionSignedIn(account)),
           authRepositoryProvider.overrideWithValue(repo),
           mealsOnDayProvider.overrideWith((ref, day) async => []),
+          dailyMissionsProvider.overrideWith(
+            (ref) async => const DailyMissions(
+              streak: 0,
+              bestStreak: 0,
+              streakBroken: false,
+              missions: [],
+            ),
+          ),
           dashboardProvider.overrideWith(
             (ref, day) async => Dashboard.fromJson({
               'date': '2026-10-19',
@@ -62,14 +72,14 @@ void main() {
       await tester.tap(find.text('Concluir'));
       await tester.pumpAndSettle();
       expect(find.byType(IntroTourPage), findsNothing);
-      expect(find.text('Calorias de hoje'), findsOneWidget);
+      expect(find.byType(HomePage), findsOneWidget);
       // A API continua retornando pending=true: o recibo local deve impedir o loop.
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pumpAndSettle();
       await tester.pumpWidget(app());
       await tester.pumpAndSettle();
       expect(find.byType(IntroTourPage), findsNothing);
-      expect(find.text('Calorias de hoje'), findsOneWidget);
+      expect(find.byType(HomePage), findsOneWidget);
     },
   );
 }

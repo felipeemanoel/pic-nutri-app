@@ -1,0 +1,505 @@
+{
+  "@@locale": "pt",
+  "languageTitle": "Idioma",
+  "@languageTitle": {
+    "description": "Título da seção/folha de idioma"
+  },
+  "languageChooseTitle": "Escolha o idioma do app",
+  "@languageChooseTitle": {
+    "description": "Título da folha de seleção"
+  },
+  "languageChooseSubtitle": "Você pode mudar quando quiser em Perfil › Idioma.",
+  "@languageChooseSubtitle": {
+    "description": "Subtítulo da folha de seleção"
+  },
+  "languageFollowDevice": "Usar o idioma do aparelho",
+  "@languageFollowDevice": {
+    "description": "Opção que segue o idioma do sistema"
+  },
+  "languageInProgress": "Tradução em andamento",
+  "@languageInProgress": {
+    "description": "Aviso em idiomas ainda não concluídos"
+  },
+  "languageChange": "Mudar idioma",
+  "@languageChange": {
+    "description": "Rótulo/tooltip do botão de idioma"
+  },
+  "languageChangeShort": "Alterar",
+  "@languageChangeShort": {
+    "description": "Ação curta ao lado do idioma atual"
+  },
+  "authTagline": "Um espaço para cuidar de você.",
+  "@authTagline": {
+    "description": "Frase abaixo da marca nas telas de conta"
+  },
+  "authFooter": "Sua evolução, no seu ritmo.",
+  "@authFooter": {
+    "description": "Rodapé das telas de conta"
+  },
+  "onboardingWelcomeTitle": "Vamos montar o seu plano",
+  "@onboardingWelcomeTitle": {
+    "description": "Título da primeira tela do cadastro"
+  },
+  "onboardingWelcomeSubtitle": "Responda algumas perguntas rápidas e o PicNutri se ajusta a você. Leva cerca de 2 minutos.",
+  "onboardingWelcomePhotoTitle": "Registre por foto",
+  "onboardingWelcomePhotoText": "Fotografe o prato e veja calorias e macros estimados.",
+  "onboardingWelcomeGoalsTitle": "Metas feitas para você",
+  "onboardingWelcomeGoalsText": "Calorias, proteína e água calculadas com os seus dados.",
+  "onboardingWelcomeProgressTitle": "Veja a sua evolução",
+  "onboardingWelcomeProgressText": "Peso, medidas e hábitos em gráficos simples.",
+  "actionStart": "Começar",
+  "@actionStart": {
+    "description": "Botão da primeira tela do cadastro"
+  },
+  "actionStartUsing": "Começar a usar",
+  "@actionStartUsing": {
+    "description": "Botão da última tela do cadastro"
+  },
+  "actionContinue": "Continuar",
+  "profileTitle": "Perfil",
+  "@profileTitle": {
+    "description": "Título da aba Perfil"
+  },
+  "profileSectionAccount": "Conta",
+  "profileSectionPreferences": "Preferências",
+  "profileSectionHelp": "Ajuda",
+  "profileGoals": "Perfil, objetivo e metas",
+  "profileWater": "Água {amount}",
+  "@profileWater": {
+    "description": "Meta de água no resumo do perfil",
+    "placeholders": {
+      "amount": {
+        "type": "String",
+        "example": "2.000 ml"
+      }
+    }
+  },
+  "profileMyPlan": "Meu plano",
+  "@profileMyPlan": {
+    "description": "Assinatura (plano pago)"
+  },
+  "profileProfessionals": "Profissionais",
+  "profileProfessionalsSubtitle": "Encontre nutricionistas e educadores físicos",
+  "profileTrackMedication": "Acompanhar medicamento",
+  "profileTrackMedicationSubtitle": "Registre aplicações prescritas e sintomas na Evolução",
+  "profileSignInMethods": "Formas de acesso",
+  "profileSignInMethodsSubtitle": "Senha, Google, Facebook e Apple",
+  "profilePrivacy": "Privacidade e dados",
+  "profilePrivacySubtitle": "Autorizações, exportação e exclusão da conta",
+  "profileNotifications": "Notificações e lembretes",
+  "profileNotificationsOn": "Ativadas neste aparelho",
+  "profileNotificationsOff": "Desativadas neste aparelho",
+  "profileTheme": "Tema",
+  "themeSystem": "Sistema",
+  "themeLight": "Claro",
+  "themeDark": "Escuro",
+  "profileAssistant": "Assistente",
+  "profileAssistantSubtitle": "Consulte seus registros e tire dúvidas sobre o app",
+  "profileHelpCenter": "Central de ajuda",
+  "profileHelpCenterSubtitle": "Perguntas frequentes e orientações de uso",
+  "profileServerStatusDev": "Status do servidor (desenvolvimento)",
+  "profileLogout": "Sair",
+  "profileLogoutConfirmTitle": "Sair da conta?",
+  "profileLogoutConfirmMessage": "Você precisará entrar novamente neste aparelho.",
+  "navHome": "Início",
+  "navFood": "Alimentação",
+  "navProgress": "Evolução",
+  "navContent": "Conteúdo",
+  "actionRetry": "Tentar novamente",
+  "nutrientCarbs": "Carboidratos",
+  "nutrientProtein": "Proteínas",
+  "nutrientFat": "Gorduras",
+  "mealBreakfast": "Café da manhã",
+  "mealMorningSnack": "Lanche da manhã",
+  "mealLunch": "Almoço",
+  "mealAfternoonSnack": "Lanche da tarde",
+  "mealDinner": "Jantar",
+  "mealSupper": "Ceia",
+  "mealOther": "Outro",
+  "relToday": "hoje, {time}",
+  "@relToday": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "relTomorrow": "amanhã, {time}",
+  "@relTomorrow": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "relYesterday": "ontem, {time}",
+  "@relYesterday": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "homeRegister": "Registrar",
+  "homeGoodMorning": "Bom dia",
+  "homeGoodAfternoon": "Boa tarde",
+  "homeGoodEvening": "Boa noite",
+  "homeGreetingName": "{greeting}, {name}",
+  "@homeGreetingName": {
+    "placeholders": {
+      "greeting": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeTagline": "Cada pequeno cuidado conta.",
+  "homeQuickPhoto": "Fotografar prato",
+  "homeQuickMeal": "Refeição",
+  "homeQuickWater": "Beber água",
+  "homeYourProgress": "Sua evolução",
+  "homeProgressEmpty": "Acompanhe seu peso e suas fotos",
+  "homeCurrentWeight": "Peso atual: {weight}",
+  "@homeCurrentWeight": {
+    "placeholders": {
+      "weight": {
+        "type": "String"
+      }
+    }
+  },
+  "homeNextWater": "Faltam {amount} de água",
+  "@homeNextWater": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "homeNextWaterMessage": "Um copo de cada vez já ajuda.",
+  "homeLogWater": "Registrar água",
+  "homeNextProtein": "Faltam {amount} de proteínas",
+  "@homeNextProtein": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "homeNextProteinMessage": "Veja ideias de receitas com boas fontes de proteína.",
+  "homeSeeRecipes": "Ver receitas",
+  "homeSetGoalsTitle": "Defina suas metas",
+  "homeSetGoalsMessage": "Com metas de água e proteínas, o app mostra o que falta a cada dia.",
+  "homeSetGoalsAction": "Definir metas",
+  "homeGoalsReached": "Metas de água e proteínas alcançadas",
+  "homeGoalsReachedMessage": "Cada cuidado conta. Continue no seu ritmo.",
+  "homeMealsCount": "{count, plural, =1{1 refeição} other{{count} refeições}}",
+  "@homeMealsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeDayBalance": "Seu dia em equilíbrio",
+  "homeKcalOfGoal": "{kcal} de {goal}",
+  "@homeKcalOfGoal": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      },
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "homeKcalLogged": "{kcal} registradas",
+  "@homeKcalLogged": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "homeOfGoal": "de {goal}",
+  "@homeOfGoal": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "homeKcalLoggedShort": "kcal registradas",
+  "homeNoMealsDay": "Nenhuma refeição registrada neste dia.",
+  "homeSetYourGoal": "Defina sua meta",
+  "homeAboveGoal": " acima da meta",
+  "homeToGoal": " para sua meta",
+  "homeMacroSemanticsGoal": "{name}: {grams} de {goal} gramas",
+  "@homeMacroSemanticsGoal": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "grams": {
+        "type": "String"
+      },
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "homeMacroSemantics": "{name}: {grams} gramas",
+  "@homeMacroSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "grams": {
+        "type": "String"
+      }
+    }
+  },
+  "homeWaterAdded": "+{ml} ml registrados.",
+  "@homeWaterAdded": {
+    "placeholders": {
+      "ml": {
+        "type": "int"
+      }
+    }
+  },
+  "homeWaterNoneToday": "Nenhum registro de água hoje.",
+  "homeWaterRemoved": "Registro de {amount} removido.",
+  "@homeWaterRemoved": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "homeHydration": "Hidratação",
+  "homeHydrationDetails": "Detalhes da hidratação",
+  "homeWaterSemantics": "Água: {total} de {goal}, {percent}% da meta.",
+  "@homeWaterSemantics": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      },
+      "goal": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "homeWaterMore": "Outras quantidades de água",
+  "homeWaterOther": "Outra quantidade",
+  "homeWaterUndo": "Desfazer o último registro de água",
+  "homeWeightNone": "Peso: nenhum registro",
+  "homeWeightValue": "Peso: {weight}",
+  "@homeWeightValue": {
+    "placeholders": {
+      "weight": {
+        "type": "String"
+      }
+    }
+  },
+  "homeWeight": "Peso",
+  "homeNoRecord": "Sem registro",
+  "homeWeightHint": "Registre para acompanhar.",
+  "homeWeightChange": "{change} em 30 dias",
+  "@homeWeightChange": {
+    "placeholders": {
+      "change": {
+        "type": "String"
+      }
+    }
+  },
+  "homeWeightGoal": "Meta: {weight}",
+  "@homeWeightGoal": {
+    "placeholders": {
+      "weight": {
+        "type": "String"
+      }
+    }
+  },
+  "homeUpdatedOn": "Atualizado em {date}",
+  "@homeUpdatedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "homeLogWeight": "Registrar peso",
+  "homeYourMeals": "Suas refeições",
+  "homeSeeAll": "Ver todas",
+  "homeMealsError": "Não foi possível carregar suas refeições.",
+  "homeMealsEmpty": "Suas refeições do dia aparecem aqui.",
+  "homeMealLogged": "Registrado · {kcal}",
+  "@homeMealLogged": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "homeMealPending": "Que tal registrar?",
+  "homeCompleteProfile": "Complete seu perfil",
+  "homeCompleteProfileMessage": "Ficou para depois: {items}. Com esses dados, metas e sugestões ficam mais precisas.",
+  "@homeCompleteProfileMessage": {
+    "placeholders": {
+      "items": {
+        "type": "String"
+      }
+    }
+  },
+  "homeCompleteNow": "Completar agora",
+  "skippedEssentials": "dados básicos",
+  "skippedRoutine": "alimentação e rotina",
+  "skippedGuidance": "orientação profissional",
+  "skippedMedication": "medicamento",
+  "skippedCare": "preferências de atendimento",
+  "skippedTargets": "metas diárias",
+  "doseMedication": "Medicação",
+  "doseFirstHeadline": "Registre sua primeira aplicação",
+  "doseFirstCaption": "A contagem para a próxima começa a partir dela.",
+  "doseLast": "Última aplicação",
+  "doseNoFrequency": "Informe a frequência no cadastro para ver a próxima.",
+  "doseExpected": "Aplicação prevista",
+  "doseExpectedCaption": "Já aplicou? Registre para atualizar a contagem.",
+  "doseNext": "Próxima aplicação",
+  "doseCycle": "Ciclo entre aplicações",
+  "doseLastShort": "Última",
+  "doseEstimatedLevel": "Nível estimado",
+  "doseLog": "Registrar aplicação",
+  "doseSetupTitle": "Cadastre seu medicamento",
+  "doseSetupText": "Para ver a contagem até a próxima aplicação.",
+  "missionsTitle": "Metas de hoje",
+  "missionsError": "Não foi possível carregar suas estrelas.",
+  "missionsMyAchievement": "Minha conquista de hoje",
+  "missionsLevelStreak": "Nível {level} · {count, plural, =1{1 dia seguido} other{{count} dias seguidos}}",
+  "@missionsLevelStreak": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "missionsBroken": "Sua sequência terminou. Vamos começar de novo hoje?",
+  "missionsLevelUp": "Parabéns! Você conquistou o nível {level}!",
+  "@missionsLevelUp": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "missionsKeepGoing": "Cada dia de cuidado vale uma conquista!",
+  "missionsFirstDay": "Seu primeiro dia começa com um registro.",
+  "missionsDiamond": "Diamante conquistado! Continue sua sequência.",
+  "missionsDaysTo": "{count, plural, =1{Falta 1 dia para {level}} other{Faltam {count} dias para {level}}}",
+  "@missionsDaysTo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "missionsRecord": "{count, plural, =1{Recorde: 1 dia.} other{Recorde: {count} dias.}} Um dia sem registro reinicia a sequência.",
+  "@missionsRecord": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "levelBeginner": "Começo",
+  "levelBronze": "Bronze",
+  "levelSilver": "Prata",
+  "levelGold": "Ouro",
+  "levelDiamond": "Diamante",
+  "activityTitle": "Atividade física",
+  "activitySetWeeklyGoal": "Defina sua meta da semana",
+  "activitySessionsWeek": "{done} / {goal} treinos na semana",
+  "@activitySessionsWeek": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "goal": {
+        "type": "int"
+      }
+    }
+  },
+  "activitySessionsWeekSuffix": " / {goal} treinos na semana",
+  "@activitySessionsWeekSuffix": {
+    "placeholders": {
+      "goal": {
+        "type": "int"
+      }
+    }
+  },
+  "activityWeeks": "{count, plural, =1{1 semana} other{{count} semanas}}",
+  "@activityWeeks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "activitySetGoalHint": "Academia, corrida, caminhada... Escolha quantas vezes por semana e o horário.",
+  "activityCreateGoal": "Criar meta",
+  "activityMovingWeek": "{duration} em movimento nesta semana",
+  "@activityMovingWeek": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "activityLogWorkout": "Registrar treino",
+  "whenToday": "hoje",
+  "whenTomorrow": "amanhã",
+  "whenInDays": "{count, plural, =1{em 1 dia} other{em {count} dias}}",
+  "@whenInDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "notificationsTitle": "Notificações",
+  "notificationsUnread": "{count, plural, =1{Notificações, 1 não lida} other{Notificações, {count} não lidas}}",
+  "@notificationsUnread": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "registerHowTitle": "Como você quer registrar?",
+  "registerPhoto": "Tirar foto do prato",
+  "registerPhotoSub": "A IA estima alimentos, porções e macros",
+  "registerGallery": "Usar foto da galeria",
+  "registerGallerySub": "Escolha uma foto que você já tirou",
+  "registerDescribe": "Falar ou escrever",
+  "registerDescribeSub": "Conte o que comeu; a IA estima e você revisa",
+  "registerSearch": "Buscar alimentos",
+  "registerSearchSub": "No banco de alimentos, pelo código de barras ou informando os valores",
+  "registerEatAgain": "Comer de novo",
+  "registerRecent": "Recentes",
+  "registerFavorites": "Favoritas",
+  "registerAlso": "Também registrar",
+  "registerDose": "Aplicação",
+  "registerWorkout": "Treino",
+  "registerSymptom": "Sintoma",
+  "registerWater": "Água"
+}

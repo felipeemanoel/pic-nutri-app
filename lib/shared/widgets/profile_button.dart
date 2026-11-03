@@ -24,7 +24,9 @@ class ProfileButton extends ConsumerWidget {
           foregroundColor: context.pic.onBrandContainer,
           child: Text(
             name.isEmpty ? '?' : name[0].toUpperCase(),
-            style: context.text.labelLarge?.copyWith(color: context.pic.onBrandContainer),
+            style: context.text.labelLarge?.copyWith(
+              color: context.pic.onBrandContainer,
+            ),
           ),
         ),
       ),

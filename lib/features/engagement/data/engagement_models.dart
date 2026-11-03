@@ -28,13 +28,20 @@ class Engagement {
       last7Days: (consistency['last_7_days'] as num).toInt(),
       last30Days: (consistency['last_30_days'] as num).toInt(),
       message: json['message'] as String? ?? '',
-      achievements: list(json['achievements']).map(Achievement.fromJson).toList(),
-      activeChallenges: list(challenges['active']).map(Challenge.fromJson).toList(),
-      recentChallenges: list(challenges['recent']).map(Challenge.fromJson).toList(),
+      achievements: list(
+        json['achievements'],
+      ).map(Achievement.fromJson).toList(),
+      activeChallenges: list(
+        challenges['active'],
+      ).map(Challenge.fromJson).toList(),
+      recentChallenges: list(
+        challenges['recent'],
+      ).map(Challenge.fromJson).toList(),
       availableChallenges: list(
         challenges['available'],
       ).map(ChallengeOption.fromJson).toList(),
-      completedChallenges: (challenges['completed_count'] as num?)?.toInt() ?? 0,
+      completedChallenges:
+          (challenges['completed_count'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -50,8 +57,10 @@ class Engagement {
   final List<ChallengeOption> availableChallenges;
   final int completedChallenges;
 
-  List<Achievement> get unlocked => achievements.where((a) => a.achieved).toList();
-  List<Achievement> get newlyUnlocked => achievements.where((a) => a.isNew).toList();
+  List<Achievement> get unlocked =>
+      achievements.where((a) => a.achieved).toList();
+  List<Achievement> get newlyUnlocked =>
+      achievements.where((a) => a.isNew).toList();
 }
 
 class Achievement {
@@ -72,7 +81,9 @@ class Achievement {
     icon: json['icon'] as String? ?? '',
     achieved: json['achieved'] as bool? ?? false,
     isNew: json['is_new'] as bool? ?? false,
-    achievedAt: DateTime.tryParse(json['achieved_at'] as String? ?? '')?.toLocal(),
+    achievedAt: DateTime.tryParse(
+      json['achieved_at'] as String? ?? '',
+    )?.toLocal(),
   );
 
   final String code;
@@ -125,7 +136,8 @@ class Challenge {
   final String startsOn;
   final String endsOn;
 
-  double get ratio => target <= 0 ? 0 : (progress / target).clamp(0, 1).toDouble();
+  double get ratio =>
+      target <= 0 ? 0 : (progress / target).clamp(0, 1).toDouble();
   bool get isCompleted => status == 'completed';
 }
 
@@ -137,12 +149,13 @@ class ChallengeOption {
     required this.target,
   });
 
-  factory ChallengeOption.fromJson(Map<String, dynamic> json) => ChallengeOption(
-    code: json['code'] as String,
-    title: json['title'] as String? ?? '',
-    description: json['description'] as String? ?? '',
-    target: (json['target'] as num?)?.toInt() ?? 1,
-  );
+  factory ChallengeOption.fromJson(Map<String, dynamic> json) =>
+      ChallengeOption(
+        code: json['code'] as String,
+        title: json['title'] as String? ?? '',
+        description: json['description'] as String? ?? '',
+        target: (json['target'] as num?)?.toInt() ?? 1,
+      );
 
   final String code;
   final String title;
@@ -153,7 +166,13 @@ class ChallengeOption {
 /// Celebração pendente: conquista nova ou meta do dia (água, proteína).
 /// Cada uma aparece uma única vez (o servidor guarda o que já foi visto).
 class Celebration {
-  const Celebration({required this.key, required this.kind, required this.title, required this.message, required this.icon});
+  const Celebration({
+    required this.key,
+    required this.kind,
+    required this.title,
+    required this.message,
+    required this.icon,
+  });
 
   factory Celebration.fromJson(Map<String, dynamic> json) => Celebration(
     key: json['key'] as String,

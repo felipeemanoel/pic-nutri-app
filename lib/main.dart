@@ -11,7 +11,8 @@ import 'core/logging/error_reporting.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await initializeDateFormatting('pt_BR');
+  // Formatos de data de todos os idiomas oferecidos (ver AppLanguage).
+  await initializeDateFormatting();
 
   final AppEnv env;
   try {

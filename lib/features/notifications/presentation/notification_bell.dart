@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/routes.dart';
+import '../../../core/i18n/l10n.dart';
 import '../data/notification_repository.dart';
 
 /// Sino do topo com a quantidade de notificações não lidas.
@@ -13,8 +14,8 @@ class NotificationBell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final unread = ref.watch(unreadNotificationsProvider).value ?? 0;
     final label = unread == 0
-        ? 'Notificações'
-        : 'Notificações, $unread não lida${unread == 1 ? '' : 's'}';
+        ? context.l10n.notificationsTitle
+        : context.l10n.notificationsUnread(unread);
     return IconButton(
       tooltip: label,
       onPressed: () => context.push(AppRoutes.notifications),

@@ -7,10 +7,12 @@ import '../../../app/features.dart';
 import '../../../app/routes.dart';
 import '../../../core/design/design_system.dart';
 import '../../../core/design/theme_preference.dart';
+import '../../../core/i18n/l10n.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/labels.dart';
 import '../../../shared/widgets/feedback.dart';
 import '../../auth/application/session_controller.dart';
+import '../../language/presentation/language_picker.dart';
 import '../../notifications/presentation/notification_bell.dart';
 import 'profile_photo.dart';
 
@@ -20,9 +22,9 @@ class ProfilePage extends ConsumerWidget {
   Future<void> _logout(BuildContext context, WidgetRef ref) async {
     final ok = await confirmAction(
       context,
-      title: 'Sair da conta?',
-      message: 'Você precisará entrar novamente neste aparelho.',
-      confirmLabel: 'Sair',
+      title: context.l10n.profileLogoutConfirmTitle,
+      message: context.l10n.profileLogoutConfirmMessage,
+      confirmLabel: context.l10n.profileLogout,
     );
     if (ok) await ref.read(sessionControllerProvider.notifier).logout();
   }
@@ -34,10 +36,11 @@ class ProfilePage extends ConsumerWidget {
     if (account == null) return const SizedBox.shrink();
     final profile = account.profile;
     final theme = Theme.of(context);
+    final l10n = context.l10n;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Perfil'),
+        title: Text(l10n.profileTitle),
         actions: const [NotificationBell()],
       ),
       body: ListView(
@@ -69,16 +72,16 @@ class ProfilePage extends ConsumerWidget {
           // Três grupos: Conta, Preferências e Ajuda. Hábitos, relatórios e
           // bem-estar ficam na Evolução; receitas e artigos, na aba Conteúdo;
           // a central de notificações, no sino do topo.
-          const _Header('Conta'),
+          _Header(l10n.profileSectionAccount),
           ListTile(
             leading: const Icon(Icons.flag_outlined),
-            title: const Text('Perfil, objetivo e metas'),
+            title: Text(l10n.profileGoals),
             subtitle: Text(
               [
                 Labels.of(Labels.goals, profile.goal),
                 if (profile.dailyCalorieGoal != null)
                   Fmt.kcal(profile.dailyCalorieGoal!),
-                'Água ${Fmt.ml(profile.waterGoalMl)}',
+                l10n.profileWater(Fmt.ml(profile.waterGoalMl)),
               ].join(' · '),
             ),
             trailing: const Icon(Icons.chevron_right),
@@ -86,94 +89,100 @@ class ProfilePage extends ConsumerWidget {
           ),
           ListTile(
             leading: const Icon(Icons.workspace_premium_outlined),
-            title: const Text('Meu plano'),
+            title: Text(l10n.profileMyPlan),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push(AppRoutes.plan),
           ),
           if (AppFeatures.medical) ...[
             ListTile(
               leading: const Icon(Icons.groups_outlined),
-              title: const Text('Profissionais'),
-              subtitle: const Text(
-                'Encontre nutricionistas e educadores físicos',
-              ),
+              title: Text(l10n.profileProfessionals),
+              subtitle: Text(l10n.profileProfessionalsSubtitle),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => context.push(AppRoutes.professionals),
             ),
             if (!profile.medicationTrackingEnabled)
               ListTile(
                 leading: const Icon(Icons.medication_outlined),
-                title: const Text('Acompanhar medicamento'),
-                subtitle: const Text(
-                  'Registre aplicações prescritas e sintomas na Evolução',
-                ),
+                title: Text(l10n.profileTrackMedication),
+                subtitle: Text(l10n.profileTrackMedicationSubtitle),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => context.push(AppRoutes.editProfile),
               ),
           ],
           ListTile(
             leading: const Icon(Icons.key_outlined),
-            title: const Text('Formas de acesso'),
-            subtitle: const Text('Senha, Google, Facebook e Apple'),
+            title: Text(l10n.profileSignInMethods),
+            subtitle: Text(l10n.profileSignInMethodsSubtitle),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push(AppRoutes.signInMethods),
           ),
           ListTile(
             leading: const Icon(Icons.privacy_tip_outlined),
-            title: const Text('Privacidade e dados'),
-            subtitle: const Text(
-              'Autorizações, exportação e exclusão da conta',
-            ),
+            title: Text(l10n.profilePrivacy),
+            subtitle: Text(l10n.profilePrivacySubtitle),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push(AppRoutes.privacy),
           ),
           const Divider(),
-          const _Header('Preferências'),
+          _Header(l10n.profileSectionPreferences),
           ListTile(
             leading: const Icon(Icons.notifications_outlined),
-            title: const Text('Notificações e lembretes'),
+            title: Text(l10n.profileNotifications),
             subtitle: Text(
               profile.notificationsEnabled
-                  ? 'Ativadas neste aparelho'
-                  : 'Desativadas neste aparelho',
+                  ? l10n.profileNotificationsOn
+                  : l10n.profileNotificationsOff,
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push(AppRoutes.notificationSettings),
           ),
-          const ListTile(
-            leading: Icon(Icons.palette_outlined),
-            title: Text('Tema'),
+          if (AppFeatures.languages)
+            Builder(
+              builder: (context) {
+                final language = displayedLanguage(context);
+                return ListTile(
+                  key: const ValueKey('profile-language'),
+                  leading: const Icon(Icons.translate_rounded),
+                  title: Text(l10n.languageTitle),
+                  subtitle: Text('${language.flag}  ${language.nativeName}'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => showLanguagePicker(context),
+                );
+              },
+            ),
+          ListTile(
+            leading: const Icon(Icons.palette_outlined),
+            title: Text(l10n.profileTheme),
             dense: true,
           ),
           const _ThemeSelector(),
           const Divider(),
-          const _Header('Ajuda'),
+          _Header(l10n.profileSectionHelp),
           ListTile(
             leading: const Icon(Icons.auto_awesome_outlined),
-            title: const Text('Assistente'),
-            subtitle: const Text(
-              'Consulte seus registros e tire dúvidas sobre o app',
-            ),
+            title: Text(l10n.profileAssistant),
+            subtitle: Text(l10n.profileAssistantSubtitle),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push(AppRoutes.assistant),
           ),
           ListTile(
             leading: const Icon(Icons.help_outline),
-            title: const Text('Central de ajuda'),
-            subtitle: const Text('Perguntas frequentes e orientações de uso'),
+            title: Text(l10n.profileHelpCenter),
+            subtitle: Text(l10n.profileHelpCenterSubtitle),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push(AppRoutes.help),
           ),
           if (env.isDev)
             ListTile(
               leading: const Icon(Icons.dns_outlined),
-              title: const Text('Status do servidor (desenvolvimento)'),
+              title: Text(l10n.profileServerStatusDev),
               onTap: () => context.push(AppRoutes.systemStatus),
             ),
           ListTile(
             leading: Icon(Icons.logout, color: theme.colorScheme.error),
             title: Text(
-              'Sair',
+              l10n.profileLogout,
               style: TextStyle(color: theme.colorScheme.error),
             ),
             onTap: () => _logout(context, ref),
@@ -217,6 +226,7 @@ class _ThemeSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mode = ref.watch(themeModeProvider);
+    final l10n = context.l10n;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         Space.lg,
@@ -227,21 +237,21 @@ class _ThemeSelector extends ConsumerWidget {
       child: SizedBox(
         width: double.infinity,
         child: SegmentedButton<ThemeMode>(
-          segments: const [
+          segments: [
             ButtonSegment(
               value: ThemeMode.system,
-              label: Text('Sistema'),
-              icon: Icon(Icons.brightness_auto_outlined),
+              label: Text(l10n.themeSystem),
+              icon: const Icon(Icons.brightness_auto_outlined),
             ),
             ButtonSegment(
               value: ThemeMode.light,
-              label: Text('Claro'),
-              icon: Icon(Icons.light_mode_outlined),
+              label: Text(l10n.themeLight),
+              icon: const Icon(Icons.light_mode_outlined),
             ),
             ButtonSegment(
               value: ThemeMode.dark,
-              label: Text('Escuro'),
-              icon: Icon(Icons.dark_mode_outlined),
+              label: Text(l10n.themeDark),
+              icon: const Icon(Icons.dark_mode_outlined),
             ),
           ],
           selected: {mode},

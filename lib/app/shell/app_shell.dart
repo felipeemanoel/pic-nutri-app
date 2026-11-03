@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/design/design_system.dart';
+import '../../core/i18n/l10n.dart';
 import '../../core/notifications/local_notifications.dart';
 import '../../core/notifications/push_messaging.dart';
 import '../../features/auth/application/session_controller.dart';
@@ -131,33 +132,36 @@ class _AppShellState extends ConsumerState<AppShell>
     }
   }
 
-  static const _destinations = <NavigationDestination>[
-    NavigationDestination(
-      icon: Icon(Icons.home_outlined),
-      selectedIcon: Icon(Icons.home),
-      label: 'Início',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.restaurant_menu_outlined),
-      selectedIcon: Icon(Icons.restaurant_menu),
-      label: 'Alimentação',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.insights_outlined),
-      selectedIcon: Icon(Icons.insights),
-      label: 'Evolução',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.auto_stories_outlined),
-      selectedIcon: Icon(Icons.auto_stories),
-      label: 'Conteúdo',
-    ),
-    NavigationDestination(
-      icon: AccountAvatar(size: 24),
-      selectedIcon: AccountAvatar(size: 24),
-      label: 'Perfil',
-    ),
-  ];
+  static List<NavigationDestination> _destinations(BuildContext context) {
+    final l10n = context.l10n;
+    return [
+      NavigationDestination(
+        icon: const Icon(Icons.home_outlined),
+        selectedIcon: const Icon(Icons.home),
+        label: l10n.navHome,
+      ),
+      NavigationDestination(
+        icon: const Icon(Icons.restaurant_menu_outlined),
+        selectedIcon: const Icon(Icons.restaurant_menu),
+        label: l10n.navFood,
+      ),
+      NavigationDestination(
+        icon: const Icon(Icons.insights_outlined),
+        selectedIcon: const Icon(Icons.insights),
+        label: l10n.navProgress,
+      ),
+      NavigationDestination(
+        icon: const Icon(Icons.auto_stories_outlined),
+        selectedIcon: const Icon(Icons.auto_stories),
+        label: l10n.navContent,
+      ),
+      NavigationDestination(
+        icon: const AccountAvatar(size: 24),
+        selectedIcon: const AccountAvatar(size: 24),
+        label: l10n.profileTitle,
+      ),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -170,7 +174,7 @@ class _AppShellState extends ConsumerState<AppShell>
         ),
         child: NavigationBar(
           selectedIndex: shell.currentIndex,
-          destinations: _destinations,
+          destinations: _destinations(context),
           onDestinationSelected: (index) => shell.goBranch(
             index,
             initialLocation: index == shell.currentIndex,

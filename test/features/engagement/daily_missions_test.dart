@@ -57,10 +57,10 @@ void main() {
         ],
         child: MaterialApp(
           theme: AppTheme.light(),
-          home: Scaffold(
+          home: const Scaffold(
             body: MediaQuery(
-              data: const MediaQueryData(textScaler: TextScaler.linear(1.6)),
-              child: const SingleChildScrollView(child: DailyMissionsCard()),
+              data: MediaQueryData(textScaler: TextScaler.linear(1.6)),
+              child: SingleChildScrollView(child: DailyMissionsCard()),
             ),
           ),
         ),

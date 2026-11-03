@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design/design_system.dart';
+import '../../../core/i18n/l10n.dart';
 import '../data/daily_missions.dart';
 
 class DailyMissionsCard extends ConsumerStatefulWidget {
@@ -54,12 +55,12 @@ class _DailyMissionsCardState extends ConsumerState<DailyMissionsCard>
         AsyncError() => Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Metas de hoje', style: context.text.titleMedium),
-            const Text('Não foi possível carregar suas estrelas.'),
+            Text(context.l10n.missionsTitle, style: context.text.titleMedium),
+            Text(context.l10n.missionsError),
             TextButton.icon(
               onPressed: () => ref.invalidate(dailyMissionsProvider),
               icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Tentar novamente'),
+              label: Text(context.l10n.actionRetry),
             ),
           ],
         ),
@@ -84,6 +85,8 @@ class _Progress extends StatelessWidget {
     ];
     final color = colors[data.level.index];
     final next = data.nextLevel;
+    final l10n = context.l10n;
+    final level = missionLevelName(l10n, data.level);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -98,7 +101,7 @@ class _Progress extends StatelessWidget {
             ),
             const SizedBox(width: Space.sm),
             Expanded(
-              child: Text('Metas de hoje', style: context.text.titleMedium),
+              child: Text(l10n.missionsTitle, style: context.text.titleMedium),
             ),
             Text(
               '${data.stars}/${data.missions.length}',
@@ -127,7 +130,7 @@ class _Progress extends StatelessWidget {
                   const SizedBox(width: Space.sm),
                   Expanded(
                     child: Text(
-                      'Minha conquista de hoje',
+                      l10n.missionsMyAchievement,
                       style: context.text.titleMedium?.copyWith(
                         fontWeight: FontWeight.w800,
                       ),
@@ -137,18 +140,18 @@ class _Progress extends StatelessWidget {
               ),
               const SizedBox(height: Space.sm),
               Text(
-                'Nível ${data.level.label} · ${data.streak} ${data.streak == 1 ? 'dia seguido' : 'dias seguidos'}',
+                l10n.missionsLevelStreak(level, data.streak),
                 style: context.text.titleSmall?.copyWith(color: color),
               ),
               const SizedBox(height: Space.xs),
               Text(
                 data.streakBroken
-                    ? 'Sua sequência terminou. Vamos começar de novo hoje?'
+                    ? l10n.missionsBroken
                     : data.streak == data.level.days && data.streak > 0
-                    ? 'Parabéns! Você conquistou o nível ${data.level.label}!'
+                    ? l10n.missionsLevelUp(level)
                     : data.streak > 0
-                    ? 'Cada dia de cuidado vale uma conquista!'
-                    : 'Seu primeiro dia começa com um registro.',
+                    ? l10n.missionsKeepGoing
+                    : l10n.missionsFirstDay,
               ),
               const SizedBox(height: Space.sm),
               LinearProgressIndicator(
@@ -165,8 +168,11 @@ class _Progress extends StatelessWidget {
               const SizedBox(height: Space.xs),
               Text(
                 next == null
-                    ? 'Diamante conquistado! Continue sua sequência.'
-                    : 'Faltam ${next.days - data.streak} dias para ${next.label}',
+                    ? l10n.missionsDiamond
+                    : l10n.missionsDaysTo(
+                        next.days - data.streak,
+                        missionLevelName(l10n, next),
+                      ),
                 style: context.text.bodySmall,
               ),
             ],
@@ -203,10 +209,20 @@ class _Progress extends StatelessWidget {
           ),
         const SizedBox(height: Space.xs),
         Text(
-          'Recorde: ${data.bestStreak} ${data.bestStreak == 1 ? 'dia' : 'dias'}. Um dia sem registro reinicia a sequência.',
+          l10n.missionsRecord(data.bestStreak),
           style: context.text.bodySmall,
         ),
       ],
     );
   }
 }
+
+/// Nome do nível no idioma do app.
+String missionLevelName(AppLocalizations l10n, MissionLevel level) =>
+    switch (level) {
+      MissionLevel.beginner => l10n.levelBeginner,
+      MissionLevel.bronze => l10n.levelBronze,
+      MissionLevel.silver => l10n.levelSilver,
+      MissionLevel.gold => l10n.levelGold,
+      MissionLevel.diamond => l10n.levelDiamond,
+    };

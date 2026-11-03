@@ -159,7 +159,10 @@ class AuthRepository {
   /// Primeira visita guiada concluída (`completed`) ou dispensada (`skipped`).
   Future<Account> introTour(String status) async {
     final response = await guard(
-      () => _dio.post<Map<String, dynamic>>('me/intro-tour', data: {'status': status}),
+      () => _dio.post<Map<String, dynamic>>(
+        'me/intro-tour',
+        data: {'status': status},
+      ),
     );
     return Account.fromJson(response.data!['data'] as Map<String, dynamic>);
   }

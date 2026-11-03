@@ -21,8 +21,15 @@ class SymptomsPage extends ConsumerWidget {
     final days = ref.read(symptomDaysProvider);
     final to = DateTime.now();
     try {
-      final text = await ref.read(symptomRepositoryProvider).summary(from: to.subtract(Duration(days: days - 1)), to: to);
-      await SharePlus.instance.share(ShareParams(text: text, subject: 'Resumo de sintomas'));
+      final text = await ref
+          .read(symptomRepositoryProvider)
+          .summary(
+            from: to.subtract(Duration(days: days - 1)),
+            to: to,
+          );
+      await SharePlus.instance.share(
+        ShareParams(text: text, subject: 'Resumo de sintomas'),
+      );
     } on Object catch (e) {
       if (context.mounted) showFailure(context, e);
     }
@@ -45,7 +52,8 @@ class SymptomsPage extends ConsumerWidget {
           IconButton(
             tooltip: 'Quando procurar atendimento',
             icon: const Icon(Icons.health_and_safety_outlined),
-            onPressed: () => context.push(AppRoutes.helpArticle('sinais-de-alerta')),
+            onPressed: () =>
+                context.push(AppRoutes.helpArticle('sinais-de-alerta')),
           ),
         ],
       ),
@@ -57,7 +65,12 @@ class SymptomsPage extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () => ref.refresh(symptomTimelineProvider.future),
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(Space.page, Space.sm, Space.page, Space.fabClearance),
+          padding: const EdgeInsets.fromLTRB(
+            Space.page,
+            Space.sm,
+            Space.page,
+            Space.fabClearance,
+          ),
           children: [
             SegmentedButton<int>(
               segments: const [
@@ -66,7 +79,8 @@ class SymptomsPage extends ConsumerWidget {
                 ButtonSegment(value: 365, label: Text('1 ano')),
               ],
               selected: {days},
-              onSelectionChanged: (s) => ref.read(symptomDaysProvider.notifier).set(s.first),
+              onSelectionChanged: (s) =>
+                  ref.read(symptomDaysProvider.notifier).set(s.first),
             ),
             const SizedBox(height: Space.md),
             AsyncValueView<SymptomTimeline>(
@@ -76,7 +90,8 @@ class SymptomsPage extends ConsumerWidget {
                   ? const EmptyState(
                       icon: Icons.sentiment_satisfied_alt_outlined,
                       title: 'Nenhum sintoma no período',
-                      message: 'Registre como você está se sentindo. O histórico ajuda nas conversas com seus profissionais de saúde.',
+                      message:
+                          'Registre como você está se sentindo. O histórico ajuda nas conversas com seus profissionais de saúde.',
                     )
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -92,13 +107,19 @@ class SymptomsPage extends ConsumerWidget {
     );
   }
 
-  List<Widget> _grouped(BuildContext context, WidgetRef ref, List<SymptomItem> items) {
+  List<Widget> _grouped(
+    BuildContext context,
+    WidgetRef ref,
+    List<SymptomItem> items,
+  ) {
     final widgets = <Widget>[];
     String? lastDay;
     for (final item in items) {
       final day = Fmt.fullDate(item.occurredAt);
       if (day != lastDay) {
-        widgets.add(SectionHeader(title: day[0].toUpperCase() + day.substring(1)));
+        widgets.add(
+          SectionHeader(title: day[0].toUpperCase() + day.substring(1)),
+        );
         lastDay = day;
       }
       widgets.add(_SymptomTile(item: item));
@@ -148,7 +169,9 @@ class _SymptomTile extends ConsumerWidget {
               children: [
                 Icon(Icons.circle, size: 12, color: color),
                 const SizedBox(width: Space.sm),
-                Expanded(child: Text(item.label, style: context.text.titleSmall)),
+                Expanded(
+                  child: Text(item.label, style: context.text.titleSmall),
+                ),
                 Text(Fmt.time(item.occurredAt), style: context.text.bodySmall),
                 if (item.editable)
                   IconButton(
@@ -159,8 +182,12 @@ class _SymptomTile extends ConsumerWidget {
                   ),
               ],
             ),
-            Text('Intensidade ${item.intensityLabel}', style: context.text.bodySmall),
-            if (item.contextLabel != null) Text(item.contextLabel!, style: context.text.bodySmall),
+            Text(
+              'Intensidade ${item.intensityLabel}',
+              style: context.text.bodySmall,
+            ),
+            if (item.contextLabel != null)
+              Text(item.contextLabel!, style: context.text.bodySmall),
             if (item.notes != null && item.notes!.isNotEmpty) ...[
               const SizedBox(height: Space.xs),
               Text(item.notes!),
@@ -180,7 +207,10 @@ class _SymptomTile extends ConsumerWidget {
             if (item.warningSigns.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: Space.sm),
-                child: Text('Sinais de alerta marcados', style: context.text.labelMedium?.copyWith(color: pic.error)),
+                child: Text(
+                  'Sinais de alerta marcados',
+                  style: context.text.labelMedium?.copyWith(color: pic.error),
+                ),
               ),
           ],
         ),

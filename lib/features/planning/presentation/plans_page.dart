@@ -64,10 +64,16 @@ class PlansPage extends ConsumerWidget {
                   ],
                 )
               : ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(Space.page, Space.md, Space.page, Space.fabClearance),
+                  padding: const EdgeInsets.fromLTRB(
+                    Space.page,
+                    Space.md,
+                    Space.page,
+                    Space.fabClearance,
+                  ),
                   itemCount: list.length,
                   separatorBuilder: (_, _) => const SizedBox(height: Space.sm),
-                  itemBuilder: (context, i) => _PlanCard(plan: list[i], all: list),
+                  itemBuilder: (context, i) =>
+                      _PlanCard(plan: list[i], all: list),
                 ),
         ),
       ),
@@ -126,9 +132,12 @@ class _PlanCard extends ConsumerWidget {
     final week = await pickWeek(context);
     if (week == null || !context.mounted) return;
     try {
-      final created = await ref.read(planningRepositoryProvider).createPlan(week: week, copyFrom: plan.id);
+      final created = await ref
+          .read(planningRepositoryProvider)
+          .createPlan(week: week, copyFrom: plan.id);
       ref.invalidate(mealPlansProvider);
-      if (context.mounted) unawaited(context.push(AppRoutes.mealPlan(created.id)));
+      if (context.mounted)
+        unawaited(context.push(AppRoutes.mealPlan(created.id)));
     } on Object catch (e) {
       if (context.mounted) showFailure(context, e);
     }
@@ -138,7 +147,8 @@ class _PlanCard extends ConsumerWidget {
     final ok = await confirmAction(
       context,
       title: 'Excluir plano?',
-      message: 'O plano "${plan.title}" e sua lista de compras serão apagados. Os registros do diário continuam.',
+      message:
+          'O plano "${plan.title}" e sua lista de compras serão apagados. Os registros do diário continuam.',
       confirmLabel: 'Excluir',
       destructive: true,
     );
@@ -158,7 +168,10 @@ Future<DateTime?> pickWeek(BuildContext context) {
   final options = [
     (label: 'Esta semana', monday: thisWeek),
     (label: 'Próxima semana', monday: thisWeek.add(const Duration(days: 7))),
-    (label: 'Daqui a duas semanas', monday: thisWeek.add(const Duration(days: 14))),
+    (
+      label: 'Daqui a duas semanas',
+      monday: thisWeek.add(const Duration(days: 14)),
+    ),
   ];
   return showModalBottomSheet<DateTime>(
     context: context,
@@ -173,7 +186,9 @@ Future<DateTime?> pickWeek(BuildContext context) {
             ListTile(
               leading: const Icon(Icons.date_range_outlined),
               title: Text(o.label),
-              subtitle: Text(weekRange(o.monday, o.monday.add(const Duration(days: 6)))),
+              subtitle: Text(
+                weekRange(o.monday, o.monday.add(const Duration(days: 6))),
+              ),
               onTap: () => Navigator.of(context).pop(o.monday),
             ),
         ],
@@ -183,7 +198,11 @@ Future<DateTime?> pickWeek(BuildContext context) {
 }
 
 /// Cria um plano vazio na semana escolhida e abre o plano.
-Future<void> createPlanFlow(BuildContext context, WidgetRef ref, List<MealPlanSummary> existing) async {
+Future<void> createPlanFlow(
+  BuildContext context,
+  WidgetRef ref,
+  List<MealPlanSummary> existing,
+) async {
   final week = await pickWeek(context);
   if (week == null || !context.mounted) return;
   final already = existing.where((p) => p.startsOn == week).firstOrNull;
@@ -192,9 +211,12 @@ Future<void> createPlanFlow(BuildContext context, WidgetRef ref, List<MealPlanSu
     return;
   }
   try {
-    final created = await ref.read(planningRepositoryProvider).createPlan(week: week);
+    final created = await ref
+        .read(planningRepositoryProvider)
+        .createPlan(week: week);
     ref.invalidate(mealPlansProvider);
-    if (context.mounted) unawaited(context.push(AppRoutes.mealPlan(created.id)));
+    if (context.mounted)
+      unawaited(context.push(AppRoutes.mealPlan(created.id)));
   } on Object catch (e) {
     if (context.mounted) showFailure(context, e);
   }

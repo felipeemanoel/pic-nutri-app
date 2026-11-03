@@ -1,0 +1,10 @@
+Modo: ferramenta integrada image_gen.
+Referências: output/layout/inicio.png e assets/brand/picnutri_wordmark_green.png.
+
+1. Story vertical 9:16, campanha premium verde esmeralda, menta e marfim. Logo oficial e captura do aplicativo em mockup de celular. Texto: Sua rotina saudável começa aqui. Alimentação, água e evolução em um só app. Baixe o PicNutri no Google Play.
+
+2. Story vertical 9:16, mesma identidade, fotografia de prato equilibrado enquadrado pela câmera de um celular. Texto: Fotografou. Registrou. Registre suas refeições por foto e veja calorias e macros estimados. Baixe o PicNutri no Google Play.
+
+3. Story vertical 9:16, fundo esmeralda, captura do app no celular e copo de água. Texto: Cada registro conta. Acompanhe sua água. Registre suas refeições. Veja sua evolução. Comece hoje. Baixe no Google Play.
+
+Todos: português brasileiro, tipografia grande, selo Google Play, sem preços ou promessas de emagrecimento.

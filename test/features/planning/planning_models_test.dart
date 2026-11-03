@@ -6,12 +6,18 @@ Map<String, dynamic> _item(int id, String mealType, {String kind = 'food'}) => {
   'day': 1,
   'meal_type': mealType,
   'kind': kind,
-  'recipe': kind == 'recipe' ? {'id': 9, 'title': 'Arroz simples', 'servings': 2} : null,
-  'food': kind == 'food' ? {'id': 3, 'name': 'Banana, prata, crua', 'base_unit': 'g'} : null,
+  'recipe': kind == 'recipe'
+      ? {'id': 9, 'title': 'Arroz simples', 'servings': 2}
+      : null,
+  'food': kind == 'food'
+      ? {'id': 3, 'name': 'Banana, prata, crua', 'base_unit': 'g'}
+      : null,
   'quantity': kind == 'food' ? 100 : null,
   'servings': kind == 'recipe' ? 1.5 : null,
   'note': null,
-  'nutrients': kind == 'removed' ? null : {'energy_kcal': 98, 'protein_g': 1.3, 'carbs_g': 26, 'fat_g': 0.1},
+  'nutrients': kind == 'removed'
+      ? null
+      : {'energy_kcal': 98, 'protein_g': 1.3, 'carbs_g': 26, 'fat_g': 0.1},
 };
 
 void main() {
@@ -27,7 +33,12 @@ void main() {
           'day': 1,
           'date': '2026-10-12',
           'goal_kcal': 1800,
-          'totals': {'energy_kcal': 196, 'protein_g': 2.6, 'carbs_g': 52, 'fat_g': 0.2},
+          'totals': {
+            'energy_kcal': 196,
+            'protein_g': 2.6,
+            'carbs_g': 52,
+            'fat_g': 0.2,
+          },
           'items': [
             _item(1, 'dinner', kind: 'recipe'),
             _item(2, 'breakfast'),
@@ -53,7 +64,13 @@ void main() {
     final group = ShoppingGroup.fromJson({
       'category': 'Cereais e derivados',
       'items': [
-        {'food_id': 1, 'name': 'Arroz', 'quantity': 250, 'unit': 'g', 'checked': true},
+        {
+          'food_id': 1,
+          'name': 'Arroz',
+          'quantity': 250,
+          'unit': 'g',
+          'checked': true,
+        },
       ],
     });
     expect(group.items.single.checked, isTrue);
@@ -66,7 +83,12 @@ void main() {
           'title': 'Salada',
           'summary': null,
           'prep_minutes': 10,
-          'per_serving': {'energy_kcal': 120, 'protein_g': 3, 'carbs_g': 10, 'fat_g': 7},
+          'per_serving': {
+            'energy_kcal': 120,
+            'protein_g': 3,
+            'carbs_g': 10,
+            'fat_g': 7,
+          },
         },
       ],
     });

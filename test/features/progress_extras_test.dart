@@ -2,8 +2,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:picnutri/features/progress/data/body_models.dart';
 
 void main() {
-  Map<String, dynamic> progressJson({Map<String, dynamic>? trend, List<Map<String, dynamic>> doses = const []}) => {
-    'weight': {'series': <dynamic>[], 'change_kg': null, 'previous_period_change_kg': null},
+  Map<String, dynamic> progressJson({
+    Map<String, dynamic>? trend,
+    List<Map<String, dynamic>> doses = const [],
+  }) => {
+    'weight': {
+      'series': <dynamic>[],
+      'change_kg': null,
+      'previous_period_change_kg': null,
+    },
     'goal': null,
     'bmi': {'available': false, 'reason': 'missing_data', 'note': ''},
     'measurements': <dynamic>[],
@@ -19,11 +26,20 @@ void main() {
           'weekly_change_kg': -0.5,
           'direction': 'down',
           'fast_change': false,
-          'goal_estimate': {'goal_weight_kg': 76, 'date': '2026-12-25', 'weeks': 9},
+          'goal_estimate': {
+            'goal_weight_kg': 76,
+            'date': '2026-12-25',
+            'weeks': 9,
+          },
           'note': 'Estimativa feita só com os seus registros',
         },
         doses: [
-          {'date': '2026-10-20', 'taken_at': '2026-10-20T11:00:00Z', 'medication': 'Semaglutida', 'dose': '0,25 mg'},
+          {
+            'date': '2026-10-20',
+            'taken_at': '2026-10-20T11:00:00Z',
+            'medication': 'Semaglutida',
+            'dose': '0,25 mg',
+          },
         ],
       ),
     );
@@ -36,7 +52,13 @@ void main() {
 
   test('sem dados suficientes, a tendência traz só a orientação', () {
     final p = BodyProgress.fromJson(
-      progressJson(trend: {'available': false, 'reason': 'not_enough_data', 'message': 'Registre o peso'}),
+      progressJson(
+        trend: {
+          'available': false,
+          'reason': 'not_enough_data',
+          'message': 'Registre o peso',
+        },
+      ),
     );
     expect(p.trend.available, isFalse);
     expect(p.trend.message, 'Registre o peso');
@@ -45,7 +67,9 @@ void main() {
   });
 
   test('versão antiga da API (sem tendência) não quebra', () {
-    final json = progressJson()..remove('trend')..remove('doses');
+    final json = progressJson()
+      ..remove('trend')
+      ..remove('doses');
     final p = BodyProgress.fromJson(json);
     expect(p.trend.available, isFalse);
   });

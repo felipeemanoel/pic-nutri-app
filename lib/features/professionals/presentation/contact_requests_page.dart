@@ -40,7 +40,8 @@ class ContactRequestsPage extends ConsumerWidget {
                     EmptyState(
                       icon: Icons.inbox_outlined,
                       title: 'Nenhuma solicitação',
-                      message: 'Quando você pedir contato a um profissional, a resposta aparece aqui.',
+                      message:
+                          'Quando você pedir contato a um profissional, a resposta aparece aqui.',
                     ),
                   ],
                 )
@@ -93,16 +94,26 @@ class _RequestCard extends ConsumerWidget {
       _ => (pic.textSecondary, Icons.block),
     };
     return AppCard(
-      onTap: item.professionalId.isEmpty ? null : () => context.push(AppRoutes.professional(item.professionalId)),
+      onTap: item.professionalId.isEmpty
+          ? null
+          : () => context.push(AppRoutes.professional(item.professionalId)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Expanded(child: Text(item.professionalName, style: context.text.titleMedium)),
+              Expanded(
+                child: Text(
+                  item.professionalName,
+                  style: context.text.titleMedium,
+                ),
+              ),
               Icon(icon, size: 18, color: color),
               const SizedBox(width: Space.xs),
-              Text(item.statusLabel, style: context.text.labelMedium?.copyWith(color: color)),
+              Text(
+                item.statusLabel,
+                style: context.text.labelMedium?.copyWith(color: color),
+              ),
             ],
           ),
           Text(
@@ -126,7 +137,10 @@ class _RequestCard extends ConsumerWidget {
           if (item.pending)
             Align(
               alignment: Alignment.centerRight,
-              child: TextButton(onPressed: () => _cancel(context, ref), child: const Text('Cancelar')),
+              child: TextButton(
+                onPressed: () => _cancel(context, ref),
+                child: const Text('Cancelar'),
+              ),
             ),
         ],
       ),

@@ -22,19 +22,29 @@ class ReportRepository {
 
   Future<PeriodReport> summary(ReportQuery q) async {
     final response = await guard(
-      () => _dio.get<Map<String, dynamic>>('reports/summary', queryParameters: _params(q)),
+      () => _dio.get<Map<String, dynamic>>(
+        'reports/summary',
+        queryParameters: _params(q),
+      ),
     );
-    return PeriodReport.fromJson(response.data!['data'] as Map<String, dynamic>);
+    return PeriodReport.fromJson(
+      response.data!['data'] as Map<String, dynamic>,
+    );
   }
 
   /// Baixa o PDF para consulta dos últimos [days] dias (recurso do plano).
   Future<void> consultationPdf(int days, String savePath) => guard(
-    () => _dio.download('reports/consultation', savePath, queryParameters: {'days': days}),
+    () => _dio.download(
+      'reports/consultation',
+      savePath,
+      queryParameters: {'days': days},
+    ),
   );
 
   /// Baixa o CSV do período para [savePath] (recurso do plano).
   Future<void> export(ReportQuery q, String savePath) => guard(
-    () => _dio.download('reports/export', savePath, queryParameters: _params(q)),
+    () =>
+        _dio.download('reports/export', savePath, queryParameters: _params(q)),
   );
 }
 

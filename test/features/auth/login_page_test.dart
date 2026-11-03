@@ -12,6 +12,7 @@ import 'package:picnutri/features/auth/application/session_controller.dart';
 import 'package:picnutri/features/auth/data/social_sign_in.dart';
 import 'package:picnutri/features/content/data/article_models.dart';
 import 'package:picnutri/features/content/data/article_repository.dart';
+import 'package:picnutri/features/engagement/data/daily_missions.dart';
 import 'package:picnutri/features/food/data/food_repository.dart';
 import 'package:picnutri/features/food/data/nutrition_models.dart';
 import 'package:picnutri/features/help/data/help_repository.dart';
@@ -160,6 +161,16 @@ void main() {
                 'upcoming_events': <Object>[],
                 'recent_sessions': <Object>[],
               }),
+            ),
+            // Missões do dia (Início) sem API: sem o override, o esqueleto de
+            // carregamento fica animando e o pumpAndSettle não termina.
+            dailyMissionsProvider.overrideWith(
+              (ref) async => const DailyMissions(
+                streak: 0,
+                bestStreak: 0,
+                streakBroken: false,
+                missions: [],
+              ),
             ),
             // Sem API nos testes: o painel recebe um dia vazio.
             dashboardProvider.overrideWith(

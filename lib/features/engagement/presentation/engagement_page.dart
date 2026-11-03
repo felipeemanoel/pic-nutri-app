@@ -23,7 +23,12 @@ class EngagementPage extends ConsumerWidget {
           value: value,
           onRetry: () => ref.invalidate(engagementProvider),
           data: (data) => ListView(
-            padding: const EdgeInsets.fromLTRB(Space.page, Space.md, Space.page, Space.xxl),
+            padding: const EdgeInsets.fromLTRB(
+              Space.page,
+              Space.md,
+              Space.page,
+              Space.xxl,
+            ),
             children: [
               _StatsCard(data: data),
               const SectionHeader(title: 'Desafios'),
@@ -46,8 +51,12 @@ class EngagementPage extends ConsumerWidget {
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: Icon(
-                      c.isCompleted ? Icons.check_circle_rounded : Icons.history_rounded,
-                      color: c.isCompleted ? context.pic.success : context.pic.textSecondary,
+                      c.isCompleted
+                          ? Icons.check_circle_rounded
+                          : Icons.history_rounded,
+                      color: c.isCompleted
+                          ? context.pic.success
+                          : context.pic.textSecondary,
                     ),
                     title: Text(c.title),
                     subtitle: Text(
@@ -56,7 +65,8 @@ class EngagementPage extends ConsumerWidget {
                   ),
               ],
               SectionHeader(
-                title: 'Conquistas (${data.unlocked.length}/${data.achievements.length})',
+                title:
+                    'Conquistas (${data.unlocked.length}/${data.achievements.length})',
               ),
               _AchievementGrid(items: data.achievements),
             ],
@@ -88,15 +98,35 @@ class _StatsCard extends StatelessWidget {
         const SizedBox(height: Space.lg),
         Row(
           children: [
-            Expanded(child: _Stat(label: 'Sequência atual', value: dayCount(data.currentStreak))),
-            Expanded(child: _Stat(label: 'Melhor sequência', value: dayCount(data.bestStreak))),
+            Expanded(
+              child: _Stat(
+                label: 'Sequência atual',
+                value: dayCount(data.currentStreak),
+              ),
+            ),
+            Expanded(
+              child: _Stat(
+                label: 'Melhor sequência',
+                value: dayCount(data.bestStreak),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: Space.md),
         Row(
           children: [
-            Expanded(child: _Stat(label: 'Últimos 7 dias', value: '${data.last7Days}/7')),
-            Expanded(child: _Stat(label: 'Últimos 30 dias', value: '${data.last30Days}/30')),
+            Expanded(
+              child: _Stat(
+                label: 'Últimos 7 dias',
+                value: '${data.last7Days}/7',
+              ),
+            ),
+            Expanded(
+              child: _Stat(
+                label: 'Últimos 30 dias',
+                value: '${data.last30Days}/30',
+              ),
+            ),
           ],
         ),
         const SizedBox(height: Space.sm),
@@ -143,13 +173,16 @@ class _ActiveChallengeState extends ConsumerState<_ActiveChallenge> {
     final ok = await confirmAction(
       context,
       title: 'Desistir do desafio?',
-      message: 'O progresso deste desafio será encerrado. Você pode começar de novo depois.',
+      message:
+          'O progresso deste desafio será encerrado. Você pode começar de novo depois.',
       confirmLabel: 'Desistir',
     );
     if (!ok || !mounted) return;
     setState(() => _busy = true);
     try {
-      await ref.read(engagementRepositoryProvider).abandonChallenge(widget.challenge.id);
+      await ref
+          .read(engagementRepositoryProvider)
+          .abandonChallenge(widget.challenge.id);
       ref.invalidate(engagementProvider);
     } on Object catch (e) {
       if (mounted) showFailure(context, e);
@@ -192,7 +225,8 @@ class _AvailableChallenge extends ConsumerStatefulWidget {
   final ChallengeOption option;
 
   @override
-  ConsumerState<_AvailableChallenge> createState() => _AvailableChallengeState();
+  ConsumerState<_AvailableChallenge> createState() =>
+      _AvailableChallengeState();
 }
 
 class _AvailableChallengeState extends ConsumerState<_AvailableChallenge> {
@@ -201,7 +235,9 @@ class _AvailableChallengeState extends ConsumerState<_AvailableChallenge> {
   Future<void> _start() async {
     setState(() => _busy = true);
     try {
-      await ref.read(engagementRepositoryProvider).startChallenge(widget.option.code);
+      await ref
+          .read(engagementRepositoryProvider)
+          .startChallenge(widget.option.code);
       ref.invalidate(engagementProvider);
       if (mounted) showMessage(context, 'Desafio iniciado. Bons registros!');
     } on Object catch (e) {
@@ -249,7 +285,10 @@ class _AchievementGrid extends StatelessWidget {
         runSpacing: Space.sm,
         children: [
           for (final a in items)
-            SizedBox(width: width, child: _AchievementTile(item: a)),
+            SizedBox(
+              width: width,
+              child: _AchievementTile(item: a),
+            ),
         ],
       );
     },
@@ -266,7 +305,8 @@ class _AchievementTile extends StatelessWidget {
     final pic = context.pic;
     final on = item.achieved;
     return Semantics(
-      label: '${item.title}: ${item.description} ${on ? 'Conquistada.' : 'Ainda não conquistada.'}',
+      label:
+          '${item.title}: ${item.description} ${on ? 'Conquistada.' : 'Ainda não conquistada.'}',
       excludeSemantics: true,
       child: Tooltip(
         message: item.description,

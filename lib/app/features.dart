@@ -16,4 +16,12 @@ abstract final class AppFeatures {
     'FEATURE_MEDICAL',
     defaultValue: true,
   );
+
+  /// Seletor de idioma no login, no início do cadastro e no Perfil.
+  /// Desligar (`FEATURE_LANGUAGES=false`) esconde o seletor e mantém o app
+  /// no idioma do aparelho.
+  static const languages = bool.fromEnvironment(
+    'FEATURE_LANGUAGES',
+    defaultValue: true,
+  );
 }

@@ -36,8 +36,7 @@ class WeeklySummaryText {
 
   String get status => report.inProgress ? 'Em andamento' : 'Concluída';
 
-  String get title =>
-      report.inProgress ? 'Sua semana' : 'Resumo da semana';
+  String get title => report.inProgress ? 'Sua semana' : 'Resumo da semana';
 
   String get daysLogged {
     final n = report.summary.daysLogged;

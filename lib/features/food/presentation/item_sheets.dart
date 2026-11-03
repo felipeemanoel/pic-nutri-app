@@ -113,7 +113,10 @@ class _QuantitySheetState extends State<_QuantitySheet> {
             ),
             if (food.portions.isNotEmpty) ...[
               const SizedBox(height: 12),
-              Text('Medidas caseiras', style: Theme.of(context).textTheme.labelLarge),
+              Text(
+                'Medidas caseiras',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
               const SizedBox(height: 4),
               Wrap(
                 spacing: 8,
@@ -121,7 +124,9 @@ class _QuantitySheetState extends State<_QuantitySheet> {
                 children: [
                   for (final p in food.portions)
                     ActionChip(
-                      label: Text('${p.label} (${Fmt.decimal(p.grams)} ${food.baseUnit})'),
+                      label: Text(
+                        '${p.label} (${Fmt.decimal(p.grams)} ${food.baseUnit})',
+                      ),
                       onPressed: () => setState(() {
                         _unit = food.baseUnit;
                         _quantity.text = Fmt.decimal(p.grams);

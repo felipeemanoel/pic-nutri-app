@@ -33,12 +33,18 @@ class EngagementRepository {
       guard(() => _dio.post<void>('engagement/achievements/seen'));
 
   Future<List<Celebration>> celebrations() async {
-    final response = await guard(() => _dio.get<Map<String, dynamic>>('engagement/celebrations'));
-    return (response.data!['data'] as List<dynamic>).cast<Map<String, dynamic>>().map(Celebration.fromJson).toList();
+    final response = await guard(
+      () => _dio.get<Map<String, dynamic>>('engagement/celebrations'),
+    );
+    return (response.data!['data'] as List<dynamic>)
+        .cast<Map<String, dynamic>>()
+        .map(Celebration.fromJson)
+        .toList();
   }
 
-  Future<void> markCelebrationsSeen(List<String> keys) =>
-      guard(() => _dio.post<void>('engagement/celebrations/seen', data: {'keys': keys}));
+  Future<void> markCelebrationsSeen(List<String> keys) => guard(
+    () => _dio.post<void>('engagement/celebrations/seen', data: {'keys': keys}),
+  );
 }
 
 final engagementRepositoryProvider = Provider<EngagementRepository>((ref) {

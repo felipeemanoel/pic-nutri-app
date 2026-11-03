@@ -41,9 +41,17 @@ class _Body extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = professional;
     final price = priceLabel(p);
-    final place = [p.neighborhood, p.place].whereType<String>().where((s) => s.isNotEmpty).join(', ');
+    final place = [
+      p.neighborhood,
+      p.place,
+    ].whereType<String>().where((s) => s.isNotEmpty).join(', ');
     return ListView(
-      padding: const EdgeInsets.fromLTRB(Space.page, Space.sm, Space.page, Space.xxl),
+      padding: const EdgeInsets.fromLTRB(
+        Space.page,
+        Space.sm,
+        Space.page,
+        Space.xxl,
+      ),
       children: [
         Text(p.name, style: context.text.headlineSmall),
         Text(p.categoryLabel, style: context.text.bodyMedium),
@@ -58,15 +66,29 @@ class _Body extends StatelessWidget {
           Wrap(
             spacing: Space.xs,
             runSpacing: Space.xs,
-            children: [for (final s in p.specialties) Chip(label: Text(s.label))],
+            children: [
+              for (final s in p.specialties) Chip(label: Text(s.label)),
+            ],
           ),
         ],
         const SectionHeader(title: 'Atendimento'),
-        _Line(icon: Icons.videocam_outlined, text: p.modalities.map(modalityLabel).join(' e ')),
-        if (p.inPerson && place.isNotEmpty) _Line(icon: Icons.place_outlined, text: place),
+        _Line(
+          icon: Icons.videocam_outlined,
+          text: p.modalities.map(modalityLabel).join(' e '),
+        ),
+        if (p.inPerson && place.isNotEmpty)
+          _Line(icon: Icons.place_outlined, text: place),
         if (p.distanceKm != null)
-          _Line(icon: Icons.near_me_outlined, text: 'Cerca de ${p.distanceKm!.toStringAsFixed(1).replaceAll('.', ',')} km de você'),
-        if (price != null) _Line(icon: Icons.payments_outlined, text: 'Valor informado pelo profissional: $price'),
+          _Line(
+            icon: Icons.near_me_outlined,
+            text:
+                'Cerca de ${p.distanceKm!.toStringAsFixed(1).replaceAll('.', ',')} km de você',
+          ),
+        if (price != null)
+          _Line(
+            icon: Icons.payments_outlined,
+            text: 'Valor informado pelo profissional: $price',
+          ),
         if (p.availabilityNotes != null && p.availabilityNotes!.isNotEmpty)
           _Line(icon: Icons.schedule_outlined, text: p.availabilityNotes!),
         const SizedBox(height: Space.lg),
@@ -79,7 +101,8 @@ class _Body extends StatelessWidget {
         if (p.hasPendingRequest) ...[
           const StatusBanner(
             tone: BannerTone.success,
-            message: 'Solicitação enviada. Você será avisado quando o profissional responder.',
+            message:
+                'Solicitação enviada. Você será avisado quando o profissional responder.',
           ),
           const SizedBox(height: Space.sm),
           OutlinedButton(
@@ -89,7 +112,8 @@ class _Body extends StatelessWidget {
         ] else if (!p.acceptsNewClients)
           const StatusBanner(
             tone: BannerTone.warning,
-            message: 'Este profissional não está aceitando novos atendimentos no momento.',
+            message:
+                'Este profissional não está aceitando novos atendimentos no momento.',
           )
         else
           FilledButton.icon(
@@ -136,7 +160,8 @@ class ContactRequestSheet extends ConsumerStatefulWidget {
   final Professional professional;
 
   @override
-  ConsumerState<ContactRequestSheet> createState() => _ContactRequestSheetState();
+  ConsumerState<ContactRequestSheet> createState() =>
+      _ContactRequestSheetState();
 }
 
 class _ContactRequestSheetState extends ConsumerState<ContactRequestSheet> {
@@ -163,7 +188,10 @@ class _ContactRequestSheetState extends ConsumerState<ContactRequestSheet> {
 
   bool get _valid =>
       _shareContact &&
-      (!_shareData || (_categories.isNotEmpty && _purpose.text.trim().length >= 5 && _shareConsent));
+      (!_shareData ||
+          (_categories.isNotEmpty &&
+              _purpose.text.trim().length >= 5 &&
+              _shareConsent));
 
   Future<void> _send() async {
     setState(() {
@@ -172,22 +200,31 @@ class _ContactRequestSheetState extends ConsumerState<ContactRequestSheet> {
     });
     final p = widget.professional;
     try {
-      await ref.read(professionalRepositoryProvider).requestContact(
-        p.id,
-        modality: _modality,
-        requestId: _requestId,
-        message: _message.text.trim().isEmpty ? null : _message.text.trim(),
-        phone: _phone.text.trim().isEmpty ? null : _phone.text.trim(),
-        share: _shareData
-            ? ShareRequest(categories: _categories.toList(), purpose: _purpose.text.trim(), days: _days)
-            : null,
-      );
+      await ref
+          .read(professionalRepositoryProvider)
+          .requestContact(
+            p.id,
+            modality: _modality,
+            requestId: _requestId,
+            message: _message.text.trim().isEmpty ? null : _message.text.trim(),
+            phone: _phone.text.trim().isEmpty ? null : _phone.text.trim(),
+            share: _shareData
+                ? ShareRequest(
+                    categories: _categories.toList(),
+                    purpose: _purpose.text.trim(),
+                    days: _days,
+                  )
+                : null,
+          );
       ref
         ..invalidate(professionalProvider(p.id))
         ..invalidate(contactRequestsProvider)
         ..invalidate(shareGrantsProvider);
       if (!mounted) return;
-      showMessage(context, 'Solicitação enviada. Você será avisado quando ${p.name} responder.');
+      showMessage(
+        context,
+        'Solicitação enviada. Você será avisado quando ${p.name} responder.',
+      );
       Navigator.of(context).pop();
     } on Object catch (e) {
       // A folha cobre a tela: o erro aparece nela, não num aviso por baixo.
@@ -200,9 +237,14 @@ class _ContactRequestSheetState extends ConsumerState<ContactRequestSheet> {
   @override
   Widget build(BuildContext context) {
     final p = widget.professional;
-    final healthConsent = ref.watch(currentAccountProvider)?.consents.healthData ?? false;
-    final shareOptions = ref.watch(professionalsMetaProvider).value?.shareCategories ?? const <ValueLabel>[];
-    final chosen = shareOptions.where((o) => _categories.contains(o.value)).map((o) => o.label.toLowerCase());
+    final healthConsent =
+        ref.watch(currentAccountProvider)?.consents.healthData ?? false;
+    final shareOptions =
+        ref.watch(professionalsMetaProvider).value?.shareCategories ??
+        const <ValueLabel>[];
+    final chosen = shareOptions
+        .where((o) => _categories.contains(o.value))
+        .map((o) => o.label.toLowerCase());
 
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
@@ -210,17 +252,26 @@ class _ContactRequestSheetState extends ConsumerState<ContactRequestSheet> {
         shrinkWrap: true,
         padding: const EdgeInsets.fromLTRB(Space.page, 0, Space.page, Space.xl),
         children: [
-          Text('Solicitar contato com ${p.name}', style: context.text.titleMedium),
+          Text(
+            'Solicitar contato com ${p.name}',
+            style: context.text.titleMedium,
+          ),
           const SizedBox(height: Space.md),
           if (p.modalities.length > 1)
             SegmentedButton<String>(
-              segments: [for (final m in p.modalities) ButtonSegment(value: m, label: Text(modalityLabel(m)))],
+              segments: [
+                for (final m in p.modalities)
+                  ButtonSegment(value: m, label: Text(modalityLabel(m))),
+              ],
               selected: {_modality},
               showSelectedIcon: false,
               onSelectionChanged: (s) => setState(() => _modality = s.first),
             )
           else
-            Text('Atendimento ${modalityLabel(_modality).toLowerCase()}', style: context.text.bodyMedium),
+            Text(
+              'Atendimento ${modalityLabel(_modality).toLowerCase()}',
+              style: context.text.bodyMedium,
+            ),
           const SizedBox(height: Space.md),
           TextField(
             controller: _message,
@@ -235,21 +286,29 @@ class _ContactRequestSheetState extends ConsumerState<ContactRequestSheet> {
           TextField(
             controller: _phone,
             keyboardType: TextInputType.phone,
-            decoration: const InputDecoration(labelText: 'Telefone para contato (opcional)'),
+            decoration: const InputDecoration(
+              labelText: 'Telefone para contato (opcional)',
+            ),
           ),
           const SizedBox(height: Space.sm),
           CheckboxListTile(
             contentPadding: EdgeInsets.zero,
             value: _shareContact,
             onChanged: (v) => setState(() => _shareContact = v ?? false),
-            title: Text('Autorizo enviar meu nome, e-mail e o telefone informado a ${p.name} para responder esta solicitação.'),
+            title: Text(
+              'Autorizo enviar meu nome, e-mail e o telefone informado a ${p.name} para responder esta solicitação.',
+            ),
           ),
           const Divider(),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             value: _shareData && healthConsent,
-            onChanged: healthConsent ? (v) => setState(() => _shareData = v) : null,
-            title: const Text('Compartilhar também dados do PicNutri (opcional)'),
+            onChanged: healthConsent
+                ? (v) => setState(() => _shareData = v)
+                : null,
+            title: const Text(
+              'Compartilhar também dados do PicNutri (opcional)',
+            ),
             subtitle: Text(
               healthConsent
                   ? 'Você escolhe quais dados, para quê e por quanto tempo. Pode revogar quando quiser.'
@@ -308,7 +367,11 @@ class _ContactRequestSheetState extends ConsumerState<ContactRequestSheet> {
             StatusBanner(tone: BannerTone.error, message: _error!),
             const SizedBox(height: Space.sm),
           ],
-          LoadingButton(label: 'Enviar solicitação', loading: _sending, onPressed: _valid ? _send : null),
+          LoadingButton(
+            label: 'Enviar solicitação',
+            loading: _sending,
+            onPressed: _valid ? _send : null,
+          ),
         ],
       ),
     );

@@ -202,10 +202,7 @@ void main() {
     await tester.tap(find.text('Continuar com Google'));
     await tester.pump();
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    await tester.tap(
-      find.text('Continuar com Facebook'),
-      warnIfMissed: false,
-    );
+    await tester.tap(find.text('Continuar com Facebook'), warnIfMissed: false);
     await tester.pumpAndSettle();
 
     expect(social.calls, 1);

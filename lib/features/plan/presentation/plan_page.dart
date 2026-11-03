@@ -216,11 +216,15 @@ class _StoreSectionState extends ConsumerState<_StoreSection> {
       );
     }
     if (products.isLoading) {
-      return const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator()));
+      return const Padding(
+        padding: EdgeInsets.all(16),
+        child: Center(child: CircularProgressIndicator()),
+      );
     }
 
     final store = ref.read(storePurchasesProvider);
-    final fromStore = c.store.source == 'google_play' || c.store.source == 'app_store';
+    final fromStore =
+        c.store.source == 'google_play' || c.store.source == 'app_store';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -240,7 +244,9 @@ class _StoreSectionState extends ConsumerState<_StoreSection> {
               title: Text(p.title),
               subtitle: Text(p.description),
               trailing: FilledButton(
-                onPressed: _busy || fromStore ? null : () => _run(() => store.buy(p)),
+                onPressed: _busy || fromStore
+                    ? null
+                    : () => _run(() => store.buy(p)),
                 child: Text(p.price),
               ),
             ),

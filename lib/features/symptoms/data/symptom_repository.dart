@@ -13,11 +13,16 @@ class SymptomRepository {
   final Dio _dio;
 
   Future<SymptomOptions> options() async {
-    final r = await guard(() => _dio.get<Map<String, dynamic>>('symptoms/options'));
+    final r = await guard(
+      () => _dio.get<Map<String, dynamic>>('symptoms/options'),
+    );
     return SymptomOptions.fromJson(r.data!['data'] as Map<String, dynamic>);
   }
 
-  Future<SymptomTimeline> timeline({required DateTime from, required DateTime to}) async {
+  Future<SymptomTimeline> timeline({
+    required DateTime from,
+    required DateTime to,
+  }) async {
     final r = await guard(
       () => _dio.get<Map<String, dynamic>>(
         'symptoms',
@@ -26,7 +31,10 @@ class SymptomRepository {
     );
     final meta = r.data!['meta'] as Map<String, dynamic>? ?? const {};
     return SymptomTimeline(
-      items: (r.data!['data'] as List<dynamic>).cast<Map<String, dynamic>>().map(SymptomItem.fromJson).toList(),
+      items: (r.data!['data'] as List<dynamic>)
+          .cast<Map<String, dynamic>>()
+          .map(SymptomItem.fromJson)
+          .toList(),
       nearbyNote: meta['nearby_note'] as String? ?? '',
     );
   }
@@ -61,7 +69,8 @@ class SymptomRepository {
     return safety is Map<String, dynamic> ? SafetyAlert.fromJson(safety) : null;
   }
 
-  Future<void> delete(String id) => guard(() => _dio.delete<void>('symptoms/$id'));
+  Future<void> delete(String id) =>
+      guard(() => _dio.delete<void>('symptoms/$id'));
 
   /// Texto do resumo do período, para o usuário compartilhar se quiser.
   Future<String> summary({required DateTime from, required DateTime to}) async {
@@ -98,7 +107,12 @@ class SymptomDays extends Notifier<int> {
 final symptomTimelineProvider = FutureProvider<SymptomTimeline>((ref) {
   final days = ref.watch(symptomDaysProvider);
   final to = DateTime.now();
-  return ref.watch(symptomRepositoryProvider).timeline(from: to.subtract(Duration(days: days - 1)), to: to);
+  return ref
+      .watch(symptomRepositoryProvider)
+      .timeline(
+        from: to.subtract(Duration(days: days - 1)),
+        to: to,
+      );
 });
 
 /// Sintomas dos últimos 90 dias, marcados no gráfico de nível estimado.

@@ -156,13 +156,16 @@ class _PrivacyPageState extends ConsumerState<PrivacyPage> {
             value: account.consents.healthData,
             onChanged: _busy ? null : _toggleHealthConsent,
           ),
-          if (AppFeatures.medical) ListTile(
-            leading: const Icon(Icons.share_outlined),
-            title: const Text('Compartilhamentos com profissionais'),
-            subtitle: const Text('Quem pode ver seus dados, até quando, e revogar'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(AppRoutes.shareGrants),
-          ),
+          if (AppFeatures.medical)
+            ListTile(
+              leading: const Icon(Icons.share_outlined),
+              title: const Text('Compartilhamentos com profissionais'),
+              subtitle: const Text(
+                'Quem pode ver seus dados, até quando, e revogar',
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push(AppRoutes.shareGrants),
+            ),
           const Divider(),
           const _Header('Exportar meus dados'),
           Padding(

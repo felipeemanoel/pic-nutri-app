@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/routes.dart';
 import '../../../core/design/design_system.dart';
+import '../../../core/i18n/l10n.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/request_id.dart';
 import '../../../shared/state/refresh.dart';
@@ -50,7 +51,7 @@ class HomePage extends ConsumerWidget {
         heroTag: 'home-register',
         onPressed: () => _registerToday(context, ref),
         icon: const Icon(Icons.add_rounded),
-        label: const Text('Registrar'),
+        label: Text(context.l10n.homeRegister),
       ),
       body: SafeArea(
         bottom: false,
@@ -111,11 +112,12 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hour = DateTime.now().hour;
+    final l10n = context.l10n;
     final greeting = hour < 12
-        ? 'Bom dia'
+        ? l10n.homeGoodMorning
         : hour < 18
-        ? 'Boa tarde'
-        : 'Boa noite';
+        ? l10n.homeGoodAfternoon
+        : l10n.homeGoodEvening;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -127,7 +129,7 @@ class _Header extends StatelessWidget {
         Semantics(
           header: true,
           child: Text(
-            name.isEmpty ? greeting : '$greeting, $name',
+            name.isEmpty ? greeting : l10n.homeGreetingName(greeting, name),
             style: context.text.headlineMedium?.copyWith(
               fontWeight: FontWeight.w800,
               letterSpacing: -1,
@@ -135,7 +137,7 @@ class _Header extends StatelessWidget {
           ),
         ),
         const SizedBox(height: Space.xs),
-        Text('Cada pequeno cuidado conta.', style: context.text.bodyLarge),
+        Text(l10n.homeTagline, style: context.text.bodyLarge),
       ],
     );
   }
@@ -147,19 +149,20 @@ class _QuickActions extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final actions = [
       (
         Icons.photo_camera_outlined,
-        'Fotografar prato',
+        l10n.homeQuickPhoto,
         () {
           ref.read(selectedDateProvider.notifier).goToday();
           context.push('${AppRoutes.mealPhoto}?source=camera');
         },
       ),
-      (Icons.restaurant_rounded, 'Refeição', onMeal),
+      (Icons.restaurant_rounded, l10n.homeQuickMeal, onMeal),
       (
         Icons.water_drop_outlined,
-        'Beber água',
+        l10n.homeQuickWater,
         () => context.push(AppRoutes.water),
       ),
     ];
@@ -249,10 +252,10 @@ class _DashboardBody extends ConsumerWidget {
           const SizedBox(height: Space.md),
         ],
         ExpandableHomeCard(
-          title: 'Sua evolução',
+          title: context.l10n.homeYourProgress,
           summary: data.weight == null
-              ? 'Acompanhe seu peso e suas fotos'
-              : 'Peso atual: ${Fmt.kg(data.weight!.latestKg)}',
+              ? context.l10n.homeProgressEmpty
+              : context.l10n.homeCurrentWeight(Fmt.kg(data.weight!.latestKg)),
           icon: Icons.trending_up_rounded,
           child: Column(
             children: [
@@ -284,8 +287,10 @@ class _DashboardBody extends ConsumerWidget {
 
 /// Próximo passo do Início: o que falta, sem repetir os números dos cartões.
 ({String title, String message, String? action, String? route}) homeNextStep(
-  Dashboard data,
-) {
+  Dashboard data, [
+  AppLocalizations? l10n,
+]) {
+  final t = l10n ?? lookupAppLocalizations(const Locale('pt'));
   final n = data.nutrition;
   final proteinGoal = n.goalProteinG;
   final hasProteinGoal = proteinGoal != null && proteinGoal > 0;
@@ -293,33 +298,31 @@ class _DashboardBody extends ConsumerWidget {
   // Registrar refeição já é o botão principal do cartão acima: não se repete aqui.
   if (waterGoal > 0 && data.waterTotalMl < waterGoal) {
     return (
-      title: 'Faltam ${Fmt.ml(waterGoal - data.waterTotalMl)} de água',
-      message: 'Um copo de cada vez já ajuda.',
-      action: 'Registrar água',
+      title: t.homeNextWater(Fmt.ml(waterGoal - data.waterTotalMl)),
+      message: t.homeNextWaterMessage,
+      action: t.homeLogWater,
       route: AppRoutes.water,
     );
   }
   if (hasProteinGoal && n.totals.proteinG < proteinGoal) {
     return (
-      title:
-          'Faltam ${Fmt.grams(proteinGoal - n.totals.proteinG)} de proteínas',
-      message: 'Veja ideias de receitas com boas fontes de proteína.',
-      action: 'Ver receitas',
+      title: t.homeNextProtein(Fmt.grams(proteinGoal - n.totals.proteinG)),
+      message: t.homeNextProteinMessage,
+      action: t.homeSeeRecipes,
       route: AppRoutes.recipes,
     );
   }
   if (waterGoal <= 0 || !hasProteinGoal) {
     return (
-      title: 'Defina suas metas',
-      message:
-          'Com metas de água e proteínas, o app mostra o que falta a cada dia.',
-      action: 'Definir metas',
+      title: t.homeSetGoalsTitle,
+      message: t.homeSetGoalsMessage,
+      action: t.homeSetGoalsAction,
       route: AppRoutes.editProfile,
     );
   }
   return (
-    title: 'Metas de água e proteínas alcançadas',
-    message: 'Cada cuidado conta. Continue no seu ritmo.',
+    title: t.homeGoalsReached,
+    message: t.homeGoalsReachedMessage,
     action: null,
     route: null,
   );
@@ -334,7 +337,7 @@ class _DailyCareCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final step = homeNextStep(data);
+    final step = homeNextStep(data, context.l10n);
     final done = step.action == null;
     return AppCard(
       child: Row(
@@ -472,7 +475,7 @@ class _CaloriesCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(30),
           ),
           child: Text(
-            n.mealsCount == 1 ? '1 refeição' : '${n.mealsCount} refeições',
+            context.l10n.homeMealsCount(n.mealsCount),
             style: context.text.labelMedium?.copyWith(
               color: context.pic.onBrandContainer,
             ),
@@ -480,8 +483,8 @@ class _CaloriesCard extends StatelessWidget {
         ),
         const SizedBox(height: Space.md),
         _MacroBar(
-          label: 'Carboidratos',
-          semanticsName: 'Carboidratos',
+          label: context.l10n.nutrientCarbs,
+          semanticsName: context.l10n.nutrientCarbs,
           grams: n.totals.carbsG,
           goal: n.goalCarbsG,
           color: context.colors.primary,
@@ -489,8 +492,8 @@ class _CaloriesCard extends StatelessWidget {
         ),
         const SizedBox(height: Space.md),
         _MacroBar(
-          label: 'Proteínas',
-          semanticsName: 'Proteínas',
+          label: context.l10n.nutrientProtein,
+          semanticsName: context.l10n.nutrientProtein,
           grams: n.totals.proteinG,
           goal: n.goalProteinG,
           color: context.pic.water,
@@ -498,8 +501,8 @@ class _CaloriesCard extends StatelessWidget {
         ),
         const SizedBox(height: Space.md),
         _MacroBar(
-          label: 'Gorduras',
-          semanticsName: 'Gorduras',
+          label: context.l10n.nutrientFat,
+          semanticsName: context.l10n.nutrientFat,
           grams: n.totals.fatG,
           goal: n.goalFatG,
           color: context.pic.success,
@@ -516,7 +519,7 @@ class _CaloriesCard extends StatelessWidget {
           Semantics(
             header: true,
             child: Text(
-              'Seu dia em equilíbrio',
+              context.l10n.homeDayBalance,
               style: context.text.titleLarge?.copyWith(
                 fontWeight: FontWeight.w800,
                 letterSpacing: -.6,
@@ -541,8 +544,11 @@ class _CaloriesCard extends StatelessWidget {
                     ? context.pic.warning
                     : context.colors.primary,
                 semanticLabel: hasGoal
-                    ? '${Fmt.kcal(kcal)} de ${Fmt.kcal(goal)}'
-                    : '${Fmt.kcal(kcal)} registradas',
+                    ? context.l10n.homeKcalOfGoal(
+                        Fmt.kcal(kcal),
+                        Fmt.kcal(goal),
+                      )
+                    : context.l10n.homeKcalLogged(Fmt.kcal(kcal)),
                 child: Padding(
                   padding: const EdgeInsets.all(Space.md),
                   child: Column(
@@ -565,7 +571,9 @@ class _CaloriesCard extends StatelessWidget {
                       ),
                       FittedBox(
                         child: Text(
-                          hasGoal ? 'de ${Fmt.kcal(goal)}' : 'kcal registradas',
+                          hasGoal
+                              ? context.l10n.homeOfGoal(Fmt.kcal(goal))
+                              : context.l10n.homeKcalLoggedShort,
                           style: context.text.bodySmall,
                         ),
                       ),
@@ -593,10 +601,7 @@ class _CaloriesCard extends StatelessWidget {
           ),
           const SizedBox(height: Space.md),
           if (n.mealsCount == 0)
-            Text(
-              'Nenhuma refeição registrada neste dia.',
-              style: context.text.bodySmall,
-            )
+            Text(context.l10n.homeNoMealsDay, style: context.text.bodySmall)
           else
             _GoalHint(hasGoal: hasGoal, remaining: remaining),
         ],
@@ -628,7 +633,7 @@ class _GoalHint extends StatelessWidget {
         child: InkWell(
           onTap: () => context.push(AppRoutes.editProfile),
           child: Text(
-            'Defina sua meta',
+            context.l10n.homeSetYourGoal,
             style: style?.copyWith(
               color: context.colors.primary,
               fontWeight: FontWeight.w600,
@@ -649,7 +654,9 @@ class _GoalHint extends StatelessWidget {
               fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
-          TextSpan(text: over ? ' acima da meta' : ' para sua meta'),
+          TextSpan(
+            text: over ? context.l10n.homeAboveGoal : context.l10n.homeToGoal,
+          ),
         ],
       ),
       style: style,
@@ -683,8 +690,12 @@ class _MacroBar extends StatelessWidget {
     final progress = (hasGoal ? grams / g : share).clamp(0.0, 1.0);
     return Semantics(
       label: hasGoal
-          ? '$semanticsName: ${Fmt.integer(grams)} de ${Fmt.integer(g)} gramas'
-          : '$semanticsName: ${Fmt.integer(grams)} gramas',
+          ? context.l10n.homeMacroSemanticsGoal(
+              semanticsName,
+              Fmt.integer(grams),
+              Fmt.integer(g),
+            )
+          : context.l10n.homeMacroSemantics(semanticsName, Fmt.integer(grams)),
       excludeSemantics: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -753,7 +764,7 @@ class _WaterTileState extends ConsumerState<_WaterTile> {
                 : widget.data.date.add(const Duration(hours: 12)),
           );
       Refresh.water(ref);
-      if (mounted) showMessage(context, '+$ml ml registrados.');
+      if (mounted) showMessage(context, context.l10n.homeWaterAdded(ml));
     } on Object catch (error) {
       if (mounted) showFailure(context, error);
     } finally {
@@ -768,7 +779,7 @@ class _WaterTileState extends ConsumerState<_WaterTile> {
       final repo = ref.read(waterRepositoryProvider);
       final day = await repo.day(widget.data.date);
       if (day.entries.isEmpty) {
-        if (mounted) showMessage(context, 'Nenhum registro de água hoje.');
+        if (mounted) showMessage(context, context.l10n.homeWaterNoneToday);
         return;
       }
       final last = day.entries.reduce(
@@ -777,7 +788,10 @@ class _WaterTileState extends ConsumerState<_WaterTile> {
       await repo.delete(last.id);
       Refresh.water(ref);
       if (mounted) {
-        showMessage(context, 'Registro de ${Fmt.ml(last.amountMl)} removido.');
+        showMessage(
+          context,
+          context.l10n.homeWaterRemoved(Fmt.ml(last.amountMl)),
+        );
       }
     } on Object catch (error) {
       if (mounted) showFailure(context, error);
@@ -815,7 +829,7 @@ class _WaterTileState extends ConsumerState<_WaterTile> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Hidratação',
+                      context.l10n.homeHydration,
                       style: context.text.titleMedium?.copyWith(
                         fontWeight: FontWeight.w800,
                       ),
@@ -858,7 +872,7 @@ class _WaterTileState extends ConsumerState<_WaterTile> {
             shape: const Border(),
             collapsedShape: const Border(),
             title: Text(
-              'Detalhes da hidratação',
+              context.l10n.homeHydrationDetails,
               style: context.text.bodySmall,
             ),
             children: [_waterDetails(context, d, blue, percent)],
@@ -877,8 +891,11 @@ class _WaterTileState extends ConsumerState<_WaterTile> {
     final liters = d.waterTotalMl / 1000;
     return Semantics(
       container: true,
-      label:
-          'Água: ${Fmt.ml(d.waterTotalMl)} de ${Fmt.ml(d.waterGoalMl)}, $percent% da meta.',
+      label: context.l10n.homeWaterSemantics(
+        Fmt.ml(d.waterTotalMl),
+        Fmt.ml(d.waterGoalMl),
+        percent,
+      ),
       child: _HomeCard(
         padding: const EdgeInsets.all(Space.lg),
         onTap: () => context.push(AppRoutes.water),
@@ -891,7 +908,7 @@ class _WaterTileState extends ConsumerState<_WaterTile> {
                 const SizedBox(width: Space.xs),
                 Expanded(
                   child: Text(
-                    'Hidratação',
+                    context.l10n.homeHydration,
                     style: context.text.labelLarge?.copyWith(
                       color: context.pic.textSecondary,
                     ),
@@ -906,7 +923,7 @@ class _WaterTileState extends ConsumerState<_WaterTile> {
                 ),
                 // Outros volumes sem sair do Início.
                 PopupMenuButton<int>(
-                  tooltip: 'Outras quantidades de água',
+                  tooltip: context.l10n.homeWaterMore,
                   enabled: !_saving,
                   padding: EdgeInsets.zero,
                   iconSize: 22,
@@ -916,9 +933,9 @@ class _WaterTileState extends ConsumerState<_WaterTile> {
                   itemBuilder: (_) => [
                     for (final ml in _otherMl)
                       PopupMenuItem(value: ml, child: Text('+$ml ml')),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 0,
-                      child: Text('Outra quantidade'),
+                      child: Text(context.l10n.homeWaterOther),
                     ),
                   ],
                 ),
@@ -935,7 +952,7 @@ class _WaterTileState extends ConsumerState<_WaterTile> {
               children: [
                 _RoundButton(
                   icon: Icons.remove_rounded,
-                  tooltip: 'Desfazer o último registro de água',
+                  tooltip: context.l10n.homeWaterUndo,
                   color: blue,
                   onPressed: _saving || d.waterTotalMl <= 0 ? null : _undoLast,
                 ),
@@ -998,11 +1015,12 @@ class _WeightTile extends StatelessWidget {
     final w = data.weight;
     final change = w?.change30dKg;
     final goal = data.goal;
+    final l10n = context.l10n;
     return Semantics(
       container: true,
       label: w == null
-          ? 'Peso: nenhum registro'
-          : 'Peso: ${Fmt.kg(w.latestKg)}',
+          ? l10n.homeWeightNone
+          : l10n.homeWeightValue(Fmt.kg(w.latestKg)),
       child: _HomeCard(
         padding: const EdgeInsets.all(Space.lg),
         onTap: () => context.go(AppRoutes.progress),
@@ -1019,7 +1037,7 @@ class _WeightTile extends StatelessWidget {
                 const SizedBox(width: Space.xs),
                 Expanded(
                   child: Text(
-                    'Peso',
+                    l10n.homeWeight,
                     style: context.text.labelLarge?.copyWith(
                       color: context.pic.textSecondary,
                     ),
@@ -1031,7 +1049,7 @@ class _WeightTile extends StatelessWidget {
             ExcludeSemantics(
               child: w == null
                   ? Text(
-                      'Sem registro',
+                      l10n.homeNoRecord,
                       style: context.text.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -1045,12 +1063,14 @@ class _WeightTile extends StatelessWidget {
             const SizedBox(height: Space.xs),
             Text(
               switch ((w, change, goal)) {
-                (null, _, _) => 'Registre para acompanhar.',
-                (_, final c?, _) when c.abs() >= 0.1 =>
-                  '${c < 0 ? '−' : '+'}${Fmt.kg(c.abs())} em 30 dias',
-                (_, _, final g?) when g.goalWeightKg > 0 =>
-                  'Meta: ${Fmt.kg(g.goalWeightKg)}',
-                _ => 'Atualizado em ${Fmt.dayMonth(w!.latestDate)}',
+                (null, _, _) => l10n.homeWeightHint,
+                (_, final c?, _) when c.abs() >= 0.1 => l10n.homeWeightChange(
+                  '${c < 0 ? '−' : '+'}${Fmt.kg(c.abs())}',
+                ),
+                (_, _, final g?) when g.goalWeightKg > 0 => l10n.homeWeightGoal(
+                  Fmt.kg(g.goalWeightKg),
+                ),
+                _ => l10n.homeUpdatedOn(Fmt.dayMonth(w!.latestDate)),
               },
               style: context.text.bodySmall,
               maxLines: 2,
@@ -1063,7 +1083,7 @@ class _WeightTile extends StatelessWidget {
                 minimumSize: const Size(0, 44),
                 padding: EdgeInsets.zero,
               ),
-              child: const Text('Registrar peso'),
+              child: Text(l10n.homeLogWeight),
             ),
           ],
         ),
@@ -1098,7 +1118,7 @@ class _MealsSection extends ConsumerWidget {
               child: Semantics(
                 header: true,
                 child: Text(
-                  'Suas refeições',
+                  context.l10n.homeYourMeals,
                   style: context.text.titleLarge?.copyWith(
                     fontWeight: FontWeight.w700,
                     letterSpacing: -0.3,
@@ -1117,11 +1137,11 @@ class _MealsSection extends ConsumerWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('Ver todas'),
-                  Icon(Icons.chevron_right_rounded, size: 22),
+                  Text(context.l10n.homeSeeAll),
+                  const Icon(Icons.chevron_right_rounded, size: 22),
                 ],
               ),
             ),
@@ -1135,7 +1155,7 @@ class _MealsSection extends ConsumerWidget {
             onAddMeal: onAddMeal,
           ),
           AsyncError() => ErrorView(
-            message: 'Não foi possível carregar suas refeições.',
+            message: context.l10n.homeMealsError,
             onRetry: () => ref.invalidate(mealsOnDayProvider(day)),
           ),
           _ => const SkeletonCard(lines: 2),
@@ -1167,7 +1187,7 @@ class _MealList extends StatelessWidget {
             const SizedBox(width: Space.md),
             Expanded(
               child: Text(
-                'Suas refeições do dia aparecem aqui.',
+                context.l10n.homeMealsEmpty,
                 style: context.text.bodyMedium?.copyWith(
                   color: context.pic.textSecondary,
                 ),
@@ -1183,15 +1203,17 @@ class _MealList extends StatelessWidget {
           _MealTile(
             mealType: meal.mealType,
             title: meal.displayName,
-            subtitle: 'Registrado · ${Fmt.kcal(meal.totals.energyKcal)}',
+            subtitle: context.l10n.homeMealLogged(
+              Fmt.kcal(meal.totals.energyKcal),
+            ),
             done: true,
             onTap: () => context.push(AppRoutes.editMeal, extra: meal),
           ),
         for (final p in pending)
           _MealTile(
             mealType: p.mealType,
-            title: p.label,
-            subtitle: 'Que tal registrar?',
+            title: mealTypeLabel(context.l10n, p.mealType) ?? p.label,
+            subtitle: context.l10n.homeMealPending,
             done: false,
             onTap: onAddMeal,
           ),
@@ -1303,16 +1325,25 @@ class _CompleteProfileCard extends ConsumerWidget {
   /// Etapas puladas (ou deixadas para depois) que ainda podem ser completadas.
   static List<String> pending(WidgetRef ref) =>
       (ref.watch(currentAccountProvider)?.onboardingSkipped ?? const <String>[])
-          .where(_labels.containsKey)
+          .where(_steps.contains)
           .toList();
 
-  static const _labels = {
-    'essentials': 'dados básicos',
-    'routine': 'alimentação e rotina',
-    'guidance': 'orientação profissional',
-    'medication': 'medicamento',
-    'care': 'preferências de atendimento',
-    'targets': 'metas diárias',
+  static const _steps = {
+    'essentials',
+    'routine',
+    'guidance',
+    'medication',
+    'care',
+    'targets',
+  };
+
+  static String _label(AppLocalizations l10n, String step) => switch (step) {
+    'essentials' => l10n.skippedEssentials,
+    'routine' => l10n.skippedRoutine,
+    'guidance' => l10n.skippedGuidance,
+    'medication' => l10n.skippedMedication,
+    'care' => l10n.skippedCare,
+    _ => l10n.skippedTargets,
   };
 
   @override
@@ -1333,11 +1364,11 @@ class _CompleteProfileCard extends ConsumerWidget {
     return Semantics(
       container: true,
       child: StatusBanner(
-        title: 'Complete seu perfil',
-        message:
-            'Ficou para depois: ${skipped.map((s) => _labels[s]).join(', ')}. '
-            'Com esses dados, metas e sugestões ficam mais precisas.',
-        actionLabel: 'Completar agora',
+        title: context.l10n.homeCompleteProfile,
+        message: context.l10n.homeCompleteProfileMessage(
+          skipped.map((s) => _label(context.l10n, s)).join(', '),
+        ),
+        actionLabel: context.l10n.homeCompleteNow,
         onAction: () async {
           await context.push(AppRoutes.editProfile);
           if (context.mounted) await dismiss();

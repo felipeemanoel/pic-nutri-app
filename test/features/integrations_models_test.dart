@@ -7,8 +7,17 @@ void main() {
     final lookup = BarcodeLookup.fromJson({
       'status': 'incomplete',
       'food': null,
-      'draft': {'code': '7891000100103', 'name': 'Biscoito', 'base_unit': 'g', 'energy_kcal': 250, 'protein_g': 3, 'carbs_g': null, 'fat_g': null},
-      'attribution': 'Dados do rótulo via Open Food Facts (ODbL). Confira com a embalagem.',
+      'draft': {
+        'code': '7891000100103',
+        'name': 'Biscoito',
+        'base_unit': 'g',
+        'energy_kcal': 250,
+        'protein_g': 3,
+        'carbs_g': null,
+        'fat_g': null,
+      },
+      'attribution':
+          'Dados do rótulo via Open Food Facts (ODbL). Confira com a embalagem.',
     });
 
     expect(lookup.status, 'incomplete');
@@ -26,15 +35,17 @@ void main() {
       'store': ?store,
     };
 
-    final withStore = CurrentPlan.fromJson(json({
-      'android': true,
-      'ios': false,
-      'products': [
-        {'product_id': 'premium_mensal', 'plan_code': 'premium'},
-      ],
-      'source': null,
-      'auto_renew': null,
-    }));
+    final withStore = CurrentPlan.fromJson(
+      json({
+        'android': true,
+        'ios': false,
+        'products': [
+          {'product_id': 'premium_mensal', 'plan_code': 'premium'},
+        ],
+        'source': null,
+        'auto_renew': null,
+      }),
+    );
     expect(withStore.store.android, isTrue);
     expect(withStore.store.productIds, ['premium_mensal']);
 

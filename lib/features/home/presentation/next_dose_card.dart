@@ -5,9 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/routes.dart';
-import '../../../shared/widgets/expandable_home_card.dart';
 import '../../../core/design/design_system.dart';
+import '../../../core/i18n/l10n.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../shared/widgets/expandable_home_card.dart';
 import '../../medication/application/medication_overview.dart';
 import '../../medication/domain/medication_schedule.dart';
 import '../../medication/presentation/medication_forms.dart';
@@ -73,23 +74,24 @@ class _Content extends StatelessWidget {
         ? null
         : MedicationLevel.rounded(level.at(now));
 
+    final l10n = context.l10n;
     final String eyebrow;
     final String headline;
     final String caption;
     if (last == null) {
-      eyebrow = 'Medicação';
-      headline = 'Registre sua primeira aplicação';
-      caption = 'A contagem para a próxima começa a partir dela.';
+      eyebrow = l10n.doseMedication;
+      headline = l10n.doseFirstHeadline;
+      caption = l10n.doseFirstCaption;
     } else if (next == null) {
-      eyebrow = 'Última aplicação';
+      eyebrow = l10n.doseLast;
       headline = Fmt.relativeDayTime(last);
-      caption = 'Informe a frequência no cadastro para ver a próxima.';
+      caption = l10n.doseNoFrequency;
     } else if (overdue) {
-      eyebrow = 'Aplicação prevista';
+      eyebrow = l10n.doseExpected;
       headline = Fmt.relativeDayTime(next);
-      caption = 'Já aplicou? Registre para atualizar a contagem.';
+      caption = l10n.doseExpectedCaption;
     } else {
-      eyebrow = 'Próxima aplicação';
+      eyebrow = l10n.doseNext;
       headline = MedicationSchedule.countdown(next.difference(now));
       caption = Fmt.relativeDayTime(next);
     }
@@ -170,7 +172,7 @@ class _Content extends StatelessWidget {
                       minHeight: 8,
                       color: accent,
                       backgroundColor: pic.surfaceMuted,
-                      semanticsLabel: 'Ciclo entre aplicações',
+                      semanticsLabel: l10n.doseCycle,
                       semanticsValue:
                           '${(progress.clamp(0.0, 1.0) * 100).round()}%',
                     ),
@@ -183,14 +185,14 @@ class _Content extends StatelessWidget {
                     children: [
                       Expanded(
                         child: _Fact(
-                          label: 'Última',
+                          label: l10n.doseLastShort,
                           value: Fmt.relativeDayTime(last),
                         ),
                       ),
                       if (levelMg != null)
                         Expanded(
                           child: _Fact(
-                            label: 'Nível estimado',
+                            label: l10n.doseEstimatedLevel,
                             value: '~${Fmt.decimal(levelMg)} mg',
                           ),
                         ),
@@ -201,7 +203,7 @@ class _Content extends StatelessWidget {
                 FilledButton.tonalIcon(
                   onPressed: () => openDoseForm(context),
                   icon: const Icon(Icons.add_rounded),
-                  label: const Text('Registrar aplicação'),
+                  label: Text(l10n.doseLog),
                 ),
               ],
             ),
@@ -281,11 +283,8 @@ class _NoMedication extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Cadastre seu medicamento', style: context.text.titleSmall),
-              Text(
-                'Para ver a contagem até a próxima aplicação.',
-                style: context.text.bodySmall,
-              ),
+              Text(context.l10n.doseSetupTitle, style: context.text.titleSmall),
+              Text(context.l10n.doseSetupText, style: context.text.bodySmall),
             ],
           ),
         ),

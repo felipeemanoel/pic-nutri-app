@@ -29,13 +29,19 @@ class _ShoppingListPageState extends ConsumerState<ShoppingListPage> {
         if (i.checked) i.foodId,
   };
 
-  Future<void> _toggle(List<ShoppingGroup> groups, int foodId, bool value) async {
+  Future<void> _toggle(
+    List<ShoppingGroup> groups,
+    int foodId,
+    bool value,
+  ) async {
     final previous = _checked ?? _fromServer(groups);
     final next = {...previous};
     value ? next.add(foodId) : next.remove(foodId);
     setState(() => _checked = next);
     try {
-      await ref.read(planningRepositoryProvider).setChecked(widget.planId, next);
+      await ref
+          .read(planningRepositoryProvider)
+          .setChecked(widget.planId, next);
       ref.invalidate(shoppingListProvider(widget.planId));
     } on Object catch (e) {
       if (!mounted) return;
@@ -47,21 +53,26 @@ class _ShoppingListPageState extends ConsumerState<ShoppingListPage> {
   Future<void> _share(List<ShoppingGroup> groups, Set<int> checked) async {
     final buffer = StringBuffer('Lista de compras — PicNutri\n');
     for (final g in groups) {
-      final pending = g.items.where((i) => !checked.contains(i.foodId)).toList();
+      final pending = g.items
+          .where((i) => !checked.contains(i.foodId))
+          .toList();
       if (pending.isEmpty) continue;
       buffer.writeln('\n${g.category}');
       for (final i in pending) {
         buffer.writeln('• ${i.name} — ${Fmt.decimal(i.quantity)} ${i.unit}');
       }
     }
-    await SharePlus.instance.share(ShareParams(text: buffer.toString(), subject: 'Lista de compras'));
+    await SharePlus.instance.share(
+      ShareParams(text: buffer.toString(), subject: 'Lista de compras'),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final list = ref.watch(shoppingListProvider(widget.planId));
     final groups = list.value;
-    final checked = _checked ?? (groups == null ? <int>{} : _fromServer(groups));
+    final checked =
+        _checked ?? (groups == null ? <int>{} : _fromServer(groups));
 
     return Scaffold(
       appBar: AppBar(
@@ -82,10 +93,16 @@ class _ShoppingListPageState extends ConsumerState<ShoppingListPage> {
             ? const EmptyState(
                 icon: Icons.shopping_cart_outlined,
                 title: 'Lista vazia',
-                message: 'Adicione receitas ou alimentos ao plano para gerar a lista de compras.',
+                message:
+                    'Adicione receitas ou alimentos ao plano para gerar a lista de compras.',
               )
             : ListView(
-                padding: const EdgeInsets.fromLTRB(Space.page, Space.sm, Space.page, Space.xxl),
+                padding: const EdgeInsets.fromLTRB(
+                  Space.page,
+                  Space.sm,
+                  Space.page,
+                  Space.xxl,
+                ),
                 children: [
                   Text(
                     'Quantidades somadas do plano da semana, em peso ou volume do alimento como consumido na receita. Ajuste conforme o que você já tem em casa.',
@@ -102,7 +119,10 @@ class _ShoppingListPageState extends ConsumerState<ShoppingListPage> {
                         title: Text(
                           i.name,
                           style: checked.contains(i.foodId)
-                              ? TextStyle(decoration: TextDecoration.lineThrough, color: context.pic.textSecondary)
+                              ? TextStyle(
+                                  decoration: TextDecoration.lineThrough,
+                                  color: context.pic.textSecondary,
+                                )
                               : null,
                         ),
                         subtitle: Text('${Fmt.decimal(i.quantity)} ${i.unit}'),
@@ -123,7 +143,9 @@ class _ExtraRecipes extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final extras = ref.watch(shoppingExtrasProvider(planId)).value ?? const <ShoppingExtraRecipe>[];
+    final extras =
+        ref.watch(shoppingExtrasProvider(planId)).value ??
+        const <ShoppingExtraRecipe>[];
     if (extras.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -134,13 +156,17 @@ class _ExtraRecipes extends ConsumerWidget {
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.menu_book_outlined),
             title: Text(e.title),
-            subtitle: Text('${Fmt.decimal(e.servings)} porções · não planejada'),
+            subtitle: Text(
+              '${Fmt.decimal(e.servings)} porções · não planejada',
+            ),
             trailing: IconButton(
               tooltip: 'Tirar ${e.title} da lista',
               icon: const Icon(Icons.remove_circle_outline),
               onPressed: () async {
                 try {
-                  await ref.read(planningRepositoryProvider).removeRecipeFromShopping(planId, e.recipeId);
+                  await ref
+                      .read(planningRepositoryProvider)
+                      .removeRecipeFromShopping(planId, e.recipeId);
                   ref
                     ..invalidate(shoppingListProvider(planId))
                     ..invalidate(shoppingExtrasProvider(planId));
@@ -154,4 +180,3 @@ class _ExtraRecipes extends ConsumerWidget {
     );
   }
 }
-

@@ -36,9 +36,12 @@ class Dashboard {
       weight: weight == null ? null : WeightSnapshot.fromJson(weight),
       goal: goal == null ? null : GoalProgress.fromJson(goal),
       medicationTrackingEnabled:
-          AppFeatures.medical && (json['medication_tracking_enabled'] as bool? ?? false),
+          AppFeatures.medical &&
+          (json['medication_tracking_enabled'] as bool? ?? false),
       pendingMeals: [
-        for (final m in (json['pending_meals'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>())
+        for (final m
+            in (json['pending_meals'] as List<dynamic>? ?? [])
+                .cast<Map<String, dynamic>>())
           PendingMeal(
             mealType: m['meal_type'] as String,
             label: m['label'] as String,
@@ -83,7 +86,11 @@ class Dashboard {
 }
 
 class PendingMeal {
-  const PendingMeal({required this.mealType, required this.label, required this.late});
+  const PendingMeal({
+    required this.mealType,
+    required this.label,
+    required this.late,
+  });
 
   final String mealType;
   final String label;
