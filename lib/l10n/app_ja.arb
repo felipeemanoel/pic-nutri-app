@@ -160,7 +160,7 @@
   "missionsFirstDay": "最初の1日は1件の記録から始まります。",
   "missionsDiamond": "ダイヤモンド達成！連続記録を続けましょう。",
   "missionsDaysTo": "{count, plural, other{{level} まであと {count} 日}}",
-  "missionsRecord": "{count, plural, other{最高記録：{count}日。}}記録しない日があると連続記録はリセットされます。",
+  "missionsRecord": "{count, plural, other{最高記録：{count}日。}}記録できない日があっても、また始めれば大丈夫です。",
   "levelBeginner": "スタート",
   "levelBronze": "ブロンズ",
   "levelSilver": "シルバー",

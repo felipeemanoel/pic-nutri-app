@@ -583,7 +583,7 @@ class AppLocalizationsEn extends AppLocalizations {
       other: 'Best: $count days.',
       one: 'Best: 1 day.',
     );
-    return '$_temp0 A day without entries resets the streak.';
+    return '$_temp0 If you miss a day, just start again.';
   }
 
   @override

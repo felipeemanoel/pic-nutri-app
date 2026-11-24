@@ -43,9 +43,7 @@ class HomePage extends ConsumerWidget {
     final name = ref.watch(currentAccountProvider)?.firstName ?? '';
 
     return Scaffold(
-      backgroundColor: Theme.of(context).brightness == Brightness.light
-          ? const Color(0xFFF0FAF6)
-          : context.colors.surfaceContainerLowest,
+      backgroundColor: context.pic.screenTint,
       // Um único ponto de registro: refeição, aplicação, sintoma, peso e água.
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'home-register',
@@ -131,13 +129,18 @@ class _Header extends StatelessWidget {
           child: Text(
             name.isEmpty ? greeting : l10n.homeGreetingName(greeting, name),
             style: context.text.headlineMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-              letterSpacing: -1,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.6,
             ),
           ),
         ),
         const SizedBox(height: Space.xs),
-        Text(l10n.homeTagline, style: context.text.bodyLarge),
+        Text(
+          l10n.homeTagline,
+          style: context.text.bodyLarge?.copyWith(
+            color: context.pic.textSecondary,
+          ),
+        ),
       ],
     );
   }
@@ -160,43 +163,37 @@ class _QuickActions extends ConsumerWidget {
         },
       ),
       (Icons.restaurant_rounded, l10n.homeQuickMeal, onMeal),
-      (
-        Icons.water_drop_outlined,
-        l10n.homeQuickWater,
-        () => context.push(AppRoutes.water),
-      ),
     ];
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (var i = 0; i < actions.length; i++) ...[
-            if (i > 0) const SizedBox(width: Space.sm),
+            if (i > 0) const SizedBox(width: Space.md),
             Expanded(
               child: _HomeCard(
-                color: (i == 2 ? context.pic.water : context.colors.primary)
-                    .withValues(alpha: .07),
-                padding: const EdgeInsets.symmetric(
-                  vertical: Space.lg,
-                  horizontal: Space.xs,
-                ),
+                padding: const EdgeInsets.all(Space.md),
                 onTap: actions[i].$3,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                child: Row(
                   children: [
-                    Icon(
-                      actions[i].$1,
-                      size: 30,
-                      color: i == 2
-                          ? context.pic.water
-                          : context.colors.primary,
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: context.pic.brandContainer,
+                        borderRadius: Radii.control,
+                      ),
+                      child: Icon(
+                        actions[i].$1,
+                        size: 22,
+                        color: context.pic.onBrandContainer,
+                      ),
                     ),
-                    const SizedBox(height: Space.sm),
-                    Text(
-                      actions[i].$2,
-                      textAlign: TextAlign.center,
-                      style: context.text.labelMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
+                    const SizedBox(width: Space.md),
+                    Expanded(
+                      child: Text(
+                        actions[i].$2,
+                        style: context.text.titleSmall,
                       ),
                     ),
                   ],
@@ -239,18 +236,25 @@ class _DashboardBody extends ConsumerWidget {
       children: [
         _CaloriesCard(data: data),
         const SizedBox(height: Space.md),
-        const DailyMissionsCard(),
-        const SizedBox(height: Space.md),
         _QuickActions(
           onMeal: () => _registerToday(context, ref, mealOnly: true),
         ),
-        const SizedBox(height: Space.md),
+        const SizedBox(height: Space.section),
+        // A tarefa principal do Início vem logo depois do resumo do dia.
+        _MealsSection(
+          data: data,
+          day: day,
+          onAddMeal: () => _registerToday(context, ref, mealOnly: true),
+        ),
+        const SizedBox(height: Space.section),
         _WaterTile(data: data),
         const SizedBox(height: Space.md),
         if (data.medicationTrackingEnabled) ...[
           const NextDoseCard(),
           const SizedBox(height: Space.md),
         ],
+        const DailyMissionsCard(),
+        const SizedBox(height: Space.md),
         ExpandableHomeCard(
           title: context.l10n.homeYourProgress,
           summary: data.weight == null
@@ -274,19 +278,13 @@ class _DashboardBody extends ConsumerWidget {
           _CompleteProfileCard(skipped: skipped)
         else
           _DailyCareCard(data: data),
-        const SizedBox(height: Space.section),
-        _MealsSection(
-          data: data,
-          day: day,
-          onAddMeal: () => _registerToday(context, ref, mealOnly: true),
-        ),
       ],
     );
   }
 }
 
 /// Próximo passo do Início: o que falta, sem repetir os números dos cartões.
-({String title, String message, String? action, String? route}) homeNextStep(
+({String title, String message, String? action, String? route})? homeNextStep(
   Dashboard data, [
   AppLocalizations? l10n,
 ]) {
@@ -295,15 +293,8 @@ class _DashboardBody extends ConsumerWidget {
   final proteinGoal = n.goalProteinG;
   final hasProteinGoal = proteinGoal != null && proteinGoal > 0;
   final waterGoal = data.waterGoalMl;
-  // Registrar refeição já é o botão principal do cartão acima: não se repete aqui.
-  if (waterGoal > 0 && data.waterTotalMl < waterGoal) {
-    return (
-      title: t.homeNextWater(Fmt.ml(waterGoal - data.waterTotalMl)),
-      message: t.homeNextWaterMessage,
-      action: t.homeLogWater,
-      route: AppRoutes.water,
-    );
-  }
+  // Refeição e água já têm cartão e botão próprios no Início: não se repetem
+  // aqui. Com a água pendente, o cartão some em vez de repetir o número.
   if (hasProteinGoal && n.totals.proteinG < proteinGoal) {
     return (
       title: t.homeNextProtein(Fmt.grams(proteinGoal - n.totals.proteinG)),
@@ -320,6 +311,7 @@ class _DashboardBody extends ConsumerWidget {
       route: AppRoutes.editProfile,
     );
   }
+  if (data.waterTotalMl < waterGoal) return null;
   return (
     title: t.homeGoalsReached,
     message: t.homeGoalsReachedMessage,
@@ -338,6 +330,7 @@ class _DailyCareCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final step = homeNextStep(data, context.l10n);
+    if (step == null) return const SizedBox.shrink();
     final done = step.action == null;
     return AppCard(
       child: Row(
@@ -371,7 +364,7 @@ class _DailyCareCard extends StatelessWidget {
   }
 }
 
-/// Cartão branco das seções da home (cantos de 24, borda e sombra suave).
+/// Cartão das seções do Início: plano, cantos de 20 e borda de 1 px.
 class _HomeCard extends StatelessWidget {
   const _HomeCard({required this.child, this.padding, this.onTap, this.color});
 
@@ -382,13 +375,13 @@ class _HomeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    elevation: 2,
-    shadowColor: context.colors.primary.withValues(alpha: .08),
     surfaceTintColor: Colors.transparent,
     color: color ?? context.colors.surface,
     shape: RoundedRectangleBorder(
       borderRadius: Radii.card,
-      side: BorderSide(color: context.pic.border.withValues(alpha: .25)),
+      side: color == null
+          ? BorderSide(color: context.pic.border)
+          : BorderSide.none,
     ),
     clipBehavior: Clip.antiAlias,
     child: InkWell(
@@ -461,23 +454,31 @@ class _CaloriesCard extends StatelessWidget {
     final goal = n.goalKcal;
     final hasGoal = goal != null && goal > 0;
     final remaining = n.remainingKcal ?? (hasGoal ? goal - kcal : null);
+    final over = hasGoal && kcal > goal;
+    final l10n = context.l10n;
+    final ringLabel = hasGoal
+        ? l10n.homeKcalOfGoal(Fmt.kcal(kcal), Fmt.kcal(goal)) +
+              (over ? ',${l10n.homeAboveGoal}' : '')
+        : l10n.homeKcalLogged(Fmt.kcal(kcal));
 
+    final pic = context.pic;
     final macros = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: Space.sm,
-            vertical: Space.xs,
-          ),
-          decoration: BoxDecoration(
-            color: context.pic.brandContainer,
-            borderRadius: BorderRadius.circular(30),
-          ),
-          child: Text(
-            context.l10n.homeMealsCount(n.mealsCount),
-            style: context.text.labelMedium?.copyWith(
-              color: context.pic.onBrandContainer,
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: Space.md,
+              vertical: Space.xs,
+            ),
+            decoration: BoxDecoration(
+              color: pic.heroTrack,
+              borderRadius: BorderRadius.circular(Radii.pill),
+            ),
+            child: Text(
+              context.l10n.homeMealsCount(n.mealsCount),
+              style: context.text.labelMedium?.copyWith(color: pic.onHero),
             ),
           ),
         ),
@@ -487,7 +488,7 @@ class _CaloriesCard extends StatelessWidget {
           semanticsName: context.l10n.nutrientCarbs,
           grams: n.totals.carbsG,
           goal: n.goalCarbsG,
-          color: context.colors.primary,
+          color: pic.heroCarbs,
           share: _share(n.totals.carbsG * 4, n.totals),
         ),
         const SizedBox(height: Space.md),
@@ -496,7 +497,7 @@ class _CaloriesCard extends StatelessWidget {
           semanticsName: context.l10n.nutrientProtein,
           grams: n.totals.proteinG,
           goal: n.goalProteinG,
-          color: context.pic.water,
+          color: pic.heroProtein,
           share: _share(n.totals.proteinG * 4, n.totals),
         ),
         const SizedBox(height: Space.md),
@@ -505,13 +506,16 @@ class _CaloriesCard extends StatelessWidget {
           semanticsName: context.l10n.nutrientFat,
           grams: n.totals.fatG,
           goal: n.goalFatG,
-          color: context.pic.success,
+          color: pic.heroFat,
           share: _share(n.totals.fatG * 9, n.totals),
         ),
       ],
     );
+    // Único cartão em cor sólida da tela: é o resumo que a pessoa abre o app
+    // para ver. O resto fica em superfícies neutras.
     return _HomeCard(
-      padding: const EdgeInsets.all(Space.lg),
+      color: pic.heroSurface,
+      padding: const EdgeInsets.all(Space.xl),
       onTap: () => context.go(AppRoutes.food),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -520,61 +524,65 @@ class _CaloriesCard extends StatelessWidget {
             header: true,
             child: Text(
               context.l10n.homeDayBalance,
-              style: context.text.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: -.6,
-              ),
+              style: context.text.titleMedium?.copyWith(color: pic.onHero),
             ),
           ),
           const SizedBox(height: Space.lg),
           LayoutBuilder(
             builder: (context, constraints) {
+              final textScaler = MediaQuery.textScalerOf(context);
               final stacked =
-                  constraints.maxWidth < 290 ||
-                  MediaQuery.textScalerOf(context).scale(1) > 1.3;
+                  constraints.maxWidth < 290 || textScaler.scale(1) > 1.3;
               final ring = ProgressRing(
                 progress: hasGoal ? kcal / goal : null,
                 size: stacked
-                    ? 180
+                    ? 200
                     : constraints.maxWidth < 400
                     ? 136
                     : 190,
                 strokeWidth: 11,
-                color: hasGoal && kcal > goal
-                    ? context.pic.warning
-                    : context.colors.primary,
-                semanticLabel: hasGoal
-                    ? context.l10n.homeKcalOfGoal(
-                        Fmt.kcal(kcal),
-                        Fmt.kcal(goal),
-                      )
-                    : context.l10n.homeKcalLogged(Fmt.kcal(kcal)),
+                color: over ? pic.heroWarning : pic.onHero,
+                trackColor: pic.heroTrack,
+                // A cor não é o único sinal: o leitor de tela também ouve
+                // "acima da meta" (e o texto abaixo do anel diz o mesmo).
+                semanticLabel: ringLabel,
                 child: Padding(
                   padding: const EdgeInsets.all(Space.md),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        Icons.eco_outlined,
-                        color: context.colors.primary,
-                        size: 26,
-                      ),
-                      const SizedBox(height: Space.xs),
-                      FittedBox(
-                        child: Text(
-                          Fmt.integer(kcal),
-                          style: context.text.headlineLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -1.5,
-                          ),
+                      // Com fonte grande o anel cresce e o ícone sai para
+                      // dar lugar aos números.
+                      if (!stacked) ...[
+                        Icon(
+                          Icons.eco_outlined,
+                          color: pic.onHeroMuted,
+                          size: 22,
+                        ),
+                        const SizedBox(height: Space.xs),
+                      ],
+                      // Número-destaque dentro de um anel de tamanho fixo:
+                      // limita o próprio crescimento (o resto da tela segue a
+                      // fonte do sistema). Nada de FittedBox encolhendo texto.
+                      Text(
+                        Fmt.integer(kcal),
+                        textAlign: TextAlign.center,
+                        textScaler: textScaler.clamp(maxScaleFactor: 1.3),
+                        style: context.text.headlineLarge?.copyWith(
+                          color: pic.onHero,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -1,
+                          fontFeatures: const [FontFeature.tabularFigures()],
                         ),
                       ),
-                      FittedBox(
-                        child: Text(
-                          hasGoal
-                              ? context.l10n.homeOfGoal(Fmt.kcal(goal))
-                              : context.l10n.homeKcalLoggedShort,
-                          style: context.text.bodySmall,
+                      Text(
+                        hasGoal
+                            ? context.l10n.homeOfGoal(Fmt.kcal(goal))
+                            : context.l10n.homeKcalLoggedShort,
+                        textAlign: TextAlign.center,
+                        textScaler: textScaler.clamp(maxScaleFactor: 1.5),
+                        style: context.text.bodySmall?.copyWith(
+                          color: pic.onHeroMuted,
                         ),
                       ),
                     ],
@@ -600,8 +608,12 @@ class _CaloriesCard extends StatelessWidget {
             },
           ),
           const SizedBox(height: Space.md),
+          Divider(color: pic.heroTrack, height: Space.xl),
           if (n.mealsCount == 0)
-            Text(context.l10n.homeNoMealsDay, style: context.text.bodySmall)
+            Text(
+              context.l10n.homeNoMealsDay,
+              style: context.text.bodyMedium?.copyWith(color: pic.onHeroMuted),
+            )
           else
             _GoalHint(hasGoal: hasGoal, remaining: remaining),
         ],
@@ -624,9 +636,8 @@ class _GoalHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = context.text.bodyMedium?.copyWith(
-      color: context.pic.textSecondary,
-    );
+    final pic = context.pic;
+    final style = context.text.bodyMedium?.copyWith(color: pic.onHeroMuted);
     if (!hasGoal || remaining == null) {
       return Align(
         alignment: Alignment.centerLeft,
@@ -635,8 +646,10 @@ class _GoalHint extends StatelessWidget {
           child: Text(
             context.l10n.homeSetYourGoal,
             style: style?.copyWith(
-              color: context.colors.primary,
+              color: pic.onHero,
               fontWeight: FontWeight.w600,
+              decoration: TextDecoration.underline,
+              decorationColor: pic.onHero,
             ),
           ),
         ),
@@ -650,7 +663,7 @@ class _GoalHint extends StatelessWidget {
             text: Fmt.kcal(remaining!.abs()),
             style: style?.copyWith(
               fontWeight: FontWeight.w700,
-              color: over ? context.pic.warning : context.colors.primary,
+              color: over ? pic.heroWarning : pic.onHero,
               fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
@@ -708,14 +721,18 @@ class _MacroBar extends StatelessWidget {
               Text(
                 label,
                 style: context.text.labelMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
+                  color: context.pic.onHero,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               Text(
                 hasGoal
                     ? '${Fmt.integer(grams)} / ${Fmt.integer(g)} g'
                     : '${Fmt.integer(grams)} g',
-                style: context.text.bodySmall,
+                style: context.text.bodySmall?.copyWith(
+                  color: context.pic.onHeroMuted,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
               ),
             ],
           ),
@@ -724,9 +741,9 @@ class _MacroBar extends StatelessWidget {
             borderRadius: BorderRadius.circular(Radii.pill),
             child: LinearProgressIndicator(
               value: progress,
-              minHeight: 7,
+              minHeight: 6,
               color: color,
-              backgroundColor: color.withValues(alpha: .14),
+              backgroundColor: context.pic.heroTrack,
             ),
           ),
         ],
@@ -808,20 +825,26 @@ class _WaterTileState extends ConsumerState<_WaterTile> {
     final percent = (progress * 100).round();
     final liters = d.waterTotalMl / 1000;
 
+    final quickStyle = TextButton.styleFrom(
+      foregroundColor: blue,
+      backgroundColor: blue.withValues(alpha: .1),
+      minimumSize: const Size(0, 44),
+    );
     return _HomeCard(
-      padding: const EdgeInsets.all(Space.sm),
+      padding: const EdgeInsets.fromLTRB(Space.lg, Space.lg, Space.lg, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(Space.md),
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
                   color: blue.withValues(alpha: .1),
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: Radii.control,
                 ),
-                child: Icon(Icons.local_drink_rounded, color: blue, size: 34),
+                child: Icon(Icons.local_drink_rounded, color: blue, size: 22),
               ),
               const SizedBox(width: Space.md),
               Expanded(
@@ -830,44 +853,44 @@ class _WaterTileState extends ConsumerState<_WaterTile> {
                   children: [
                     Text(
                       context.l10n.homeHydration,
-                      style: context.text.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
+                      style: context.text.titleSmall,
                     ),
                     Text(
                       '${Fmt.decimal(liters)} / ${Fmt.decimal(d.waterGoalMl / 1000)} L',
-                      style: context.text.titleSmall,
+                      style: context.text.bodyMedium?.copyWith(
+                        color: context.pic.textSecondary,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
                     ),
-                    const SizedBox(height: Space.xs),
+                    const SizedBox(height: Space.sm),
                     ProgressBar(progress: progress, color: blue),
                   ],
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: Space.md),
+          Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  onPressed: _saving ? null : () => _add(_quickMl),
+                  style: quickStyle,
+                  child: const Text('+$_quickMl ml'),
+                ),
+              ),
               const SizedBox(width: Space.sm),
-              Column(
-                children: [
-                  TextButton(
-                    onPressed: _saving ? null : () => _add(_quickMl),
-                    style: TextButton.styleFrom(
-                      foregroundColor: blue,
-                      backgroundColor: blue.withValues(alpha: .1),
-                    ),
-                    child: const Text('+200 ml'),
-                  ),
-                  TextButton(
-                    onPressed: _saving ? null : () => _add(300),
-                    style: TextButton.styleFrom(
-                      foregroundColor: blue,
-                      backgroundColor: blue.withValues(alpha: .1),
-                    ),
-                    child: const Text('+300 ml'),
-                  ),
-                ],
+              Expanded(
+                child: TextButton(
+                  onPressed: _saving ? null : () => _add(_otherMl.first),
+                  style: quickStyle,
+                  child: Text('+${_otherMl.first} ml'),
+                ),
               ),
             ],
           ),
           ExpansionTile(
-            tilePadding: const EdgeInsets.symmetric(horizontal: Space.sm),
+            tilePadding: EdgeInsets.zero,
             visualDensity: VisualDensity.compact,
             shape: const Border(),
             collapsedShape: const Border(),
@@ -1119,10 +1142,7 @@ class _MealsSection extends ConsumerWidget {
                 header: true,
                 child: Text(
                   context.l10n.homeYourMeals,
-                  style: context.text.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.3,
-                  ),
+                  style: context.text.titleMedium,
                 ),
               ),
             ),
@@ -1133,9 +1153,7 @@ class _MealsSection extends ConsumerWidget {
               },
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.only(left: Space.sm),
-                textStyle: context.text.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+                textStyle: context.text.labelLarge,
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -1252,7 +1270,7 @@ class _MealTile extends StatelessWidget {
       child: Material(
         color: context.colors.surface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: Radii.card,
           side: BorderSide(color: context.pic.border),
         ),
         clipBehavior: Clip.antiAlias,
@@ -1267,13 +1285,17 @@ class _MealTile extends StatelessWidget {
               child: Row(
                 children: [
                   Container(
-                    width: 48,
-                    height: 48,
+                    width: 40,
+                    height: 40,
                     decoration: BoxDecoration(
-                      color: context.pic.surfaceMuted,
-                      borderRadius: BorderRadius.circular(14),
+                      color: context.pic.brandContainer,
+                      borderRadius: Radii.control,
                     ),
-                    child: Icon(icon(mealType), color: context.colors.primary),
+                    child: Icon(
+                      icon(mealType),
+                      size: 22,
+                      color: context.pic.onBrandContainer,
+                    ),
                   ),
                   const SizedBox(width: Space.md),
                   Expanded(

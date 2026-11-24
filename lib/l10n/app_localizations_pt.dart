@@ -584,7 +584,7 @@ class AppLocalizationsPt extends AppLocalizations {
       other: 'Recorde: $count dias.',
       one: 'Recorde: 1 dia.',
     );
-    return '$_temp0 Um dia sem registro reinicia a sequência.';
+    return '$_temp0 Se um dia ficar sem registro, é só recomeçar.';
   }
 
   @override

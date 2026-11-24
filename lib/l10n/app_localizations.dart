@@ -1071,7 +1071,7 @@ abstract class AppLocalizations {
   /// No description provided for @missionsRecord.
   ///
   /// In pt, this message translates to:
-  /// **'{count, plural, =1{Recorde: 1 dia.} other{Recorde: {count} dias.}} Um dia sem registro reinicia a sequência.'**
+  /// **'{count, plural, =1{Recorde: 1 dia.} other{Recorde: {count} dias.}} Se um dia ficar sem registro, é só recomeçar.'**
   String missionsRecord(int count);
 
   /// No description provided for @levelBeginner.

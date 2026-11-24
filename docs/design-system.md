@@ -45,15 +45,15 @@ Código: `lib/core/design/` (tokens, cores semânticas, marca e componentes) e `
 
 | Token | Hex | Uso |
 | --- | --- | --- |
-| Primary | `#087F5B` | Botões principais, ações, destaque |
-| Primary Dark | `#066649` | Texto sobre Primary Light, estados pressionados |
-| Primary Light | `#DDF5EA` | Fundos de destaque, indicador da navegação |
+| Primary | `#0F6B4E` | Botões principais, ações, destaque (verde-esmeralda profundo e sólido) |
+| Primary Dark | `#0A4D38` | Texto sobre Primary Light, estados pressionados |
+| Primary Light | `#E4F2EA` | Fundos de destaque, indicador da navegação |
 | Accent | `#65D6AD` | Detalhes e indicadores (nunca texto sobre branco: 1,8:1) |
-| Background | `#F7F9F7` | Fundo das telas |
+| Background | `#F4F6F5` | Fundo das telas |
 | Surface | `#FFFFFF` | Cartões, modais |
-| Text Primary | `#1E2925` | Títulos e conteúdo |
-| Text Secondary | `#68756F` | Descrições |
-| Border | `#E4EAE6` | Bordas e divisores |
+| Text Primary | `#121A17` | Títulos e conteúdo |
+| Text Secondary | `#5A6661` | Descrições |
+| Border | `#E3E8E5` | Bordas e divisores |
 | Success / Warning / Error / Info | `#21865A` / `#B7791F` / `#C43D4B` / `#3478C8` | Estados reais |
 | AI Primary / Light / Dark | `#7561D8` / `#EEEAFE` / `#5141A6` | Somente recursos de IA |
 
@@ -111,8 +111,10 @@ O tamanho de fonte do sistema é respeitado (sem `textScaler` fixo).
 ## Espaçamento, forma e movimento
 
 - Espaços (`Space`): 4, 8, 12, 16, 20, 24, 32; margem lateral 20.
-- Raios (`Radii`): controles 12, botões 14, cartões 16, diálogos 20, folhas 24.
-- Cartões com borda de 1 px (`Border`) em vez de sombra; sombra suave (`Shadows.soft`) só quando agrega hierarquia.
+- Raios (`Radii`): controles 12, botões 14, cartões 20, diálogos 20, folhas 24.
+- Cartões planos com borda de 1 px (`Border`), sem sombra; sombra suave (`Shadows.soft`) só em sobreposições.
+- Ícones de cartão em quadrado 40 × 40 (`brandContainer`, raio 12).
+- **Cartão-destaque**: um único por tela (no Início, o resumo do dia), em verde sólido `heroSurface` `#0D5C43` com texto branco; macros clareados (`heroCarbs/Protein/Fat`, ≥ 4:1 sobre o verde) e alerta `heroWarning`. Todo o resto em superfícies neutras.
 - Áreas de toque ≥ 48 dp; botões principais com 52 dp de altura.
 - Animações (`Motion`): 150/250/400 ms, `easeOutCubic`; desligadas quando o sistema pede menos movimento (`MediaQuery.disableAnimations`).
 

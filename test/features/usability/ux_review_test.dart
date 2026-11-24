@@ -90,27 +90,32 @@ Dashboard _dash({
 
 void main() {
   group('Início: próximo passo sem repetir os cartões', () {
-    test('aponta só o que falta, na ordem água, proteínas, metas', () {
-      expect(homeNextStep(_dash(water: 500)).title, 'Faltam 1.500 ml de água');
+    test('aponta só o que falta, sem repetir refeição nem água', () {
+      // Água pendente: o cartão de hidratação já mostra; o próximo passo some.
+      expect(homeNextStep(_dash(water: 500, protein: 95)), isNull);
       expect(
-        homeNextStep(_dash(water: 2000, protein: 50)).action,
+        homeNextStep(_dash(water: 500, protein: 50))!.action,
         'Ver receitas',
       );
       expect(
-        homeNextStep(_dash(water: 2000, proteinGoal: null)).action,
+        homeNextStep(_dash(water: 2000, protein: 50))!.action,
+        'Ver receitas',
+      );
+      expect(
+        homeNextStep(_dash(water: 2000, proteinGoal: null))!.action,
         'Definir metas',
       );
-      final done = homeNextStep(_dash(water: 2000, protein: 95));
+      final done = homeNextStep(_dash(water: 2000, protein: 95))!;
       expect(done.action, isNull);
       expect(done.title, contains('alcançadas'));
     });
 
     test('critério de proteína é 100% da meta, igual ao relatório', () {
       expect(
-        homeNextStep(_dash(water: 2000, protein: 89)).action,
+        homeNextStep(_dash(water: 2000, protein: 89))!.action,
         'Ver receitas',
       );
-      expect(homeNextStep(_dash(water: 2000, protein: 90)).action, isNull);
+      expect(homeNextStep(_dash(water: 2000, protein: 90))!.action, isNull);
     });
   });
 

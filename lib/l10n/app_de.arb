@@ -160,7 +160,7 @@
   "missionsFirstDay": "Dein erster Tag beginnt mit einem Eintrag.",
   "missionsDiamond": "Diamant erreicht! Setz deine Serie fort.",
   "missionsDaysTo": "{count, plural, =1{Noch 1 Tag bis {level}} other{Noch {count} Tage bis {level}}}",
-  "missionsRecord": "{count, plural, =1{Rekord: 1 Tag.} other{Rekord: {count} Tage.}} Ein Tag ohne Eintrag setzt die Serie zurück.",
+  "missionsRecord": "{count, plural, =1{Rekord: 1 Tag.} other{Rekord: {count} Tage.}} Wenn ein Tag fehlt, fang einfach wieder an.",
   "levelBeginner": "Einstieg",
   "levelBronze": "Bronze",
   "levelSilver": "Silber",

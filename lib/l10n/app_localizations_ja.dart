@@ -563,7 +563,7 @@ class AppLocalizationsJa extends AppLocalizations {
       locale: localeName,
       other: '最高記録：$count日。',
     );
-    return '$_temp0記録しない日があると連続記録はリセットされます。';
+    return '$_temp0記録できない日があっても、また始めれば大丈夫です。';
   }
 
   @override

@@ -297,8 +297,9 @@ class _PlanItemTile extends ConsumerWidget {
           .read(planningRepositoryProvider)
           .logItem(plan.id, item.id, requestId: newRequestId());
       Refresh.nutrition(ref);
-      if (context.mounted)
+      if (context.mounted) {
         showMessage(context, '${item.title} registrado no diário.');
+      }
     } on Object catch (e) {
       if (context.mounted) showFailure(context, e);
     }
@@ -319,8 +320,9 @@ class _PlanItemTile extends ConsumerWidget {
       );
       await repo.removeItem(plan.id, item.id);
       _refreshPlan(ref, plan.id);
-      if (context.mounted)
+      if (context.mounted) {
         showMessage(context, '${item.title} trocado por ${recipe.title}.');
+      }
     } on Object catch (e) {
       _refreshPlan(ref, plan.id);
       if (context.mounted) showFailure(context, e);
@@ -486,8 +488,9 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
                 );
               }
               final data = snapshot.data;
-              if (data == null)
+              if (data == null) {
                 return const Center(child: CircularProgressIndicator());
+              }
               if (data.recipes.isEmpty) {
                 return const EmptyState(
                   compact: true,

@@ -160,7 +160,7 @@
   "missionsFirstDay": "Your first day starts with one entry.",
   "missionsDiamond": "Diamond reached! Keep your streak going.",
   "missionsDaysTo": "{count, plural, =1{1 day to {level}} other{{count} days to {level}}}",
-  "missionsRecord": "{count, plural, =1{Best: 1 day.} other{Best: {count} days.}} A day without entries resets the streak.",
+  "missionsRecord": "{count, plural, =1{Best: 1 day.} other{Best: {count} days.}} If you miss a day, just start again.",
   "levelBeginner": "Starter",
   "levelBronze": "Bronze",
   "levelSilver": "Silver",

@@ -19,13 +19,11 @@ class ExpandableHomeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    elevation: 2,
-    shadowColor: context.colors.primary.withValues(alpha: .07),
     surfaceTintColor: Colors.transparent,
     color: context.colors.surface,
     shape: RoundedRectangleBorder(
       borderRadius: Radii.card,
-      side: BorderSide(color: context.pic.border.withValues(alpha: .35)),
+      side: BorderSide(color: context.pic.border),
     ),
     clipBehavior: Clip.antiAlias,
     child: ExpansionTile(
@@ -35,7 +33,7 @@ class ExpandableHomeCard extends StatelessWidget {
         horizontal: Space.lg,
         vertical: Space.xs,
       ),
-      leading: Icon(icon, color: context.colors.primary),
+      leading: IconBadge(icon: icon),
       title: Text(title, style: context.text.titleSmall),
       subtitle: Text(summary, style: context.text.bodySmall),
       children: [child],

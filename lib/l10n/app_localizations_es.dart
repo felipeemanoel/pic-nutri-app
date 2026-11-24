@@ -583,7 +583,7 @@ class AppLocalizationsEs extends AppLocalizations {
       other: 'Récord: $count días.',
       one: 'Récord: 1 día.',
     );
-    return '$_temp0 Un día sin registros reinicia la racha.';
+    return '$_temp0 Si un día no registras, solo vuelve a empezar.';
   }
 
   @override

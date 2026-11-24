@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../pic_colors.dart';
 import '../tokens.dart';
 
-/// Cartão padrão: superfície com borda discreta, cantos de 24 e espaçamento
+/// Cartão padrão: superfície plana com borda discreta, cantos de 20 e espaçamento
 /// interno consistente. Com [onTap], ganha resposta ao toque.
 class AppCard extends StatelessWidget {
   const AppCard({
@@ -34,8 +34,6 @@ class AppCard extends StatelessWidget {
       label: semanticLabel,
       button: onTap != null,
       child: Material(
-        elevation: 1,
-        shadowColor: context.colors.shadow.withValues(alpha: 0.06),
         surfaceTintColor: Colors.transparent,
         color: color ?? context.colors.surface,
         shape: shape,
@@ -77,4 +75,33 @@ class SectionHeader extends StatelessWidget {
       ],
     ),
   );
+}
+
+/// Ícone de cartão num quadrado suave da marca (40 × 40, raio 12): o mesmo
+/// padrão em atalhos, listas e cartões de todas as telas.
+class IconBadge extends StatelessWidget {
+  const IconBadge({super.key, required this.icon, this.ai = false});
+
+  final IconData icon;
+
+  /// Recurso de IA: usa a identidade roxa.
+  final bool ai;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.pic;
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: ai ? p.aiContainer : p.brandContainer,
+        borderRadius: Radii.control,
+      ),
+      child: Icon(
+        icon,
+        size: 22,
+        color: ai ? p.onAiContainer : p.onBrandContainer,
+      ),
+    );
+  }
 }

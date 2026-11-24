@@ -32,6 +32,15 @@ class PicColors extends ThemeExtension<PicColors> {
     required this.chartFill,
     required this.chartGrid,
     required this.chartReference,
+    required this.screenTint,
+    required this.heroSurface,
+    required this.onHero,
+    required this.onHeroMuted,
+    required this.heroTrack,
+    required this.heroWarning,
+    required this.heroCarbs,
+    required this.heroProtein,
+    required this.heroFat,
   });
 
   final Color textSecondary;
@@ -60,6 +69,20 @@ class PicColors extends ThemeExtension<PicColors> {
   final Color chartGrid;
   final Color chartReference;
 
+  /// Fundo levemente esverdeado das telas de painel (Início).
+  final Color screenTint;
+
+  /// Cartão-destaque do Início (resumo do dia) em verde sólido e o que vai
+  /// sobre ele: texto, trilhas e as cores dos macros clareadas (≥ 4:1).
+  final Color heroSurface;
+  final Color onHero;
+  final Color onHeroMuted;
+  final Color heroTrack;
+  final Color heroWarning;
+  final Color heroCarbs;
+  final Color heroProtein;
+  final Color heroFat;
+
   static const light = PicColors(
     textSecondary: PicPalette.textSecondary,
     border: PicPalette.border,
@@ -83,9 +106,18 @@ class PicColors extends ThemeExtension<PicColors> {
     fat: PicPalette.fat,
     water: PicPalette.water,
     chartLine: PicPalette.primary,
-    chartFill: Color(0x1F0C8452),
+    chartFill: Color(0x1F0F6B4E),
     chartGrid: PicPalette.border,
     chartReference: PicPalette.textSecondary,
+    screenTint: PicPalette.background,
+    heroSurface: Color(0xFF0D5C43),
+    onHero: Color(0xFFFFFFFF),
+    onHeroMuted: Color(0xFFCDDED7),
+    heroTrack: Color(0x2EFFFFFF),
+    heroWarning: Color(0xFFFFD27A),
+    heroCarbs: Color(0xFFF2C879),
+    heroProtein: Color(0xFFA9CFF2),
+    heroFat: Color(0xFFF5AE9C),
   );
 
   static const dark = PicColors(
@@ -114,6 +146,15 @@ class PicColors extends ThemeExtension<PicColors> {
     chartFill: Color(0x266FD3A2),
     chartGrid: PicPalette.darkBorder,
     chartReference: PicPalette.darkTextSecondary,
+    screenTint: Color(0xFF0D1311),
+    heroSurface: Color(0xFF1C4A39),
+    onHero: Color(0xFFFFFFFF),
+    onHeroMuted: Color(0xFFD0DDD7),
+    heroTrack: Color(0x2EFFFFFF),
+    heroWarning: PicPalette.darkWarning,
+    heroCarbs: PicPalette.darkCarbs,
+    heroProtein: PicPalette.darkProtein,
+    heroFat: PicPalette.darkFat,
   );
 
   @override
@@ -149,6 +190,15 @@ class PicColors extends ThemeExtension<PicColors> {
       chartFill: c(chartFill, other.chartFill),
       chartGrid: c(chartGrid, other.chartGrid),
       chartReference: c(chartReference, other.chartReference),
+      screenTint: c(screenTint, other.screenTint),
+      heroSurface: c(heroSurface, other.heroSurface),
+      onHero: c(onHero, other.onHero),
+      onHeroMuted: c(onHeroMuted, other.onHeroMuted),
+      heroTrack: c(heroTrack, other.heroTrack),
+      heroWarning: c(heroWarning, other.heroWarning),
+      heroCarbs: c(heroCarbs, other.heroCarbs),
+      heroProtein: c(heroProtein, other.heroProtein),
+      heroFat: c(heroFat, other.heroFat),
     );
   }
 }

@@ -39,16 +39,12 @@ class ProgressPhotoHighlight extends ConsumerWidget {
                     children: [
                       Row(
                         children: [
-                          Icon(
-                            Icons.auto_awesome_outlined,
-                            size: 17,
-                            color: context.colors.primary,
-                          ),
-                          const SizedBox(width: 6),
+                          const IconBadge(icon: Icons.photo_library_outlined),
+                          const SizedBox(width: Space.md),
                           Expanded(
                             child: Text(
-                              'Sua evolução',
-                              style: context.text.titleMedium,
+                              'Fotos de evolução',
+                              style: context.text.titleSmall,
                             ),
                           ),
                         ],
@@ -89,9 +85,9 @@ class ProgressPhotoHighlight extends ConsumerWidget {
                   label: 'Abrir minhas fotos de evolução',
                   child: InkWell(
                     onTap: open,
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: Radii.control,
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(18),
+                      borderRadius: Radii.control,
                       child: SizedBox(
                         width: 92,
                         height: 116,

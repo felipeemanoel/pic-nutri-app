@@ -118,7 +118,7 @@ class _PlanAndRecipes extends StatelessWidget {
             onTap: () => context.push(AppRoutes.mealPlans),
           ),
         ),
-        const SizedBox(width: Space.sm),
+        const SizedBox(width: Space.md),
         Expanded(
           child: _Shortcut(
             icon: Icons.menu_book_outlined,
@@ -131,7 +131,8 @@ class _PlanAndRecipes extends StatelessWidget {
   );
 }
 
-/// Atalho de mesmo peso visual (ícone sobre o rótulo).
+/// Atalho de mesmo peso visual: ícone em quadrado da marca + rótulo, como os
+/// atalhos do Início.
 class _Shortcut extends StatelessWidget {
   const _Shortcut({
     required this.icon,
@@ -151,27 +152,19 @@ class _Shortcut extends StatelessWidget {
     child: Material(
       color: context.colors.surface,
       shape: RoundedRectangleBorder(
-        borderRadius: Radii.control,
+        borderRadius: Radii.card,
         side: BorderSide(color: context.pic.border),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: Space.xs,
-            vertical: Space.md,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+          padding: const EdgeInsets.all(Space.md),
+          child: Row(
             children: [
-              Icon(icon, color: context.colors.primary),
-              const SizedBox(height: Space.xs),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: context.text.labelMedium,
-              ),
+              IconBadge(icon: icon),
+              const SizedBox(width: Space.md),
+              Expanded(child: Text(label, style: context.text.titleSmall)),
             ],
           ),
         ),
@@ -719,13 +712,17 @@ class _AddOption extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
               color: ai ? p.aiContainer : p.brandContainer,
               borderRadius: Radii.control,
             ),
-            child: Icon(icon, color: ai ? p.ai : context.colors.primary),
+            child: Icon(
+              icon,
+              size: 22,
+              color: ai ? p.onAiContainer : p.onBrandContainer,
+            ),
           ),
           const SizedBox(width: Space.md),
           Expanded(
@@ -737,7 +734,7 @@ class _AddOption extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(Icons.chevron_right),
+          Icon(Icons.chevron_right, color: p.textSecondary),
         ],
       ),
     );
@@ -754,7 +751,14 @@ class _SummaryCard extends StatelessWidget {
     final t = summary.totals;
     final goal = summary.goalKcal;
     final hasGoal = goal != null && goal > 0;
+    final over = hasGoal && t.energyKcal > goal;
+    final p = context.pic;
+    final muted = context.text.bodyMedium?.copyWith(color: p.onHeroMuted);
+    // Mesmo cartão-destaque do Início: o resumo do dia é o único bloco em cor
+    // sólida; refeições e atalhos ficam em superfícies neutras.
     return AppCard(
+      color: p.heroSurface,
+      borderColor: Colors.transparent,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -765,8 +769,19 @@ class _SummaryCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Calorias', style: context.text.labelSmall),
-                    MetricValue(value: Fmt.integer(t.energyKcal), unit: 'kcal'),
+                    Text(
+                      'Calorias',
+                      style: context.text.labelMedium?.copyWith(
+                        color: p.onHeroMuted,
+                      ),
+                    ),
+                    MetricValue(
+                      value: Fmt.integer(t.energyKcal),
+                      unit: 'kcal',
+                      large: true,
+                      color: p.onHero,
+                      unitColor: p.onHeroMuted,
+                    ),
                   ],
                 ),
               ),
@@ -774,16 +789,41 @@ class _SummaryCard extends StatelessWidget {
                 Text(
                   'meta ${Fmt.kcal(goal)}',
                   style: context.text.bodySmall?.copyWith(
+                    color: p.onHeroMuted,
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                 ),
             ],
           ),
           if (hasGoal) ...[
+            const SizedBox(height: Space.md),
+            ProgressBar(
+              progress: t.energyKcal / goal,
+              color: over ? p.heroWarning : p.onHero,
+              trackColor: p.heroTrack,
+            ),
             const SizedBox(height: Space.sm),
-            ProgressBar(progress: t.energyKcal / goal),
+            // Acima da meta: dito em texto, não só pela cor da barra.
+            Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: Fmt.kcal((goal - t.energyKcal).abs()),
+                    style: muted?.copyWith(
+                      color: over ? p.heroWarning : p.onHero,
+                      fontWeight: FontWeight.w700,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                  TextSpan(
+                    text: over ? context.l10n.homeAboveGoal : context.l10n.homeToGoal,
+                  ),
+                ],
+              ),
+              style: muted,
+            ),
           ],
-          const SizedBox(height: Space.lg),
+          Divider(color: p.heroTrack, height: Space.xxxl),
           MacroSummary(
             proteinG: t.proteinG,
             carbsG: t.carbsG,
@@ -791,6 +831,7 @@ class _SummaryCard extends StatelessWidget {
             proteinGoal: summary.goalProteinG,
             carbsGoal: summary.goalCarbsG,
             fatGoal: summary.goalFatG,
+            onHero: true,
           ),
         ],
       ),
@@ -810,13 +851,29 @@ class _MealTile extends ConsumerWidget {
       onTap: () => context.push(AppRoutes.editMeal, extra: meal),
       semanticLabel:
           '${meal.displayName}, ${Fmt.kcal(meal.totals.energyKcal)}. Toque para editar.',
-      child: Column(
+      padding: const EdgeInsets.fromLTRB(Space.lg, Space.md, Space.xs, Space.lg),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: Space.xs),
+            child: IconBadge(icon: mealTypeIcon(meal.mealType)),
+          ),
+          const SizedBox(width: Space.md),
+          Expanded(child: _mealBody(context, ref, fromPhoto)),
+        ],
+      ),
+    );
+  }
+
+  Widget _mealBody(BuildContext context, WidgetRef ref, bool fromPhoto) =>
+      Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Expanded(
-                child: Text(meal.displayName, style: context.text.titleMedium),
+                child: Text(meal.displayName, style: context.text.titleSmall),
               ),
               if (fromPhoto) ...[
                 const AiBadge(label: 'Por foto', compact: false),
@@ -851,7 +908,10 @@ class _MealTile extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: Space.sm),
-          Row(
+          Wrap(
+            spacing: Space.md,
+            runSpacing: Space.xxs,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Text(
                 Fmt.kcal(meal.totals.energyKcal),
@@ -859,19 +919,22 @@ class _MealTile extends ConsumerWidget {
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
-              const SizedBox(width: Space.md),
-              Expanded(
-                child: Text(
-                  'P ${Fmt.grams(meal.totals.proteinG)} · C ${Fmt.grams(meal.totals.carbsG)} · G ${Fmt.grams(meal.totals.fatG)}',
-                  style: context.text.bodySmall,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+              Text(
+                'P ${Fmt.grams(meal.totals.proteinG)} · C ${Fmt.grams(meal.totals.carbsG)} · G ${Fmt.grams(meal.totals.fatG)}',
+                style: context.text.bodySmall?.copyWith(
+                  fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
             ],
           ),
         ],
-      ),
-    );
-  }
+      );
 }
+
+/// Ícone por tipo de refeição: ilustrativo, sem sugerir ser o prato registrado.
+IconData mealTypeIcon(String mealType) => switch (mealType) {
+  'breakfast' || 'supper' => Icons.free_breakfast_outlined,
+  'lunch' || 'dinner' => Icons.dinner_dining_outlined,
+  _ => Icons.bakery_dining_outlined,
+};
+

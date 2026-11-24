@@ -585,7 +585,7 @@ class AppLocalizationsDe extends AppLocalizations {
       other: 'Rekord: $count Tage.',
       one: 'Rekord: 1 Tag.',
     );
-    return '$_temp0 Ein Tag ohne Eintrag setzt die Serie zurück.';
+    return '$_temp0 Wenn ein Tag fehlt, fang einfach wieder an.';
   }
 
   @override

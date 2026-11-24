@@ -413,7 +413,7 @@
       }
     }
   },
-  "missionsRecord": "{count, plural, =1{Recorde: 1 dia.} other{Recorde: {count} dias.}} Um dia sem registro reinicia a sequência.",
+  "missionsRecord": "{count, plural, =1{Recorde: 1 dia.} other{Recorde: {count} dias.}} Se um dia ficar sem registro, é só recomeçar.",
   "@missionsRecord": {
     "placeholders": {
       "count": {

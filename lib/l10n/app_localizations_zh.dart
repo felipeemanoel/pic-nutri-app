@@ -563,7 +563,7 @@ class AppLocalizationsZh extends AppLocalizations {
       locale: localeName,
       other: '最高纪录：$count 天。',
     );
-    return '$_temp0一天不记录，连续记录就会重新开始。';
+    return '$_temp0某天没有记录也没关系，重新开始就好。';
   }
 
   @override

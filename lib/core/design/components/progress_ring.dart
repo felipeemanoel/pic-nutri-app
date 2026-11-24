@@ -15,6 +15,7 @@ class ProgressRing extends StatelessWidget {
     this.size = 132,
     this.strokeWidth = 12,
     this.color,
+    this.trackColor,
     this.semanticLabel,
   });
 
@@ -24,6 +25,9 @@ class ProgressRing extends StatelessWidget {
   final double size;
   final double strokeWidth;
   final Color? color;
+
+  /// Trilha do anel; padrão `surfaceMuted` (use outra sobre fundos coloridos).
+  final Color? trackColor;
   final String? semanticLabel;
 
   @override
@@ -31,7 +35,7 @@ class ProgressRing extends StatelessWidget {
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     final target = (progress ?? 0).clamp(0.0, 1.0);
     final ringColor = color ?? context.colors.primary;
-    final track = context.pic.surfaceMuted;
+    final track = trackColor ?? context.pic.surfaceMuted;
 
     return Semantics(
       label: semanticLabel,
@@ -91,11 +95,15 @@ class ProgressBar extends StatelessWidget {
     super.key,
     required this.progress,
     this.color,
+    this.trackColor,
     this.height = 8,
   });
 
   final double? progress;
   final Color? color;
+
+  /// Trilha; padrão `surfaceMuted` (use outra sobre fundos coloridos).
+  final Color? trackColor;
   final double height;
 
   @override
@@ -111,7 +119,7 @@ class ProgressBar extends StatelessWidget {
           value: value,
           minHeight: height,
           color: color ?? context.colors.primary,
-          backgroundColor: context.pic.surfaceMuted,
+          backgroundColor: trackColor ?? context.pic.surfaceMuted,
         ),
       ),
     );

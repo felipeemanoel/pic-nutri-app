@@ -169,9 +169,10 @@ void main() {
     expect(find.text('Hábitos e conquistas'), findsNothing);
     // O Início é sempre hoje: sem navegador de dias.
     expect(find.byTooltip('Dia anterior'), findsNothing);
-    // Próximo passo: o que falta, sem repetir os números dos cartões acima.
-    await tester.scrollUntilVisible(find.text('Faltam 1.500 ml de água'), 200);
-    expect(find.text('Registrar água'), findsOneWidget);
+    // Próximo passo: o que falta, sem repetir a água do cartão de hidratação.
+    await tester.scrollUntilVisible(find.text('Definir metas'), 200);
+    expect(find.text('Faltam 1.500 ml de água'), findsNothing);
+    expect(find.text('Registrar água'), findsNothing);
     expect(find.text('Registrar'), findsOneWidget);
   });
 

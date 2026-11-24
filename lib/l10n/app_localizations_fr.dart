@@ -588,7 +588,7 @@ class AppLocalizationsFr extends AppLocalizations {
       other: 'Record : $count jours.',
       one: 'Record : 1 jour.',
     );
-    return '$_temp0 Un jour sans enregistrement remet la série à zéro.';
+    return '$_temp0 Si vous manquez un jour, il suffit de recommencer.';
   }
 
   @override

@@ -45,8 +45,9 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
 
   bool get _isCurrent {
     final now = DateTime.now();
-    if (_period == 'month')
+    if (_period == 'month') {
       return _reference.year == now.year && _reference.month == now.month;
+    }
     final monday = now.subtract(Duration(days: now.weekday - 1));
     final refMonday = _reference.subtract(
       Duration(days: _reference.weekday - 1),

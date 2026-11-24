@@ -160,7 +160,7 @@
   "missionsFirstDay": "你的第一天从一条记录开始。",
   "missionsDiamond": "已获得钻石！继续保持连续记录。",
   "missionsDaysTo": "{count, plural, other{距离 {level} 还有 {count} 天}}",
-  "missionsRecord": "{count, plural, other{最高纪录：{count} 天。}}一天不记录，连续记录就会重新开始。",
+  "missionsRecord": "{count, plural, other{最高纪录：{count} 天。}}某天没有记录也没关系，重新开始就好。",
   "levelBeginner": "起步",
   "levelBronze": "青铜",
   "levelSilver": "白银",

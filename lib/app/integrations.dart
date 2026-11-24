@@ -53,11 +53,13 @@ abstract final class Integrations {
 
   static bool get push {
     if (firebaseProjectId.isEmpty || firebaseSenderId.isEmpty) return false;
-    if (Platform.isAndroid)
+    if (Platform.isAndroid) {
       return firebaseAndroidApiKey.isNotEmpty &&
           firebaseAndroidAppId.isNotEmpty;
-    if (Platform.isIOS)
+    }
+    if (Platform.isIOS) {
       return firebaseIosApiKey.isNotEmpty && firebaseIosAppId.isNotEmpty;
+    }
     return false;
   }
 }

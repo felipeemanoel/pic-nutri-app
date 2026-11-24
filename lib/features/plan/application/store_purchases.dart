@@ -65,8 +65,9 @@ class StorePurchases {
   Future<List<ProductDetails>> products(List<String> ids) async {
     if (!supported ||
         ids.isEmpty ||
-        !await InAppPurchase.instance.isAvailable())
+        !await InAppPurchase.instance.isAvailable()) {
       return const [];
+    }
     final response = await InAppPurchase.instance.queryProductDetails(
       ids.toSet(),
     );

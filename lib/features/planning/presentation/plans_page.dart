@@ -136,8 +136,9 @@ class _PlanCard extends ConsumerWidget {
           .read(planningRepositoryProvider)
           .createPlan(week: week, copyFrom: plan.id);
       ref.invalidate(mealPlansProvider);
-      if (context.mounted)
+      if (context.mounted) {
         unawaited(context.push(AppRoutes.mealPlan(created.id)));
+      }
     } on Object catch (e) {
       if (context.mounted) showFailure(context, e);
     }
@@ -215,8 +216,9 @@ Future<void> createPlanFlow(
         .read(planningRepositoryProvider)
         .createPlan(week: week);
     ref.invalidate(mealPlansProvider);
-    if (context.mounted)
+    if (context.mounted) {
       unawaited(context.push(AppRoutes.mealPlan(created.id)));
+    }
   } on Object catch (e) {
     if (context.mounted) showFailure(context, e);
   }

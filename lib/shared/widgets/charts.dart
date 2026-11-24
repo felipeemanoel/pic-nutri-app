@@ -256,16 +256,21 @@ class Sparkline extends StatelessWidget {
     required this.points,
     this.height = 56,
     this.semanticLabel,
+    this.color,
   });
 
   final List<(DateTime, double)> points;
   final double height;
   final String? semanticLabel;
 
+  /// Cor da linha; padrão `chartLine` (use `onHero` sobre o cartão verde).
+  final Color? color;
+
   @override
   Widget build(BuildContext context) {
     if (points.length < 2) return SizedBox(height: height);
     final pic = context.pic;
+    final line = color ?? pic.chartLine;
     final first = points.first.$1;
     final spots = [
       for (final (date, value) in points)
@@ -296,14 +301,14 @@ class Sparkline extends StatelessWidget {
               lineBarsData: [
                 LineChartBarData(
                   spots: spots,
-                  color: pic.chartLine,
+                  color: line,
                   barWidth: 2,
                   isStrokeCapRound: true,
                   dotData: FlDotData(
                     checkToShowDot: (spot, bar) => spot == bar.spots.last,
                     getDotPainter: (_, _, _, _) => FlDotCirclePainter(
                       radius: 3.5,
-                      color: pic.chartLine,
+                      color: line,
                       strokeWidth: 0,
                     ),
                   ),
@@ -313,8 +318,8 @@ class Sparkline extends StatelessWidget {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        pic.chartLine.withValues(alpha: 0.20),
-                        pic.chartLine.withValues(alpha: 0.01),
+                        line.withValues(alpha: 0.20),
+                        line.withValues(alpha: 0.01),
                       ],
                     ),
                   ),

@@ -160,7 +160,7 @@
   "missionsFirstDay": "Tu primer día empieza con un registro.",
   "missionsDiamond": "¡Diamante conseguido! Sigue con tu racha.",
   "missionsDaysTo": "{count, plural, =1{Falta 1 día para {level}} other{Faltan {count} días para {level}}}",
-  "missionsRecord": "{count, plural, =1{Récord: 1 día.} other{Récord: {count} días.}} Un día sin registros reinicia la racha.",
+  "missionsRecord": "{count, plural, =1{Récord: 1 día.} other{Récord: {count} días.}} Si un día no registras, solo vuelve a empezar.",
   "levelBeginner": "Inicio",
   "levelBronze": "Bronce",
   "levelSilver": "Plata",

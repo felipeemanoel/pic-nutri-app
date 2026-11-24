@@ -160,7 +160,7 @@
   "missionsFirstDay": "Votre premier jour commence par un enregistrement.",
   "missionsDiamond": "Diamant obtenu ! Continuez votre série.",
   "missionsDaysTo": "{count, plural, =1{Plus qu'1 jour avant {level}} other{Plus que {count} jours avant {level}}}",
-  "missionsRecord": "{count, plural, =1{Record : 1 jour.} other{Record : {count} jours.}} Un jour sans enregistrement remet la série à zéro.",
+  "missionsRecord": "{count, plural, =1{Record : 1 jour.} other{Record : {count} jours.}} Si vous manquez un jour, il suffit de recommencer.",
   "levelBeginner": "Débutant",
   "levelBronze": "Bronze",
   "levelSilver": "Argent",

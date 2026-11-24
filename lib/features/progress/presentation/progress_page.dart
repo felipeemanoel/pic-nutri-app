@@ -90,38 +90,43 @@ class _SummaryTab extends ConsumerWidget {
     },
     child: ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(Space.page),
+      padding: const EdgeInsets.fromLTRB(
+        Space.page,
+        Space.lg,
+        Space.page,
+        Space.xxxl,
+      ),
       children: [
-        const ProgressPhotoHighlight(),
+        const _WeightHero(),
+        const SizedBox(height: Space.md),
+        const WeeklySummaryCard(),
         const SizedBox(height: Space.md),
         const StreakCard(),
         const SizedBox(height: Space.md),
-        const WeeklySummaryCard(),
-        const SizedBox(height: Space.section),
+        const ProgressPhotoHighlight(),
+        const SectionHeader(title: 'Mais sobre você'),
         AppCard(
-          padding: EdgeInsets.zero,
+          padding: const EdgeInsets.symmetric(vertical: Space.xs),
           child: Column(
             children: [
-              ListTile(
-                leading: const Icon(Icons.bar_chart_rounded),
-                title: const Text('Relatórios'),
-                subtitle: const Text('Semana, mês e exportação'),
-                trailing: const Icon(Icons.chevron_right),
+              _LinkTile(
+                icon: Icons.bar_chart_rounded,
+                title: 'Relatórios',
+                subtitle: 'Semana, mês e exportação',
                 onTap: () => context.push(AppRoutes.reports),
               ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.emoji_events_outlined),
-                title: const Text('Hábitos e conquistas'),
-                trailing: const Icon(Icons.chevron_right),
+              const Divider(height: 1, indent: 72),
+              _LinkTile(
+                icon: Icons.emoji_events_outlined,
+                title: 'Hábitos e conquistas',
+                subtitle: 'Sequência, níveis e metas do dia',
                 onTap: () => context.push(AppRoutes.engagement),
               ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.spa_outlined),
-                title: const Text('Bem-estar'),
-                subtitle: const Text('Sintomas, linha do tempo e resumo'),
-                trailing: const Icon(Icons.chevron_right),
+              const Divider(height: 1, indent: 72),
+              _LinkTile(
+                icon: Icons.spa_outlined,
+                title: 'Bem-estar',
+                subtitle: 'Sintomas, linha do tempo e resumo',
                 onTap: () => context.push(AppRoutes.symptoms),
               ),
             ],
@@ -163,10 +168,15 @@ class _WeightTabState extends ConsumerState<_WeightTab> {
           await ref.read(bodyProgressProvider(_days).future);
         },
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+          padding: const EdgeInsets.fromLTRB(
+            Space.page,
+            Space.md,
+            Space.page,
+            Space.fabClearance,
+          ),
           children: [
             Wrap(
-              spacing: 8,
+              spacing: Space.sm,
               children: [
                 for (final (days, label) in const [
                   (7, '7 dias'),
@@ -182,7 +192,7 @@ class _WeightTabState extends ConsumerState<_WeightTab> {
                   ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: Space.md),
             AsyncValueView<BodyProgress>(
               value: progress,
               onRetry: () => ref.invalidate(bodyProgressProvider(_days)),
@@ -323,22 +333,21 @@ class _WeightTabState extends ConsumerState<_WeightTab> {
                 ],
               ),
             ),
-            const SizedBox(height: Space.section),
-            Text('Histórico', style: theme.textTheme.titleMedium),
+            const SectionHeader(title: 'Histórico'),
             entries.when(
               data: (list) => list.isEmpty
-                  ? const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      child: Text('Nenhum registro de peso ainda.'),
+                  ? Text(
+                      'Nenhum registro de peso ainda.',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: context.pic.textSecondary,
+                      ),
                     )
-                  : Column(
+                  : _HistoryCard(
                       children: [
                         for (final e in list.take(60))
-                          ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(Fmt.kg(e.weightKg)),
-                            subtitle: Text(Fmt.shortDate(e.measuredAt)),
-                            trailing: const Icon(Icons.edit_outlined),
+                          _HistoryRow(
+                            value: Fmt.kg(e.weightKg),
+                            date: Fmt.shortDate(e.measuredAt),
                             onTap: () => showWeightForm(context, entry: e),
                           ),
                       ],
@@ -384,7 +393,12 @@ class _MeasurementsTab extends ConsumerWidget {
                 onAction: () => showMeasurementForm(context),
               )
             : ListView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+                padding: const EdgeInsets.fromLTRB(
+                  Space.page,
+                  Space.md,
+                  Space.page,
+                  Space.fabClearance,
+                ),
                 children: [
                   ...progress.maybeWhen(
                     data: (p) => [
@@ -405,7 +419,12 @@ class _MeasurementsTab extends ConsumerWidget {
                                   trailing: Text(
                                     m.changeCm == null
                                         ? '—'
-                                        : '${m.changeCm! > 0 ? '+' : ''}${Fmt.decimal(m.changeCm!)} cm',
+                                        : '${m.changeCm! > 0 ? '+' : (m.changeCm! < 0 ? '−' : '')}${Fmt.decimal(m.changeCm!.abs())} cm',
+                                    style: context.text.titleSmall?.copyWith(
+                                      fontFeatures: const [
+                                        FontFeature.tabularFigures(),
+                                      ],
+                                    ),
                                   ),
                                 ),
                             ],
@@ -414,17 +433,18 @@ class _MeasurementsTab extends ConsumerWidget {
                     ],
                     orElse: () => const <Widget>[],
                   ),
-                  const SizedBox(height: 12),
-                  for (final m in list)
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(
-                        '${m.displayName}: ${Fmt.decimal(m.valueCm)} cm',
-                      ),
-                      subtitle: Text(Fmt.shortDate(m.measuredAt)),
-                      trailing: const Icon(Icons.edit_outlined),
-                      onTap: () => showMeasurementForm(context, entry: m),
-                    ),
+                  const SectionHeader(title: 'Histórico'),
+                  _HistoryCard(
+                    children: [
+                      for (final m in list)
+                        _HistoryRow(
+                          value:
+                              '${m.displayName}: ${Fmt.decimal(m.valueCm)} cm',
+                          date: Fmt.shortDate(m.measuredAt),
+                          onTap: () => showMeasurementForm(context, entry: m),
+                        ),
+                    ],
+                  ),
                 ],
               ),
       ),
@@ -489,4 +509,234 @@ class _TrendCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Destaque da Evolução: peso atual, variação em 30 dias (neutra, sem
+/// julgamento) e o caminho até o objetivo. Único cartão em cor sólida da
+/// tela, como o resumo do dia no Início e na Alimentação.
+class _WeightHero extends ConsumerWidget {
+  const _WeightHero();
+
+  static const _days = 30;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final p = context.pic;
+    final progress = ref.watch(bodyProgressProvider(_days));
+    final muted = context.text.bodyMedium?.copyWith(color: p.onHeroMuted);
+    return AppCard(
+      color: p.heroSurface,
+      borderColor: Colors.transparent,
+      // Toque leva à aba Peso, com gráfico e histórico.
+      onTap: () => DefaultTabController.of(context).animateTo(2),
+      child: switch (progress) {
+        AsyncData(:final value) => _body(context, value),
+        AsyncError() => Row(
+          children: [
+            Expanded(
+              child: Text('Não foi possível carregar seu peso.', style: muted),
+            ),
+            TextButton(
+              onPressed: () => ref.invalidate(bodyProgressProvider(_days)),
+              style: TextButton.styleFrom(foregroundColor: p.onHero),
+              child: const Text('Tentar de novo'),
+            ),
+          ],
+        ),
+        _ => const SizedBox(height: 120),
+      },
+    );
+  }
+
+  Widget _body(BuildContext context, BodyProgress b) {
+    final p = context.pic;
+    final t = context.text;
+    final muted = t.bodyMedium?.copyWith(color: p.onHeroMuted);
+    final latest = b.series.isEmpty ? null : b.series.last.weightKg;
+    if (latest == null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Seu peso', style: t.titleMedium?.copyWith(color: p.onHero)),
+          const SizedBox(height: Space.xs),
+          Text(
+            'Registre seu peso para acompanhar a evolução aqui.',
+            style: muted,
+          ),
+          const SizedBox(height: Space.lg),
+          FilledButton.icon(
+            onPressed: () => showWeightForm(context),
+            style: FilledButton.styleFrom(
+              backgroundColor: p.onHero,
+              foregroundColor: p.heroSurface,
+            ),
+            icon: const Icon(Icons.add),
+            label: const Text('Registrar peso'),
+          ),
+        ],
+      );
+    }
+    final goal = b.goal;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Peso atual',
+                style: t.labelMedium?.copyWith(color: p.onHeroMuted),
+              ),
+            ),
+            Text(
+              'Últimos $_days dias',
+              style: t.labelMedium?.copyWith(color: p.onHeroMuted),
+            ),
+          ],
+        ),
+        const SizedBox(height: Space.xs),
+        Wrap(
+          spacing: Space.md,
+          runSpacing: Space.sm,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            MetricValue(
+              value: Fmt.decimal(latest),
+              unit: 'kg',
+              large: true,
+              color: p.onHero,
+              unitColor: p.onHeroMuted,
+            ),
+            // Variação em cor neutra, com sinal: nem "boa" nem "ruim".
+            if (b.changeKg != null)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Space.md,
+                  vertical: Space.xs,
+                ),
+                decoration: BoxDecoration(
+                  color: p.heroTrack,
+                  borderRadius: BorderRadius.circular(Radii.pill),
+                ),
+                child: Text(
+                  '${signedKg(b.changeKg)} no período',
+                  style: t.labelMedium?.copyWith(
+                    color: p.onHero,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+          ],
+        ),
+        if (b.series.length >= 2) ...[
+          const SizedBox(height: Space.md),
+          Sparkline(
+            points: [for (final s in b.series) (s.date, s.weightKg)],
+            color: p.onHero,
+            semanticLabel: 'Peso nos últimos $_days dias',
+          ),
+        ],
+        if (goal != null) ...[
+          Divider(color: p.heroTrack, height: Space.xxxl),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Objetivo: ${Fmt.kg(goal.goalWeightKg)}',
+                  style: muted,
+                ),
+              ),
+              Text(
+                '${Fmt.integer(goal.progressPercent)}%',
+                style: t.labelLarge?.copyWith(
+                  color: p.onHero,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: Space.sm),
+          ProgressBar(
+            progress: (goal.progressPercent / 100).clamp(0.0, 1.0),
+            color: p.onHero,
+            trackColor: p.heroTrack,
+            height: 6,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Atalho em lista: ícone da marca, título, descrição e seta.
+class _LinkTile extends StatelessWidget {
+  const _LinkTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+    leading: IconBadge(icon: icon),
+    title: Text(title, style: context.text.titleSmall),
+    subtitle: Text(subtitle, style: context.text.bodySmall),
+    trailing: Icon(Icons.chevron_right, color: context.pic.textSecondary),
+    onTap: onTap,
+  );
+}
+
+/// Histórico de registros (peso, medidas) num cartão com divisórias.
+class _HistoryCard extends StatelessWidget {
+  const _HistoryCard({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+    padding: const EdgeInsets.symmetric(vertical: Space.xs),
+    child: Column(
+      children: [
+        for (var i = 0; i < children.length; i++) ...[
+          if (i > 0) const Divider(height: 1, indent: Space.lg),
+          children[i],
+        ],
+      ],
+    ),
+  );
+}
+
+class _HistoryRow extends StatelessWidget {
+  const _HistoryRow({
+    required this.value,
+    required this.date,
+    required this.onTap,
+  });
+
+  final String value;
+  final String date;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+    title: Text(
+      value,
+      style: context.text.titleSmall?.copyWith(
+        fontFeatures: const [FontFeature.tabularFigures()],
+      ),
+    ),
+    subtitle: Text(date, style: context.text.bodySmall),
+    trailing: Icon(
+      Icons.edit_outlined,
+      size: 20,
+      color: context.pic.textSecondary,
+    ),
+    onTap: onTap,
+  );
 }

@@ -33,8 +33,9 @@ class MedicationInstructionsPage extends StatelessWidget {
         );
       }
     } on Object {
-      if (context.mounted)
+      if (context.mounted) {
         showMessage(context, 'Não foi possível abrir a bula no navegador.');
+      }
     }
   }
 

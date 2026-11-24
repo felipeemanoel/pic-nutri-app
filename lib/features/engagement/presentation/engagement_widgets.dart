@@ -47,14 +47,15 @@ class _StreakCardState extends ConsumerState<StreakCard> {
       child: Row(
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
               color: streak > 0 ? pic.warningContainer : pic.surfaceMuted,
-              borderRadius: BorderRadius.circular(Radii.md),
+              borderRadius: Radii.control,
             ),
             child: Icon(
               Icons.local_fire_department_rounded,
+              size: 22,
               color: streak > 0 ? pic.warning : pic.textSecondary,
             ),
           ),
@@ -79,7 +80,7 @@ class _StreakCardState extends ConsumerState<StreakCard> {
               ],
             ),
           ),
-          const Icon(Icons.chevron_right),
+          Icon(Icons.chevron_right, color: pic.textSecondary),
         ],
       ),
     );

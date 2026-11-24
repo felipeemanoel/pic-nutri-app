@@ -13,12 +13,16 @@ class MetricValue extends StatelessWidget {
     this.unit,
     this.large = false,
     this.color,
+    this.unitColor,
   });
 
   final String value;
   final String? unit;
   final bool large;
   final Color? color;
+
+  /// Cor da unidade; padrão `textSecondary`.
+  final Color? unitColor;
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +41,7 @@ class MetricValue extends StatelessWidget {
             TextSpan(
               text: ' $unit',
               style: context.text.bodyMedium?.copyWith(
-                color: context.pic.textSecondary,
+                color: unitColor ?? context.pic.textSecondary,
               ),
             ),
         ],
@@ -115,8 +119,11 @@ class MacroSummary extends StatelessWidget {
     this.proteinGoal,
     this.carbsGoal,
     this.fatGoal,
+    this.onHero = false,
   });
 
+  /// Sobre o cartão-destaque verde: cores clareadas e trilha translúcida.
+  final bool onHero;
   final double proteinG;
   final double carbsG;
   final double fatG;
@@ -129,27 +136,59 @@ class MacroSummary extends StatelessWidget {
     final p = context.pic;
     return Row(
       children: [
-        Expanded(child: _Macro('Proteínas', proteinG, proteinGoal, p.protein)),
+        Expanded(
+          child: _Macro(
+            'Proteínas',
+            proteinG,
+            proteinGoal,
+            onHero ? p.heroProtein : p.protein,
+            onHero: onHero,
+          ),
+        ),
         const SizedBox(width: Space.md),
-        Expanded(child: _Macro('Carboidratos', carbsG, carbsGoal, p.carbs)),
+        Expanded(
+          child: _Macro(
+            'Carboidratos',
+            carbsG,
+            carbsGoal,
+            onHero ? p.heroCarbs : p.carbs,
+            onHero: onHero,
+          ),
+        ),
         const SizedBox(width: Space.md),
-        Expanded(child: _Macro('Gorduras', fatG, fatGoal, p.fat)),
+        Expanded(
+          child: _Macro(
+            'Gorduras',
+            fatG,
+            fatGoal,
+            onHero ? p.heroFat : p.fat,
+            onHero: onHero,
+          ),
+        ),
       ],
     );
   }
 }
 
 class _Macro extends StatelessWidget {
-  const _Macro(this.label, this.value, this.goal, this.color);
+  const _Macro(
+    this.label,
+    this.value,
+    this.goal,
+    this.color, {
+    this.onHero = false,
+  });
 
   final String label;
   final double value;
   final int? goal;
   final Color color;
+  final bool onHero;
 
   @override
   Widget build(BuildContext context) {
     final hasGoal = goal != null && goal! > 0;
+    final p = context.pic;
     return Semantics(
       label: hasGoal
           ? '$label: ${Fmt.grams(value)} de ${goal}g'
@@ -172,7 +211,9 @@ class _Macro extends StatelessWidget {
                 Flexible(
                   child: Text(
                     label,
-                    style: context.text.labelSmall,
+                    style: context.text.labelSmall?.copyWith(
+                      color: onHero ? p.onHeroMuted : null,
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -182,6 +223,7 @@ class _Macro extends StatelessWidget {
             Text(
               hasGoal ? '${Fmt.decimal(value)}/${goal}g' : Fmt.grams(value),
               style: context.text.titleSmall?.copyWith(
+                color: onHero ? p.onHero : null,
                 fontFeatures: const [FontFeature.tabularFigures()],
               ),
               maxLines: 1,
@@ -191,6 +233,7 @@ class _Macro extends StatelessWidget {
             ProgressBar(
               progress: hasGoal ? value / goal! : (value > 0 ? 1 : 0),
               color: color,
+              trackColor: onHero ? p.heroTrack : null,
               height: 4,
             ),
           ],

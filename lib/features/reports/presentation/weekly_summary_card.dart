@@ -126,8 +126,8 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) => Row(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Icon(Icons.calendar_view_week_rounded, color: context.colors.primary),
-      const SizedBox(width: Space.sm),
+      const IconBadge(icon: Icons.calendar_view_week_rounded),
+      const SizedBox(width: Space.md),
       Expanded(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,7 +152,7 @@ class _Header extends StatelessWidget {
           child: Text(status!, style: context.text.labelSmall),
         ),
       const SizedBox(width: Space.xs),
-      const Icon(Icons.chevron_right),
+      Icon(Icons.chevron_right, color: context.pic.textSecondary),
     ],
   );
 }

@@ -92,48 +92,51 @@ class _Progress extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(
-              data.streakBroken
-                  ? Icons.sentiment_dissatisfied_rounded
-                  : Icons.auto_awesome_rounded,
-              color: color,
-              size: 30,
+            // Sem rosto triste nem o ícone de IA: o cartão informa, não julga.
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: context.pic.brandContainer,
+                borderRadius: Radii.control,
+              ),
+              child: Icon(
+                Icons.task_alt_rounded,
+                size: 22,
+                color: context.pic.onBrandContainer,
+              ),
             ),
-            const SizedBox(width: Space.sm),
+            const SizedBox(width: Space.md),
             Expanded(
-              child: Text(l10n.missionsTitle, style: context.text.titleMedium),
+              child: Text(l10n.missionsTitle, style: context.text.titleSmall),
             ),
             Text(
               '${data.stars}/${data.missions.length}',
-              style: context.text.titleMedium?.copyWith(color: color),
+              style: context.text.titleSmall?.copyWith(
+                color: context.pic.textSecondary,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
             ),
           ],
         ),
         const SizedBox(height: Space.md),
         Container(
-          padding: const EdgeInsets.all(Space.md),
+          padding: const EdgeInsets.all(Space.lg),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                color.withValues(alpha: .18),
-                color.withValues(alpha: .04),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(16),
+            color: context.pic.surfaceMuted,
+            borderRadius: Radii.control,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Icon(Icons.emoji_events_rounded, size: 36, color: color),
+                  Icon(Icons.emoji_events_outlined, size: 22, color: color),
                   const SizedBox(width: Space.sm),
                   Expanded(
                     child: Text(
                       l10n.missionsMyAchievement,
-                      style: context.text.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
+                      style: context.text.titleSmall,
                     ),
                   ),
                 ],
@@ -141,7 +144,7 @@ class _Progress extends StatelessWidget {
               const SizedBox(height: Space.sm),
               Text(
                 l10n.missionsLevelStreak(level, data.streak),
-                style: context.text.titleSmall?.copyWith(color: color),
+                style: context.text.labelLarge,
               ),
               const SizedBox(height: Space.xs),
               Text(
@@ -160,8 +163,8 @@ class _Progress extends StatelessWidget {
                     : ((data.streak - data.level.days) /
                               (next.days - data.level.days))
                           .clamp(0.0, 1.0),
-                color: color,
-                backgroundColor: color.withValues(alpha: .12),
+                color: context.colors.primary,
+                backgroundColor: context.pic.border,
                 minHeight: 6,
                 borderRadius: BorderRadius.circular(8),
               ),
